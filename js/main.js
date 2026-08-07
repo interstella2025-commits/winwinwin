@@ -109,7 +109,6 @@ function init() {
   gsap.set(".hero-card", { clipPath: "inset(100% 0% 0% 0%)", yPercent: 8 });
   gsap.set(".hero-card img", { scale: 1.25 });
   gsap.set("#marquee1", { yPercent: 120, rotation: -1.6, scale: 1.03 });
-  gsap.set(".marquee-final", { yPercent: 0, clearProps: "transform" });
 
   const intro = gsap.timeline({ defaults: { ease: "power4.out" } });
 
