@@ -108,7 +108,8 @@ function init() {
   gsap.set(".hero-sub .cl", { yPercent: 115 });
   gsap.set(".hero-card", { clipPath: "inset(100% 0% 0% 0%)", yPercent: 8 });
   gsap.set(".hero-card img", { scale: 1.25 });
-  gsap.set(".marquee", { yPercent: 120 });
+  gsap.set("#marquee1", { yPercent: 120, rotation: -1.6, scale: 1.03 });
+  gsap.set(".marquee-final", { yPercent: 0, clearProps: "transform" });
 
   const intro = gsap.timeline({ defaults: { ease: "power4.out" } });
 
@@ -132,7 +133,7 @@ function init() {
     .to(".hero-cta-wrap", { autoAlpha: 1, y: 0, duration: .9 }, "-=.55")
     .to(".hero-card", { clipPath: "inset(0% 0% 0% 0%)", yPercent: 0, duration: 1.15, ease: "power4.inOut" }, "-=.9")
     .to(".hero-card img", { scale: 1, duration: 1.4, ease: "power3.out" }, "<")
-    .to(".marquee", { yPercent: 0, duration: .8, ease: "power3.out" }, "-=.8");
+    .to("#marquee1", { yPercent: 0, rotate: -1.6, scale: 1.03, duration: .8, ease: "power3.out" }, "-=.8");
 
   /* hero 人物視差 */
   gsap.to("#heroPhoto", {

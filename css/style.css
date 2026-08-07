@@ -193,16 +193,27 @@ strong { font-weight: 700; color: var(--ink); }
   background: var(--lime);
   color: #101204;
   overflow: hidden;
-  padding: 15px 0;
+  padding: 18px 0 16px;
+  display: flex;
+  align-items: center;
+}
+#marquee1 {
   transform: rotate(-1.6deg) scale(1.03);
 }
-.marquee-final { margin-top: 90px; transform: rotate(0); }
-.marquee-track { display: flex; white-space: nowrap; will-change: transform; }
+.marquee-final { margin-top: 90px; transform: none; }
+.marquee-track {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  will-change: transform;
+}
 .marquee-track span {
   font-family: var(--display);
   font-size: clamp(16px, 4.6vw, 26px);
+  line-height: 1.2;
   letter-spacing: .12em;
-  padding-right: 8px;
+  padding: 0.18em 8px 0.12em 0;
+  display: inline-block;
 }
 
 /* ─── 通用標題 ─── */
