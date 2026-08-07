@@ -66,7 +66,7 @@ function chipHTML(list) {
 }
 function logoHTML() {
   return `<span class="emq-chips">` + LOGOS.map(s =>
-    `<span class="chip-logo"><img src="assets/logos/${s}.png" alt="" loading="lazy"></span>`
+    `<span class="chip-logo"><img src="assets/logos/${s}.webp" alt="" loading="lazy"></span>`
   ).join("") + `</span>`;
 }
 const half = Math.ceil(ENDORSERS.length / 2);
