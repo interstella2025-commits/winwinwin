@@ -61,7 +61,7 @@ const LOGOS = ["stanford", "berkeley", "cambridge", "homerton", "monterey",
 
 function chipHTML(list) {
   return `<span class="emq-chips">` + list.map(([slug, name, title]) =>
-    `<span class="chip"><img src="assets/endorse/${slug}.jpg" alt="${name}" loading="lazy">` +
+    `<span class="chip"><img src="assets/endorse/${slug}.webp" alt="${name}" loading="lazy">` +
     `<span class="chip-cap"><b>${name}</b><i>${title}</i></span></span>`).join("") + `</span>`;
 }
 function logoHTML() {
