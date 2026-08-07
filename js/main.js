@@ -2,6 +2,7 @@
 gsap.registerPlugin(ScrollTrigger, DrawSVGPlugin);
 
 const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const motionMedia = gsap.matchMedia();
 
 /* ── 工具：把 [data-split] 內文字拆成字元 span ── */
 function splitChars(el) {
@@ -89,7 +90,7 @@ document.querySelectorAll("[data-clauses] .cl").forEach(cl => {
 if (reduced) {
   /* 減少動態：全部直接顯示，僅保留互動邏輯 */
   document.getElementById("loader").style.display = "none";
-  stageRailSetup();
+  stageRailSetup(window.matchMedia("(min-width: 1024px)").matches);
   stickyCtaSetup();
 } else {
   init();
@@ -134,29 +135,40 @@ function init() {
     .to(".hero-card img", { scale: 1, duration: 1.4, ease: "power3.out" }, "<")
     .to("#marquee1", { yPercent: 0, rotate: -1.6, scale: 1.03, duration: .8, ease: "power3.out" }, "-=.8");
 
-  /* hero 人物視差 */
-  gsap.to("#heroPhoto", {
-    yPercent: 10, scale: 1.06,
-    ease: "none",
-    scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: true }
-  });
-  gsap.to(".hero-top", {
-    yPercent: -14, autoAlpha: .25,
-    ease: "none",
-    scrollTrigger: { trigger: ".hero", start: "top top", end: "70% top", scrub: true }
+  /* Hero 視差：桌面收斂位移，手機保留較明顯的上下景深 */
+  motionMedia.add({
+    isDesktop: "(min-width: 1024px)",
+    isMobile: "(max-width: 1023px)"
+  }, context => {
+    const { isDesktop } = context.conditions;
+    gsap.to("#heroPhoto", {
+      yPercent: isDesktop ? 6 : 10,
+      scale: isDesktop ? 1.035 : 1.06,
+      ease: "none",
+      scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: true }
+    });
+    gsap.to(".hero-top", {
+      yPercent: isDesktop ? -9 : -14,
+      autoAlpha: isDesktop ? .48 : .25,
+      ease: "none",
+      scrollTrigger: { trigger: ".hero", start: "top top", end: "70% top", scrub: true }
+    });
   });
 
-  /* ═══ 2. 跑馬燈：無限循環＋滾動變速（data-rev 反向）═══ */
+  /* ═══ 2. 跑馬燈：綠色文字帶固定慢速；圖卡跑馬燈保留輕微滾動變速 ═══ */
   document.querySelectorAll(".marquee-track").forEach(track => {
     const rev = track.dataset.rev === "1";
+    const isTextMarquee = Boolean(track.closest(".marquee"));
+    const duration = isTextMarquee ? 40 : (rev ? 26 : 22);
     const loop = rev
-      ? gsap.fromTo(track, { xPercent: -50 }, { xPercent: 0, duration: 26, ease: "none", repeat: -1 })
-      : gsap.to(track, { xPercent: -50, duration: 22, ease: "none", repeat: -1 });
+      ? gsap.fromTo(track, { xPercent: -50 }, { xPercent: 0, duration, ease: "none", repeat: -1 })
+      : gsap.to(track, { xPercent: -50, duration, ease: "none", repeat: -1 });
+    if (isTextMarquee) return;
     ScrollTrigger.create({
       trigger: track.closest(".marquee") || track.closest(".emq-row"),
       start: "top bottom", end: "bottom top",
       onUpdate: self => {
-        const v = Math.min(Math.abs(self.getVelocity()) / 300, 5);
+        const v = Math.min(Math.abs(self.getVelocity()) / 1200, .6);
         gsap.to(loop, { timeScale: 1 + v, duration: .4, overwrite: true });
       }
     });
@@ -197,35 +209,55 @@ function init() {
     });
   });
 
-  /* ═══ 4. 宣言三步驟 ═══ */
-  gsap.utils.toArray("[data-mf]").forEach((step, i) => {
-    gsap.fromTo(step,
-      { autoAlpha: 0, x: i % 2 ? 60 : -60 },
-      {
-        autoAlpha: 1, x: 0, duration: .9, ease: "back.out(1.4)",
-        scrollTrigger: { trigger: step, start: "top 88%" }
-      });
-  });
+  /* ═══ 4–6. 響應式進場：手機強調方向感，桌面強調整組秩序 ═══ */
+  motionMedia.add({
+    isDesktop: "(min-width: 1024px)",
+    isMobile: "(max-width: 1023px)"
+  }, context => {
+    const { isDesktop } = context.conditions;
 
-  /* ═══ 5. 卡片（加碼/診斷）═══ */
-  gsap.utils.toArray("[data-card]").forEach((card, i) => {
-    gsap.fromTo(card,
-      { autoAlpha: 0, y: 70, rotate: i % 2 ? 2.5 : -2.5 },
-      {
-        autoAlpha: 1, y: 0, rotate: 0, duration: 1, ease: "power3.out",
-        delay: (i % 3) * .12,
-        scrollTrigger: { trigger: card, start: "top 90%" }
-      });
-  });
+    gsap.utils.toArray("[data-mf]").forEach((step, i) => {
+      gsap.fromTo(step,
+        isDesktop
+          ? { autoAlpha: 0, y: 46, scale: .96 }
+          : { autoAlpha: 0, x: i % 2 ? 60 : -60 },
+        {
+          autoAlpha: 1, x: 0, y: 0, scale: 1,
+          duration: .9, delay: isDesktop ? i * .1 : 0,
+          ease: "back.out(1.35)",
+          scrollTrigger: { trigger: isDesktop ? ".manifesto-flow" : step, start: "top 86%" }
+        });
+    });
 
-  /* ═══ 6. 痛點清單 ═══ */
-  gsap.utils.toArray("[data-pain]").forEach((li, i) => {
-    gsap.fromTo(li,
-      { autoAlpha: 0, x: i % 2 ? 70 : -70 },
-      {
-        autoAlpha: 1, x: 0, duration: .85, ease: "power3.out",
-        scrollTrigger: { trigger: li, start: "top 92%" }
-      });
+    gsap.utils.toArray("[data-card]").forEach((card, i) => {
+      gsap.fromTo(card,
+        {
+          autoAlpha: 0,
+          y: isDesktop ? 54 : 70,
+          rotate: isDesktop ? 0 : (i % 2 ? 2.5 : -2.5),
+          scale: isDesktop ? .97 : 1
+        },
+        {
+          autoAlpha: 1, y: 0, rotate: 0, scale: 1,
+          duration: 1, ease: "power3.out",
+          delay: (i % 3) * .12,
+          scrollTrigger: { trigger: card, start: "top 88%" }
+        });
+    });
+
+    gsap.utils.toArray("[data-pain]").forEach((li, i) => {
+      gsap.fromTo(li,
+        isDesktop
+          ? { autoAlpha: 0, y: 42 }
+          : { autoAlpha: 0, x: i % 2 ? 70 : -70 },
+        {
+          autoAlpha: 1, x: 0, y: 0,
+          duration: .85,
+          delay: isDesktop ? (i % 2) * .1 : 0,
+          ease: "power3.out",
+          scrollTrigger: { trigger: li, start: "top 90%" }
+        });
+    });
   });
 
   /* 24 小時數字 */
@@ -241,22 +273,48 @@ function init() {
     });
   }
 
-  /* ═══ 7. 三階段：橫排一次展開＋右滑引導 ═══ */
-  stageRailSetup();
+  /* ═══ 7–8. 三階段與複利鏈：依版面方向建立不同動畫 ═══ */
+  motionMedia.add({
+    isDesktop: "(min-width: 1024px)",
+    isMobile: "(max-width: 1023px)"
+  }, context => {
+    const { isDesktop } = context.conditions;
+    const clearRail = stageRailSetup(isDesktop);
 
-  /* ═══ 8. 複利鏈條 ═══ */
-  gsap.fromTo("#chainLine", { scaleY: 0 }, {
-    scaleY: 1, ease: "none",
-    scrollTrigger: { trigger: "#chain", start: "top 80%", end: "bottom 60%", scrub: true }
-  });
-  gsap.utils.toArray("[data-chain]").forEach(item => {
-    gsap.fromTo(item, { autoAlpha: 0, x: 40 }, {
-      autoAlpha: 1, x: 0, duration: .8, ease: "power3.out",
-      scrollTrigger: {
-        trigger: item, start: "top 82%",
-        onEnter: () => item.classList.add("lit"),
-      }
+    gsap.fromTo("#chainLine",
+      isDesktop ? { scaleX: 0 } : { scaleY: 0 },
+      {
+        scaleX: 1,
+        scaleY: 1,
+        ease: "none",
+        scrollTrigger: {
+          trigger: "#chain",
+          start: "top 80%",
+          end: isDesktop ? "center 48%" : "bottom 60%",
+          scrub: true
+        }
+      });
+
+    gsap.utils.toArray("[data-chain]").forEach((item, i) => {
+      gsap.fromTo(item,
+        isDesktop ? { autoAlpha: 0, y: 34 } : { autoAlpha: 0, x: 40 },
+        {
+          autoAlpha: 1, x: 0, y: 0,
+          duration: .8,
+          delay: isDesktop ? i * .08 : 0,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: isDesktop ? "#chain" : item,
+            start: "top 82%",
+            onEnter: () => item.classList.add("lit"),
+          }
+        });
     });
+
+    return () => {
+      if (clearRail) clearRail();
+      document.querySelectorAll("[data-chain]").forEach(item => item.classList.remove("lit"));
+    };
   });
 
   /* ═══ 9. 專業複利引擎 ═══ */
@@ -265,13 +323,20 @@ function init() {
   /* ═══ 10. 照片揭示＋內部視差 ═══ */
   gsap.utils.toArray("[data-photo]").forEach(fig => {
     const img = fig.querySelector("img");
+    const isMentorPortrait = fig.classList.contains("mentor-photo-wrap");
     gsap.fromTo(fig, { clipPath: "inset(12% 6% 12% 6%)", autoAlpha: 0 }, {
       clipPath: "inset(0% 0% 0% 0%)", autoAlpha: 1,
       duration: 1.2, ease: "power3.out",
       scrollTrigger: { trigger: fig, start: "top 86%" }
     });
-    gsap.fromTo(img, { yPercent: -6, scale: 1.12 }, {
-      yPercent: 6, scale: 1.12, ease: "none",
+    gsap.fromTo(img,
+      {
+        yPercent: isMentorPortrait ? -1 : -6,
+        scale: isMentorPortrait ? 1.025 : 1.12
+      }, {
+      yPercent: isMentorPortrait ? 1 : 6,
+      scale: isMentorPortrait ? 1.025 : 1.12,
+      ease: "none",
       scrollTrigger: { trigger: fig, start: "top bottom", end: "bottom top", scrub: true }
     });
   });
@@ -374,8 +439,8 @@ function engineSetup() {
   });
 }
 
-/* ═══ 三階段橫排軌道：進場展開、滑動更新進度、箭頭引導 ═══ */
-function stageRailSetup() {
+/* ═══ 三階段：手機橫滑、桌面三欄 ═══ */
+function stageRailSetup(isDesktop = false) {
   const rail = document.getElementById("stageRail");
   const hint = document.getElementById("railHint");
   if (!rail) return;
@@ -383,7 +448,27 @@ function stageRailSetup() {
   const dots = [...document.querySelectorAll(".sp-dot")];
   const fills = [document.getElementById("spFill"), document.getElementById("spFill2")];
 
-  /* 進場：三張卡由右依序展開 */
+  /* 桌面：三張同時存在，以由下而上的景深進場 */
+  if (isDesktop) {
+    if (hint) hint.classList.add("gone");
+    dots.forEach(dot => dot.classList.add("on"));
+    fills.forEach(fill => {
+      if (fill) fill.style.transform = "scaleX(1)";
+    });
+    if (!reduced) {
+      gsap.fromTo(cards,
+        { autoAlpha: 0, y: 70, scale: .95 },
+        {
+          autoAlpha: 1, y: 0, scale: 1,
+          duration: 1, stagger: .14, ease: "power3.out",
+          scrollTrigger: { trigger: rail, start: "top 82%" }
+        });
+    }
+    return;
+  }
+
+  /* 手機：三張卡由右依序展開 */
+  if (hint) hint.classList.remove("gone");
   if (!reduced) {
     gsap.fromTo(cards,
       { autoAlpha: 0, x: 70, scale: .94 },
@@ -396,8 +481,9 @@ function stageRailSetup() {
 
   /* 依水平捲動更新進度點與連接線 */
   let moved = false;   /* scroll-snap 載入時的自動對齊不算使用者滑動 */
-  ["pointerdown", "touchstart", "wheel", "keydown"].forEach(ev =>
-    rail.addEventListener(ev, () => { moved = true; }, { passive: true }));
+  const markMoved = () => { moved = true; };
+  const events = ["pointerdown", "touchstart", "wheel", "keydown"];
+  events.forEach(ev => rail.addEventListener(ev, markMoved, { passive: true }));
 
   const update = () => {
     const max = rail.scrollWidth - rail.clientWidth;
@@ -414,13 +500,20 @@ function stageRailSetup() {
   update();
 
   /* 點箭頭 → 捲到下一張 */
+  const goNext = () => {
+    moved = true;
+    const step = cards[0].getBoundingClientRect().width + 16;
+    rail.scrollBy({ left: step, behavior: "smooth" });
+  };
   if (hint) {
-    hint.addEventListener("click", () => {
-      moved = true;
-      const step = cards[0].getBoundingClientRect().width + 16;
-      rail.scrollBy({ left: step, behavior: "smooth" });
-    });
+    hint.addEventListener("click", goNext);
   }
+
+  return () => {
+    events.forEach(ev => rail.removeEventListener(ev, markMoved));
+    rail.removeEventListener("scroll", update);
+    if (hint) hint.removeEventListener("click", goNext);
+  };
 }
 
 /* ═══ 置底 CTA：過了 hero 出現、進 final 收起 ═══ */

@@ -201,7 +201,6 @@ strong { font-weight: 700; color: var(--ink); }
 #marquee1 {
   transform: rotate(-1.6deg) scale(1.03);
 }
-.marquee-final { margin-top: 90px; transform: none; }
 .marquee-track {
   display: flex;
   align-items: center;
@@ -313,10 +312,21 @@ strong { font-weight: 700; color: var(--ink); }
 
 /* ─── S3 加碼 ─── */
 .gifts { background: var(--bg); }
+.gifts .sec-sub {
+  color: var(--lime);
+  font-size: clamp(23px, 6.4vw, 40px);
+  font-weight: 900;
+  line-height: 1.65;
+}
 .manifesto { background: var(--bg2); }
 .gift-cards { margin: 52px 0 46px; display: grid; gap: 18px; }
 .gift-card {
   position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(105px, 34%);
+  grid-template-rows: auto auto 1fr;
+  column-gap: 18px;
+  align-items: start;
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: 22px;
@@ -325,14 +335,31 @@ strong { font-weight: 700; color: var(--ink); }
   transition: border-color .3s;
 }
 .gift-card:hover { border-color: var(--line-lime); }
+.gift-cover {
+  grid-column: 2;
+  grid-row: 1 / 4;
+  width: 100%;
+  margin: 0;
+  align-self: center;
+  overflow: hidden;
+  aspect-ratio: 4 / 5;
+  border-radius: 12px;
+  background: #f4f0e5;
+}
+.gift-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 .gift-num {
+  grid-column: 1;
   font-family: var(--display); font-size: 46px; line-height: 1;
   color: transparent;
   -webkit-text-stroke: 1.5px var(--lime);
   display: block; margin-bottom: 14px;
 }
-.gift-card h3 { font-size: 20px; font-weight: 900; margin-bottom: 8px; }
-.gift-card p { font-size: 14.5px; color: var(--ink-dim); }
+.gift-card h3 { grid-column: 1; font-size: 20px; font-weight: 900; margin-bottom: 8px; }
+.gift-card p { grid-column: 1; font-size: 14.5px; color: var(--ink-dim); }
 
 /* ─── S4 痛點 hook ─── */
 .pain-hook { text-align: center; }
@@ -769,13 +796,21 @@ strong { font-weight: 700; color: var(--ink); }
 .diag-card h3 { font-size: 22px; font-weight: 900; margin-bottom: 12px; }
 .dc-do { font-size: 14.5px; color: var(--ink-dim); }
 .diag-foot { margin-top: 60px; text-align: center; color: var(--ink-dim); }
-.df-words { margin-top: 26px; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.df-words {
+  width: 100%;
+  margin-top: 26px;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
 .df-words span {
-  font-weight: 900; font-size: 16px;
+  min-width: 0;
+  padding: 8px 4px;
+  font-weight: 900; font-size: 14px;
+  white-space: nowrap;
   color: var(--lime);
   border: 1px solid var(--line-lime);
   border-radius: 999px;
-  padding: 8px 20px;
 }
 
 /* ─── S11 FINAL ─── */
@@ -799,8 +834,6 @@ strong { font-weight: 700; color: var(--ink); }
 }
 .final-path i { font-style: normal; color: var(--lime); }
 .final-path .red { color: var(--lime); }
-.final .marquee-final { padding-bottom: calc(15px + 74px + env(safe-area-inset-bottom)); }
-
 /* 置底 CTA */
 .sticky-cta {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
@@ -967,20 +1000,235 @@ strong { font-weight: 700; color: var(--ink); }
   .loop-item p, .ch-text p { font-size: 13.5px; }
 }
 
-/* ─── 桌機微調 ─── */
-@media (min-width: 768px) {
-  .wrap { width: min(88%, 700px); }
-  .hero { flex-direction: row; align-items: center; gap: 0; padding-top: 80px; padding-bottom: 120px; }
-  .hero-top { width: 52%; margin: 0 0 0 6%; }
-  .hero-card { width: 36%; margin: 0 6% 0 0; border-radius: 24px; border: 1px solid var(--line); }
-  .marquee { position: absolute; left: -2%; right: -2%; bottom: 34px; margin-top: 0; }
-  .gift-cards, .diag-cards { grid-template-columns: repeat(3, 1fr); }
-  .mentor-hero { display: grid; grid-template-columns: 300px 1fr; gap: 52px; align-items: start; }
+/* ─── 桌機版：1024px 以上獨立排版，不回寫手機樣式 ─── */
+@media (min-width: 1024px) {
+  .wrap { width: min(86%, 1180px); }
+  .wrap-wide { width: min(90%, 1320px); }
+  .section { padding: 140px 0; }
+  .sec-title { font-size: clamp(46px, 4.5vw, 68px); line-height: 1.3; }
+  .sec-sub { max-width: 760px; margin-inline: auto; font-size: 18px; }
+
+  /* Hero：文字與國際獎項照左右並列 */
+  .hero {
+    min-height: 100svh;
+    flex-direction: row;
+    align-items: center;
+    gap: clamp(54px, 6vw, 104px);
+    padding: 88px 5vw 150px;
+  }
+  .hero::before {
+    top: -48%; right: -12%;
+    width: 72vw; height: 72vw;
+  }
+  .hero-top { width: min(52%, 700px); margin: 0; }
+  .hero-kicker { font-size: 13px; margin-bottom: 30px; }
+  .ht-line { font-size: clamp(86px, 8.9vw, 142px); }
+  .ht-outline { font-size: clamp(64px, 6.7vw, 106px); }
+  .hero-sub { margin-top: 30px; font-size: 20px; }
+  .hero-cta-wrap { margin: 34px 0 0; }
+  .cta-btn { padding: 19px 34px; font-size: 16px; }
+  .hero-card {
+    width: min(38%, 510px);
+    margin: 0;
+    border: 1px solid var(--line);
+    border-radius: 28px;
+  }
+  .hero-card img { aspect-ratio: 4 / 4.15; }
+  .hc-cap { padding: 70px 26px 34px; text-align: left; font-size: 16px; }
+  .marquee {
+    position: absolute;
+    left: -2%; right: -2%; bottom: 36px;
+    margin-top: 0;
+  }
+
+  /* 痛點 Hook：主命題與說明形成兩欄敘事 */
+  .pain-hook .wrap {
+    display: grid;
+    grid-template-columns: minmax(0, 1.08fr) minmax(360px, .92fr);
+    grid-template-rows: auto auto auto 1fr;
+    column-gap: clamp(70px, 8vw, 130px);
+    align-items: start;
+    text-align: left;
+  }
+  .pain-hook .sec-kicker { grid-column: 1 / -1; text-align: left; }
+  .pain-title {
+    grid-column: 1;
+    grid-row: 2 / 5;
+    font-size: clamp(42px, 4.2vw, 62px);
+    line-height: 1.55;
+  }
+  .pain-lead {
+    grid-column: 2;
+    grid-row: 2;
+    margin-top: 4px;
+    font-size: 18px;
+  }
+  .pain-punch {
+    grid-column: 2;
+    grid-row: 3;
+    margin-top: 28px;
+    font-size: clamp(28px, 2.6vw, 38px);
+  }
+  .pain-desc {
+    grid-column: 2;
+    grid-row: 4;
+    margin-top: 34px;
+    font-size: 16px;
+  }
+
+  /* 六個痛點以雙欄卡片呈現 */
+  .pains .wrap { max-width: 1120px; }
+  .pain-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .pain-list li { min-height: 126px; padding: 26px 28px; }
+  .pain-list p { font-size: 16px; }
+  .pain-conclusion { margin-top: 78px; }
+
+  /* 商業模式宣言 */
+  .manifesto .wrap { max-width: 1060px; }
+  .manifesto-line { font-size: 30px; line-height: 1.8; }
+  .manifesto-line.strong { font-size: 38px; }
+  .manifesto-flow {
+    width: 100%;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+    margin-top: 76px;
+  }
+  .mf-step { min-height: 132px; padding: 26px 28px; }
+  .creed { width: min(100%, 760px); padding: 34px 38px; }
+
+  /* 三份資源：桌面三欄，封面回到卡片上方完整展示 */
+  .gifts .wrap { max-width: 1180px; }
+  .gifts .sec-sub { font-size: clamp(28px, 3vw, 40px); }
+  .gift-cards,
+  .diag-cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 22px;
+  }
+  .gift-card {
+    display: flex;
+    flex-direction: column;
+    padding: 32px;
+  }
+  .gift-cover {
+    width: min(100%, 205px);
+    margin: 0 auto 26px;
+    flex: 0 0 auto;
+  }
+  .gift-card h3 { font-size: 21px; }
+  .gift-card p { font-size: 15px; }
+
+  /* 三階段：桌面一次看完，手機仍保留橫向滑動 */
+  .stages { padding-top: 140px; }
+  .stages-head { max-width: 920px; padding-bottom: 64px; }
+  .stage-progress,
+  .rail-hint { display: none; }
+  .stages-rail-wrap { padding: 10px 0; }
+  .stage-rail {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 22px;
+    width: min(86%, 1180px);
+    margin: 0 auto;
+    padding: 0;
+    overflow: visible;
+    scroll-snap-type: none;
+  }
+  .stage-card {
+    min-width: 0;
+    min-height: 580px;
+    padding: 38px 32px;
+    scroll-snap-align: none;
+  }
+  .stage-name { font-size: 38px; }
+  .stage-body { font-size: 15px; }
+  .stages-foot { max-width: 900px; padding-top: 96px; padding-bottom: 140px; }
+
+  /* 專業複利鏈：手機直向、桌面橫向 */
+  .method .wrap { max-width: 1040px; }
+  .chain {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 28px;
+    margin-top: 76px;
+    padding: 64px 0 0;
+  }
+  .chain-line {
+    left: 12.5%; right: 12.5%;
+    top: 20px; bottom: auto;
+    width: auto; height: 2px;
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+  .chain-item { text-align: center; }
+  .ch-dot {
+    left: 50%; top: -50px;
+    transform: translateX(-50%);
+  }
+  .ch-text h4 { font-size: 22px; }
+  .ch-text p { font-size: 15px; }
+
+  /* 控制台與講師資訊加寬 */
+  .loops .wrap { max-width: 1040px; }
+  .panel { margin-top: 62px; }
+  .loop-row { padding: 24px 30px 26px 64px; }
+  .lr-node { left: 25px; top: 29px; }
+  .spine { left: 31px; }
+  .lr-desc { font-size: 14px; }
+
+  .mentor .wrap { max-width: 1120px; }
+  .mentor-hero {
+    display: grid;
+    grid-template-columns: minmax(320px, 380px) 1fr;
+    gap: clamp(70px, 8vw, 118px);
+    align-items: start;
+    margin-top: 66px;
+  }
   .mentor-photo-wrap { width: 100%; margin: 0; }
-  .mentor-name { text-align: left; }
-  .pain-list { grid-template-columns: 1fr 1fr; }
-  .stage-rail { padding-left: 8vw; padding-right: 8vw; }
-  .stage-card { flex-basis: min(52%, 440px); }
+  .mentor-name { text-align: left; font-size: 40px; }
+  .mentor-bio { font-size: 16px; }
+  .cred-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 42px;
+    margin-top: 62px;
+  }
+  .cred-list li { font-size: 15px; }
+  .cred-list li:nth-child(2) { border-top: 1px solid var(--line); }
+  .award-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(300px, .65fr);
+    align-items: stretch;
+    margin-top: 60px;
+  }
+  .ac-media img { height: 100%; aspect-ratio: auto; }
+  .ac-body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 42px;
+    border-top: 0;
+    border-left: 2px solid var(--lime);
+  }
+  .ac-title { font-size: 25px; }
+  .chip { width: 210px; }
+
+  /* 診斷卡與收尾 */
+  .diagnose .wrap { max-width: 1180px; }
+  .diag-card { padding: 36px 32px; }
+  .diag-card h3 { font-size: 25px; }
+  .dc-do { font-size: 15px; }
+  .diag-foot { margin-top: 82px; }
+  .df-words {
+    width: min(100%, 760px);
+    margin: 30px auto 0;
+    gap: 12px;
+  }
+  .df-words span { padding: 10px 16px; font-size: 16px; }
+  .final .wrap { max-width: 920px; }
+  .final-title { font-size: clamp(48px, 5vw, 72px); }
+  .final-body { max-width: 720px; margin-inline: auto; font-size: 18px; }
+  .final-path { max-width: 820px; margin-inline: auto; }
+  .sticky-cta { display: none; }
 }
 
 /* ─── 減少動態 ─── */
