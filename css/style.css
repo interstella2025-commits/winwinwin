@@ -193,9 +193,10 @@ strong { font-weight: 700; color: var(--ink); }
   background: var(--lime);
   color: #101204;
   overflow: hidden;
-  padding: 18px 0 16px;
+  padding: 8px 0;
   display: flex;
   align-items: center;
+  min-height: 0;
 }
 #marquee1 {
   transform: rotate(-1.6deg) scale(1.03);
@@ -206,14 +207,18 @@ strong { font-weight: 700; color: var(--ink); }
   align-items: center;
   white-space: nowrap;
   will-change: transform;
+  line-height: 1;
 }
 .marquee-track span {
   font-family: var(--display);
   font-size: clamp(16px, 4.6vw, 26px);
-  line-height: 1.2;
+  line-height: 1;
   letter-spacing: .12em;
-  padding: 0.18em 8px 0.12em 0;
+  padding-right: 8px;
   display: inline-block;
+  /* Anton 字帽會超出 em box，只留極小上下空間避免裁切 */
+  padding-top: 0.06em;
+  padding-bottom: 0.02em;
 }
 
 /* ─── 通用標題 ─── */
