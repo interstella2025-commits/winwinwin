@@ -691,21 +691,45 @@ strong { font-weight: 700; color: var(--ink); }
   text-align: center; margin-bottom: 24px;
 }
 .mentor-name span { color: var(--lime); }
-.mentor-bio { color: var(--ink-dim); font-size: 15px; margin-bottom: 16px; }
-.cred-list { list-style: none; margin-top: 38px; }
-.cred-list li {
-  position: relative;
-  padding: 16px 4px 16px 34px;
-  border-bottom: 1px solid var(--line);
-  font-size: 14.5px; color: var(--ink-dim);
+/* 履歷式排版：分類標籤 + 條列，用細線分隔，不用卡片框 */
+.mentor-profile { display: grid; }
+.mentor-group {
+  padding: 24px 0 22px;
+  border-top: 1px solid var(--line);
 }
-.cred-list li:first-child { border-top: 1px solid var(--line); }
-.cred-list li::before {
+.mentor-group:first-child { border-top: 0; padding-top: 6px; }
+.mentor-group-title {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 16px;
+  font-family: var(--label);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .3em;
+  color: var(--lime);
+}
+.mentor-group-title::before {
   content: "";
-  position: absolute; left: 8px; top: 27px;
-  width: 12px; height: 3px;
+  width: 18px; height: 2px;
   background: var(--lime);
+  flex-shrink: 0;
 }
+.mentor-group ul { list-style: none; display: grid; gap: 12px; }
+.mentor-group li {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ink);
+}
+.mentor-group li strong { font-weight: 700; color: var(--ink); }
+.mentor-group li > span {
+  display: inline-block;
+  margin-left: 10px;
+  font-size: 13px;
+  color: var(--ink-faint);
+}
+/* 重要獎項：獎名為主角，前綴地區淡化 */
+.mentor-awards ul { gap: 13px; }
+.mentor-awards li { color: var(--ink-faint); font-size: 14px; }
+.mentor-awards strong { display: block; font-size: 15.5px; color: var(--lime-hi); font-weight: 800; }
 /* 獎項卡：圖在上、文字在下方獨立面板 */
 .award-card {
   margin-top: 48px;
@@ -730,6 +754,48 @@ strong { font-weight: 700; color: var(--ink); }
 }
 .ac-title { font-size: 20px; font-weight: 900; line-height: 1.5; margin-bottom: 8px; }
 .ac-desc { font-size: 14px; color: var(--ink-dim); line-height: 1.7; }
+
+/* 媒體採訪與報導 */
+.media-strip { margin-top: clamp(80px, 16vw, 130px); }
+.media-grid {
+  margin-top: 40px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.media-card {
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--card);
+  transition: border-color .3s;
+}
+.media-card:hover { border-color: var(--line-lime); }
+.media-card .mm {
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  background: #fff;
+}
+.media-card img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  object-position: center top;
+}
+.media-card figcaption { padding: 13px 14px 16px; }
+.mc-tag {
+  display: block;
+  margin-bottom: 6px;
+  font-family: var(--label);
+  font-size: 9px; font-weight: 700; letter-spacing: .16em;
+  color: var(--lime);
+}
+.media-card h4 { font-size: 14px; font-weight: 900; line-height: 1.5; }
+.media-card figcaption p {
+  margin-top: 4px;
+  font-size: 11.5px; line-height: 1.65;
+  color: var(--ink-faint);
+}
 
 /* 名人推薦雙向跑馬燈 */
 .endorse-strip { margin-top: clamp(80px, 16vw, 130px); }
@@ -1185,15 +1251,21 @@ strong { font-weight: 700; color: var(--ink); }
   }
   .mentor-photo-wrap { width: 100%; margin: 0; }
   .mentor-name { text-align: left; font-size: 40px; }
-  .mentor-bio { font-size: 16px; }
-  .cred-list {
+  /* 桌面：標籤在左、內容在右的履歷欄式排版 */
+  .mentor-group {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: 42px;
-    margin-top: 62px;
+    grid-template-columns: 190px minmax(0, 1fr);
+    column-gap: 34px;
+    align-items: start;
+    padding: 28px 0 26px;
   }
-  .cred-list li { font-size: 15px; }
-  .cred-list li:nth-child(2) { border-top: 1px solid var(--line); }
+  .mentor-group-title { margin-bottom: 0; padding-top: 3px; }
+  .mentor-group li { font-size: 15.5px; }
+  .mentor-awards ul {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 36px;
+    row-gap: 16px;
+  }
   .award-card {
     display: grid;
     grid-template-columns: minmax(0, 1.35fr) minmax(300px, .65fr);
@@ -1210,6 +1282,16 @@ strong { font-weight: 700; color: var(--ink); }
     border-left: 2px solid var(--lime);
   }
   .ac-title { font-size: 25px; }
+  .media-strip { margin-top: 110px; }
+  .media-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+    margin-top: 48px;
+  }
+  .media-card figcaption { padding: 18px 20px 20px; }
+  .mc-tag { font-size: 10px; }
+  .media-card h4 { font-size: 17px; }
+  .media-card figcaption p { font-size: 13px; }
   .chip { width: 210px; }
 
   /* 診斷卡與收尾 */

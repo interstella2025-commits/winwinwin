@@ -329,13 +329,16 @@ function init() {
       duration: 1.2, ease: "power3.out",
       scrollTrigger: { trigger: fig, start: "top 86%" }
     });
-    gsap.fromTo(img,
-      {
-        yPercent: isMentorPortrait ? -1 : -6,
-        scale: isMentorPortrait ? 1.025 : 1.12
-      }, {
-      yPercent: isMentorPortrait ? 1 : 6,
-      scale: isMentorPortrait ? 1.025 : 1.12,
+    if (isMentorPortrait) {
+      gsap.set(img, { yPercent: 0, scale: 1 });
+      return;
+    }
+    gsap.fromTo(img, {
+      yPercent: -6,
+      scale: 1.12
+    }, {
+      yPercent: 6,
+      scale: 1.12,
       ease: "none",
       scrollTrigger: { trigger: fig, start: "top bottom", end: "bottom top", scrub: true }
     });
