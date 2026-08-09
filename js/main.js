@@ -57,27 +57,29 @@ const ENDORSERS = [
   ["rotary", "扶輪社社長", "史上最年輕"],
   ["chin", "秦慧珠議員推薦", "當選優秀青年"]
 ];
-const LOGOS = ["stanford", "berkeley", "cambridge", "homerton", "monterey",
-  "phillips", "stedmunds", "ucam", "sunderland", "calge", "svri", "iau", "crest"];
-
 function chipHTML(list) {
   return `<span class="emq-chips">` + list.map(([slug, name, title]) =>
     `<span class="chip"><img src="assets/endorse/${slug}.webp" alt="${name}" loading="lazy">` +
     `<span class="chip-cap"><b>${name}</b><i>${title}</i></span></span>`).join("") + `</span>`;
 }
-function logoHTML() {
-  return `<span class="emq-chips">` + LOGOS.map(s =>
+function logoHTML(list) {
+  return `<span class="emq-chips">` + list.map(s =>
     `<span class="chip-logo"><img src="assets/logos/${s}.webp" alt="" loading="lazy"></span>`
   ).join("") + `</span>`;
 }
 const half = Math.ceil(ENDORSERS.length / 2);
 const rowA = ENDORSERS.slice(0, half), rowB = ENDORSERS.slice(half);
+/* 寬字標與圓形校徽交錯分配，兩排視覺密度才均衡 */
+const logoA = ["stanford", "cambridge", "monterey", "stedmunds", "sunderland", "svri", "crest"];
+const logoB = ["berkeley", "homerton", "phillips", "ucam", "calge", "iau"];
 const elA = document.getElementById("emqA"),
       elB = document.getElementById("emqB"),
-      elL = document.getElementById("emqLogo");
+      elL = document.getElementById("emqLogo"),
+      elL2 = document.getElementById("emqLogo2");
 if (elA) elA.innerHTML = chipHTML(rowA) + chipHTML(rowA);
 if (elB) elB.innerHTML = chipHTML(rowB) + chipHTML(rowB);
-if (elL) elL.innerHTML = logoHTML() + logoHTML();
+if (elL) elL.innerHTML = logoHTML(logoA) + logoHTML(logoA);
+if (elL2) elL2.innerHTML = logoHTML(logoB) + logoHTML(logoB);
 
 /* [data-clauses]：把每個 .cl 子句包上遮罩，供逐句揭示 */
 document.querySelectorAll("[data-clauses] .cl").forEach(cl => {
