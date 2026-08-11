@@ -203,11 +203,11 @@ function init() {
     });
   });
 
-  /* 「不是…／是…」宣言逐條浮現 */
+  /* 「不適合／適合」清單逐條浮現：以各自位置觸發，清單變長也不會漏拍 */
   gsap.utils.toArray("[data-creed]").forEach((line, i) => {
     gsap.fromTo(line, { autoAlpha: 0, x: -22 }, {
-      autoAlpha: 1, x: 0, duration: .7, delay: i * .14, ease: "power3.out",
-      scrollTrigger: { trigger: ".creed", start: "top 86%" }
+      autoAlpha: 1, x: 0, duration: .7, delay: (i % 6) * .08, ease: "power3.out",
+      scrollTrigger: { trigger: line, start: "top 92%" }
     });
   });
 
@@ -345,15 +345,6 @@ function init() {
       scrollTrigger: { trigger: fig, start: "top bottom", end: "bottom top", scrub: true }
     });
   });
-
-  /* 講師紅框浮動 */
-  const frame = document.querySelector(".mentor-frame");
-  if (frame) {
-    gsap.fromTo(frame, { x: 0, y: 0 }, {
-      x: 14, y: 14, duration: 1, ease: "power3.out",
-      scrollTrigger: { trigger: ".mentor-photo-wrap", start: "top 80%" }
-    });
-  }
 
   /* 資歷清單 */
   gsap.utils.toArray("[data-cred]").forEach((li, i) => {
