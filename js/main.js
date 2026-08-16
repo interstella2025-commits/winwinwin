@@ -81,6 +81,57 @@ if (elB) elB.innerHTML = chipHTML(rowB) + chipHTML(rowB);
 if (elL) elL.innerHTML = logoHTML(logoA) + logoHTML(logoA);
 if (elL2) elL2.innerHTML = logoHTML(logoB) + logoHTML(logoB);
 
+/* 國際舞台現場：大場照片橫滑帶 */
+const STAGE_SHOTS = [
+  ["sg-mbs", "SINGAPORE", "新加坡・金沙會展中心"],
+  ["tw-summit", "TAIPEI", "台北・企業家高峰講座"],
+  ["bj-forum", "BEIJING", "北京・京台科學家論壇"],
+  ["jp-seminar", "JAPAN", "日本・企業家研習講座"],
+  ["uk-cambridge", "CAMBRIDGE, UK", "英國劍橋・哈默頓學院"],
+  ["tw-ryla", "ROTARY RYLA", "台北・國際扶輪 RYLA 研習營"]
+];
+function stageHTML(list) {
+  return `<span class="emq-chips">` + list.map(([s, en, zh]) =>
+    `<span class="chip-stage"><img src="assets/stage/${s}.webp" alt="${zh}" loading="lazy">` +
+    `<span class="cs-cap"><i>${en}</i><b>${zh}</b></span></span>`).join("") + `</span>`;
+}
+const elS = document.getElementById("emqStage");
+if (elS) elS.innerHTML = stageHTML(STAGE_SHOTS) + stageHTML(STAGE_SHOTS);
+
+/* 教育事業足跡：載入航線地圖 SVG，捲動時逐條起飛 */
+const mapWrap = document.getElementById("footprintMap");
+if (mapWrap) {
+  fetch("assets/footprint-map.svg")
+    .then(r => r.text())
+    .then(svg => {
+      mapWrap.innerHTML = svg;
+      if (reduced || typeof gsap === "undefined") return;
+      const arcs = mapWrap.querySelectorAll(".fl-arc");
+      const dots = mapWrap.querySelectorAll(".fl-city");
+      const labels = mapWrap.querySelectorAll(".fl-label");
+      arcs.forEach(a => {
+        const len = a.getTotalLength();
+        gsap.set(a, { strokeDasharray: len, strokeDashoffset: len });
+      });
+      gsap.set(dots, { scale: 0, transformOrigin: "center" });
+      gsap.set(labels, { autoAlpha: 0 });
+      gsap.set(".fl-dots", { autoAlpha: 0 });
+      const tl = gsap.timeline({
+        scrollTrigger: { trigger: mapWrap, start: "top 78%" }
+      });
+      tl.to(".fl-dots", { autoAlpha: 1, duration: 1, ease: "power2.out" })
+        .to(arcs, {
+          strokeDashoffset: 0,
+          duration: 1.15, stagger: .14, ease: "power2.inOut"
+        }, "-=.35")
+        .to(dots, {
+          scale: 1, duration: .45, stagger: .14, ease: "back.out(2.4)"
+        }, "<+.55")
+        .to(labels, { autoAlpha: 1, duration: .5, stagger: .06 }, "-=.9");
+    })
+    .catch(() => {});
+}
+
 /* [data-clauses]：把每個 .cl 子句包上遮罩，供逐句揭示 */
 document.querySelectorAll("[data-clauses] .cl").forEach(cl => {
   const mask = document.createElement("span");

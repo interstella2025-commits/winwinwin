@@ -898,6 +898,97 @@ strong { font-weight: 700; color: var(--ink); }
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
+/* 國際舞台現場：大場照片橫滑帶 */
+.stage-strip { margin-top: clamp(80px, 16vw, 130px); }
+.stage-mq { margin-top: 34px; }
+.chip-stage {
+  position: relative;
+  flex: 0 0 auto;
+  width: min(78vw, 340px);
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: var(--card);
+}
+.chip-stage img { display: block; width: 100%; aspect-ratio: 3 / 2; object-fit: cover; }
+.cs-cap {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  padding: 46px 14px 12px;
+  background: linear-gradient(180deg, transparent, rgba(6,6,8,.94) 68%);
+}
+.cs-cap i {
+  display: block; font-style: normal;
+  font-family: var(--label);
+  font-size: 9px; font-weight: 700; letter-spacing: .2em;
+  color: var(--lime);
+}
+.cs-cap b {
+  display: block; margin-top: 3px;
+  font-size: 14px; font-weight: 900; color: #fff;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* 教育事業足跡：從台北出發的航線地圖 */
+.footprint-map {
+  margin: 18px auto 0;
+  width: min(94%, 1100px);
+}
+.footprint-map svg { display: block; width: 100%; height: auto; }
+.fl-dots {
+  fill: none;
+  stroke: rgba(255,255,255,.15);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+}
+.fl-arc {
+  fill: none;
+  stroke: var(--lime);
+  stroke-width: 1.5;
+  opacity: .8;
+}
+.fl-city { fill: var(--lime); }
+.fl-origin { fill: var(--lime); }
+.fl-origin-ring {
+  fill: none;
+  stroke: var(--lime);
+  stroke-width: 1.5;
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: fl-pulse 2.4s ease-out infinite;
+}
+@keyframes fl-pulse {
+  0%   { transform: scale(.6); opacity: .9; }
+  70%  { transform: scale(2.1); opacity: 0; }
+  100% { transform: scale(2.1); opacity: 0; }
+}
+.fl-label {
+  fill: #fff;
+  font-family: var(--label), "Noto Sans TC", sans-serif;
+  font-size: 15px; font-weight: 700;
+}
+.fl-label-origin { fill: var(--lime); font-size: 17px; font-weight: 900; }
+
+/* 手機：地圖上的字太小，隱藏標籤、下方城市膠囊當圖例 */
+.fl-label { display: none; }
+.city-chips {
+  margin: 20px auto 0;
+  width: min(90%, 720px);
+  display: flex; flex-wrap: wrap; justify-content: center;
+  gap: 8px;
+}
+.city-chips span {
+  padding: 7px 13px;
+  font-size: 12px; font-weight: 700;
+  color: var(--lime);
+  border: 1px solid var(--line-lime);
+  border-radius: 999px;
+}
+@media (min-width: 1024px) {
+  .fl-label { display: block; }
+  .city-chips { display: none; }
+  .footprint-map { margin-top: 30px; }
+}
+
 /* 合作學校：單色 logo 牆，深色底上的白色標誌帶（雙排反向） */
 .logo-label {
   margin-top: 56px; text-align: center;
@@ -1393,6 +1484,11 @@ strong { font-weight: 700; color: var(--ink); }
   .media-card h4 { font-size: 17px; }
   .media-card figcaption p { font-size: 13px; }
   .chip { width: 210px; }
+  .stage-strip { margin-top: 110px; }
+  .chip-stage { width: 460px; }
+  .cs-cap { padding: 56px 18px 15px; }
+  .cs-cap i { font-size: 10px; }
+  .cs-cap b { font-size: 16px; }
   .logo-label { margin-top: 76px; }
   .logo-mq { padding: 40px 0; gap: 44px; }
   .chip-logo { padding: 0 44px; }
