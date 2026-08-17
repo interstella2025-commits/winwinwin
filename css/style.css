@@ -11,7 +11,7 @@
   --lime-dp: #9ac822;
   --ink: #f4f4f0;
   --ink-dim: #a9a9ad;
-  --ink-faint: #707074;
+  --ink-faint: #8e8e93;
   --line: rgba(255,255,255,.1);
   --line-lime: rgba(200,247,74,.28);
   --display: "Anton", "Noto Sans TC", sans-serif;
@@ -141,9 +141,9 @@ strong { font-weight: 700; color: var(--ink); }
 .cta-big { padding: 20px 36px; }
 .cta-note {
   margin-top: 14px;
-  font-size: 12.5px; font-weight: 500; letter-spacing: .08em;
+  font-size: clamp(14px, 3.8vw, 16px); font-weight: 500; letter-spacing: .06em;
   line-height: 1.7;
-  color: var(--ink-faint);
+  color: var(--ink-dim);
 }
 
 /* hero 得獎照：手機滿版出血 */
@@ -255,8 +255,8 @@ strong { font-weight: 700; color: var(--ink); }
 .mf-step.red { background: var(--lime); border-color: var(--lime); color: #101204; box-shadow: 0 14px 50px rgba(200,247,74,.2); }
 .mf-num { font-family: var(--display); font-size: 30px; line-height: 1; color: var(--lime); }
 .mf-step.red .mf-num { color: #101204; }
-.mf-tag { display: block; font-weight: 900; font-size: 18px; line-height: 1.5; }
-.mf-desc { display: block; font-family: var(--label); font-size: 12px; letter-spacing: .22em; color: var(--ink-faint); }
+.mf-tag { display: block; font-weight: 900; font-size: 20px; line-height: 1.5; }
+.mf-desc { display: block; font-family: var(--label); font-size: 13px; letter-spacing: .22em; color: var(--ink-faint); }
 .mf-step.red .mf-desc {
   font-family: var(--sans);
   font-size: 17px; font-weight: 900; letter-spacing: .06em;
@@ -330,33 +330,8 @@ strong { font-weight: 700; color: var(--ink); }
 /* ─── S3 加碼 ─── */
 .gifts { background: var(--bg); }
 /* 贈禮路徑：診斷 → 設計 → 行動 */
-.gift-path {
-  margin: 30px auto 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-}
-.gp-step { text-align: center; }
-.gp-step b {
-  display: block;
-  font-family: var(--label);
-  font-size: 13px; font-weight: 800; letter-spacing: .2em;
-  color: var(--lime);
-}
-.gp-step i {
-  display: block;
-  margin-top: 4px;
-  font-style: normal;
-  font-size: 12px;
-  color: var(--ink-faint);
-}
-.gp-arr { color: var(--lime); font-size: 15px; opacity: .7; }
 @media (min-width: 1024px) {
-  .gift-path { margin-top: 38px; gap: 26px; }
-  .gp-step b { font-size: 15px; }
-  .gp-step i { font-size: 13px; }
-}
+      }
 .gifts .sec-sub {
   color: var(--lime);
   font-size: clamp(23px, 6.4vw, 40px);
@@ -367,29 +342,33 @@ strong { font-weight: 700; color: var(--ink); }
 .gift-cards { margin: 52px 0 46px; display: grid; gap: 18px; }
 .gift-card {
   position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(105px, 34%);
-  grid-template-rows: auto auto 1fr;
-  column-gap: 18px;
-  align-items: start;
+  display: flex;
+  align-items: center;
+  gap: 18px;
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: 22px;
-  padding: 32px 28px;
-  overflow: hidden;
-  transition: border-color .3s;
+  border-radius: 18px;
+  padding: 24px 22px;
+  transition: border-color .35s;
 }
+.gift-body { flex: 1; min-width: 0; }
+.gift-task {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: 13.5px;
+  color: var(--ink-faint);
+}
+.gift-task strong { display: block; margin-top: 2px; font-size: 15px; color: var(--lime-hi); font-weight: 800; }
 .gift-card:hover { border-color: var(--line-lime); }
 .gift-cover {
-  grid-column: 2;
-  grid-row: 1 / 4;
+  flex: 0 0 34%;
+  max-width: 220px;
   width: 100%;
   margin: 0;
-  align-self: center;
   overflow: hidden;
   aspect-ratio: 4 / 5;
   border-radius: 12px;
-  background: #f4f0e5;
 }
 .gift-cover img {
   width: 100%;
@@ -419,19 +398,11 @@ strong { font-weight: 700; color: var(--ink); }
   color: var(--ink-faint);
 }
 .gift-card p { grid-column: 1; font-size: 14.5px; color: var(--ink-dim); }
-.gift-task {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid var(--line);
-  font-size: 13.5px;
-  color: var(--ink-faint);
-}
-.gift-task strong { display: block; margin-top: 2px; font-size: 15px; color: var(--lime-hi); font-weight: 800; }
 
 /* ─── S4 痛點 hook ─── */
 .pain-hook { text-align: center; }
 .pain-title { font-weight: 900; font-size: clamp(25px, 7.2vw, 48px); line-height: 1.7; }
-.pain-title > span { display: block; }
+.pain-title > span { display: block; text-wrap: balance; }
 .pain-red { color: var(--lime); }
 .pain-title > span.pain-red:nth-child(3) { margin-top: 14px; }
 .pain-lead { margin-top: 48px; color: var(--ink-dim); }
@@ -531,7 +502,7 @@ strong { font-weight: 700; color: var(--ink); }
   100% { box-shadow: 0 0 0 0 rgba(200,247,74,0); transform: translateX(0); }
 }
 .rh-text {
-  font-size: 10px; letter-spacing: .18em;
+  font-size: 11px; letter-spacing: .18em;
   color: var(--lime);
   writing-mode: vertical-rl;
 }
@@ -568,8 +539,7 @@ strong { font-weight: 700; color: var(--ink); }
 .stage-card[data-stage="2"] .stage-name { color: var(--lime-hi); }
 .stage-card[data-stage="2"] .stage-ghost { -webkit-text-stroke-color: rgba(200,247,74,.5); }
 .stage-card[data-stage="2"] .stage-body { color: #c6c8ba; }
-.stage-card[data-stage="2"] .stage-shift { border-top-color: rgba(200,247,74,.5); }
-
+.stage-card[data-stage="2"] 
 /* 階段標籤上的亮度階梯條 */
 .stage-meter { display: flex; gap: 4px; margin-bottom: 14px; }
 .stage-meter i {
@@ -585,15 +555,6 @@ strong { font-weight: 700; color: var(--ink); }
 .stage-name { font-weight: 900; font-size: clamp(28px, 7.6vw, 40px); margin-bottom: 16px; }
 .stage-body { font-size: 14.5px; color: var(--ink-dim); line-height: 1.8; }
 .stage-body p + p { margin-top: .9em; }
-.stage-shift {
-  margin-top: 22px; padding-top: 18px;
-  border-top: 1px dashed rgba(200,247,74,.3);
-  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
-  font-size: 13.5px;
-}
-.ss-from { color: var(--ink-faint); text-decoration: line-through; text-decoration-color: rgba(200,247,74,.6); }
-.ss-arr { color: var(--lime); font-weight: 700; }
-.ss-to { color: var(--lime-hi); font-weight: 700; }
 .stages-foot { padding-top: 70px; padding-bottom: clamp(90px, 18vw, 150px); text-align: center; color: var(--ink-dim); }
 .sf-strong {
   margin-top: 28px;
@@ -705,12 +666,12 @@ strong { font-weight: 700; color: var(--ink); }
 }
 .loop-row.on .lr-id { color: var(--lime); }
 .lr-state {
-  font-size: 10px; letter-spacing: .2em;
+  font-size: 11px; letter-spacing: .2em;
   color: var(--ink-faint); transition: color .35s;
 }
 .loop-row.on .lr-state { color: var(--lime); }
 .lr-name { font-size: clamp(18px, 5vw, 21px); font-weight: 900; margin: 7px 0 5px; }
-.lr-desc { font-size: 13.5px; color: var(--ink-dim); line-height: 1.75; }
+.lr-desc { font-size: 14.5px; color: var(--ink-dim); line-height: 1.75; }
 /* 分段式電量條，讀起來像儀表而不是底線 */
 .lm-bar {
   position: relative; display: block;
@@ -726,15 +687,26 @@ strong { font-weight: 700; color: var(--ink); }
   transform: scaleX(0); transform-origin: left;
 }
 
+/* 複利引擎：hover 互動（取代原本的無限掃描循環） */
+.loop-row { transition: background-color .3s ease; }
+.loop-row .lr-node { transition: transform .25s ease, box-shadow .25s ease; }
+.loop-row:hover { background-color: rgba(200, 247, 74, .045); }
+.loop-row:hover .lr-node {
+  transform: scale(1.5);
+  box-shadow: 0 0 14px rgba(200, 247, 74, .8);
+}
+.loop-row:hover .lr-name { color: var(--lime-hi); }
+.lr-name { transition: color .25s ease; }
+
 .panel-foot {
   padding: 24px 18px 26px;
   border-top: 1px solid var(--line);
   text-align: center;
   background: rgba(200,247,74,.035);
 }
-.pf-main { font-size: clamp(15px, 4.2vw, 18px); font-weight: 900; line-height: 1.7; }
+.pf-main { font-size: clamp(17px, 4.6vw, 21px); font-weight: 900; line-height: 1.7; }
 .pf-main em { color: var(--lime); }
-.pf-sub { margin-top: 10px; font-size: 12.5px; color: var(--ink-faint); }
+.pf-sub { margin-top: 10px; font-size: 14px; color: var(--ink-faint); }
 
 /* ─── S9 講師 ─── */
 .mentor { background: var(--bg); }
@@ -860,7 +832,7 @@ strong { font-weight: 700; color: var(--ink); }
 .media-card h4 { font-size: 14px; font-weight: 900; line-height: 1.5; }
 .media-card figcaption p {
   margin-top: 4px;
-  font-size: 11.5px; line-height: 1.65;
+  font-size: 13px; line-height: 1.65;
   color: var(--ink-faint);
 }
 
@@ -894,7 +866,7 @@ strong { font-weight: 700; color: var(--ink); }
 }
 .chip-cap i {
   display: block; font-style: normal;
-  font-size: 10px; letter-spacing: .06em; color: var(--lime);
+  font-size: 11px; letter-spacing: .06em; color: var(--lime);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
@@ -978,7 +950,7 @@ strong { font-weight: 700; color: var(--ink); }
 }
 .city-chips span {
   padding: 7px 13px;
-  font-size: 12px; font-weight: 700;
+  font-size: 13px; font-weight: 700;
   color: var(--lime);
   border: 1px solid var(--line-lime);
   border-radius: 999px;
@@ -990,12 +962,6 @@ strong { font-weight: 700; color: var(--ink); }
 }
 
 /* 合作學校：單色 logo 牆，深色底上的白色標誌帶（雙排反向） */
-.logo-label {
-  margin-top: 56px; text-align: center;
-  font-family: var(--label);
-  font-size: 11px; font-weight: 700; letter-spacing: .34em; text-indent: .34em;
-  color: var(--ink-faint);
-}
 .logo-mq {
   margin-top: 24px;
   padding: 32px 0;
@@ -1030,7 +996,7 @@ strong { font-weight: 700; color: var(--ink); }
   border-radius: 20px;
   padding: 30px 28px;
 }
-.dc-if { font-family: var(--label); font-size: 13px; color: var(--ink-faint); margin-bottom: 10px; }
+.dc-if { font-family: var(--label); font-size: 13.5px; color: var(--ink-faint); margin-bottom: 10px; }
 .diag-card h3 { font-size: 22px; font-weight: 900; margin-bottom: 12px; }
 .dc-do { font-size: 14.5px; color: var(--ink-dim); }
 .diag-foot { margin-top: 60px; text-align: center; color: var(--ink-dim); }
@@ -1068,7 +1034,7 @@ strong { font-weight: 700; color: var(--ink); }
 .final-path {
   margin: 42px 0 46px;
   display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px;
-  font-weight: 900; font-size: 16px;
+  font-weight: 900; font-size: clamp(19px, 4.8vw, 26px);
 }
 .final-path i { font-style: normal; color: var(--lime); }
 .final-path .red { color: var(--lime); }
@@ -1189,7 +1155,7 @@ strong { font-weight: 700; color: var(--ink); }
 }
 .form-submit.loading .fs-spinner { display: inline-block; }
 @keyframes spin { to { transform: rotate(360deg); } }
-.form-note { margin-top: 14px; font-size: 11.5px; color: var(--ink-faint); text-align: center; line-height: 1.7; }
+.form-note { margin-top: 14px; font-size: 12.5px; color: var(--ink-faint); text-align: center; line-height: 1.7; }
 .form-error {
   display: none;
   margin-top: 12px; padding: 12px 14px;
@@ -1227,15 +1193,15 @@ strong { font-weight: 700; color: var(--ink); }
   .wrap { width: 94%; }
   .stage-rail { padding-left: 3vw; padding-right: 3vw; }
   .stage-card { flex-basis: 90%; padding: 30px 20px; }
-  .stage-body { font-size: 13.5px; }
+  .stage-body { font-size: 14px; }
   .pain-list li { padding: 18px 14px; gap: 12px; }
   .pain-list p { font-size: 14px; }
   .gift-card, .diag-card { padding: 26px 20px; }
-  .gift-card p, .dc-do { font-size: 13.5px; }
+  .gift-card p, .dc-do { font-size: 14px; }
   .pc-strong { font-size: 18px; }
   .hours { font-size: 1.35em; }
   .mentor-bio { font-size: 14px; }
-  .loop-item p, .ch-text p { font-size: 13.5px; }
+  .loop-item p, .ch-text p { font-size: 14px; }
 }
 
 /* ─── 桌機版：1024px 以上獨立排版，不回寫手機樣式 ─── */
@@ -1351,7 +1317,7 @@ strong { font-weight: 700; color: var(--ink); }
   .creed-no { font-size: 15px; margin-bottom: 14px; }
   .creed-yes { margin-bottom: 20px; }
   .creed-yes strong { font-size: 16.5px; }
-  .creed-sub { font-size: 13.5px; }
+  .creed-sub { font-size: 14px; }
 
   /* 三份資源：桌面三欄，封面回到卡片上方完整展示 */
   .gifts .wrap { max-width: 1180px; }
@@ -1369,8 +1335,10 @@ strong { font-weight: 700; color: var(--ink); }
   }
   .gift-cover {
     width: min(100%, 205px);
+    max-width: 205px;
     margin: 0 auto 26px;
     flex: 0 0 auto;
+    order: -1;
   }
   .gift-card h3 { font-size: 21px; }
   .gift-card p { font-size: 15px; }
@@ -1482,15 +1450,14 @@ strong { font-weight: 700; color: var(--ink); }
   .media-card figcaption { padding: 18px 20px 20px; }
   .mc-tag { font-size: 10px; }
   .media-card h4 { font-size: 17px; }
-  .media-card figcaption p { font-size: 13px; }
+  .media-card figcaption p { font-size: 13.5px; }
   .chip { width: 210px; }
   .stage-strip { margin-top: 110px; }
   .chip-stage { width: 460px; }
   .cs-cap { padding: 56px 18px 15px; }
   .cs-cap i { font-size: 10px; }
   .cs-cap b { font-size: 16px; }
-  .logo-label { margin-top: 76px; }
-  .logo-mq { padding: 40px 0; gap: 44px; }
+  .logo-mq { margin-top: 48px; padding: 40px 0; gap: 44px; }
   .chip-logo { padding: 0 44px; }
   .chip-logo img { max-height: 50px; max-width: 240px; }
   .chip-logo img[src*="svri"],

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@600;700;800&family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 820px; height: 1025px; }
+  body {
+    background: #f4f1e4;
+    font-family: "Archivo", sans-serif;
+    color: #101010;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 52px;
+    overflow: hidden;
+  }
+  .kicker {
+    font-size: 21px; font-weight: 700; letter-spacing: .42em; text-indent: .42em;
+    display: flex; align-items: center; gap: 22px;
+  }
+  .kicker::before, .kicker::after { content: ""; width: 46px; height: 3px; background: #c3e934; }
+  .title {
+    font-family: "Anton", sans-serif;
+    font-size: 168px;
+    line-height: .96;
+    margin-top: 26px;
+    letter-spacing: .01em;
+    transform: scaleY(1.06);
+  }
+  .en {
+    margin-top: 20px;
+    font-size: 43px; font-weight: 800; letter-spacing: .13em; text-indent: .13em;
+  }
+  .zh {
+    margin-top: 16px;
+    font-family: "Noto Sans TC", sans-serif;
+    font-size: 30px; font-weight: 700; letter-spacing: .5em; text-indent: .5em;
+    display: flex; align-items: center; gap: 20px;
+  }
+  .zh::before, .zh::after { content: ""; width: 58px; height: 3px; background: #c3e934; }
+  .art { margin-top: 34px; }
+  .badge {
+    position: absolute; bottom: 34px; left: 50%; transform: translateX(-50%);
+  }
+</style>
+</head>
+<body>
+  <div class="kicker">EXPERT TO ENTERPRISE</div>
+  <div class="title">DIAGNOSE</div>
+  <div class="en">INCOME LEVERAGE AUDIT</div>
+  <div class="zh">專業收入槓桿診斷</div>
+
+  <svg class="art" width="620" height="520" viewBox="0 0 620 520">
+    <defs>
+      <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+        <feGaussianBlur stdDeviation="14"/>
+      </filter>
+      <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
+        <feGaussianBlur stdDeviation="3"/>
+      </filter>
+    </defs>
+
+    <!-- 虛線導引 -->
+    <g stroke="#9a9a90" stroke-width="2" stroke-dasharray="3 8">
+      <line x1="150" y1="70" x2="150" y2="330"/>
+      <line x1="470" y1="70" x2="470" y2="330"/>
+    </g>
+
+    <!-- PERSON -->
+    <g>
+      <path d="M310 8 L472 66 310 124 148 66 Z" fill="#161616" stroke-linejoin="round" stroke="#161616" stroke-width="14"/>
+      <circle cx="310" cy="42" r="12" fill="#fff"/>
+      <path d="M290 72 a20 14 0 0 1 40 0 Z" fill="#fff"/>
+      <text x="310" y="102" text-anchor="middle" fill="#fff" font-family="Archivo" font-weight="700" font-size="19" letter-spacing="6">PERSON</text>
+    </g>
+
+    <!-- CONTENT -->
+    <g transform="translate(0,150)">
+      <path d="M310 8 L472 66 310 124 148 66 Z" fill="#161616" stroke-linejoin="round" stroke="#161616" stroke-width="14"/>
+      <rect x="292" y="32" width="36" height="30" rx="5" fill="none" stroke="#fff" stroke-width="4"/>
+      <line x1="299" y1="42" x2="321" y2="42" stroke="#fff" stroke-width="3.5"/>
+      <line x1="299" y1="50" x2="321" y2="50" stroke="#fff" stroke-width="3.5"/>
+      <text x="310" y="102" text-anchor="middle" fill="#fff" font-weight="700" font-size="19" letter-spacing="6">CONTENT</text>
+    </g>
+
+    <!-- SYSTEM（裂開＋螢光） -->
+    <g transform="translate(0,306)">
+      <ellipse cx="310" cy="66" rx="205" ry="42" fill="#c3e934" opacity=".55" filter="url(#glow)"/>
+      <path d="M310 8 L370 29 382 48 360 66 384 88 366 105 310 124 148 66 Z" fill="#161616" stroke="#161616" stroke-width="10" stroke-linejoin="round"/>
+      <path d="M386 24 L472 66 382 100 398 83 376 61 396 43 Z" fill="#161616" stroke="#161616" stroke-width="10" stroke-linejoin="round"/>
+      <path d="M376 12 L388 40 368 66 392 92 376 120" fill="none" stroke="#c3e934" stroke-width="7" stroke-linejoin="round" filter="url(#soft)"/>
+      <path d="M376 12 L388 40 368 66 392 92 376 120" fill="none" stroke="#c3e934" stroke-width="4" stroke-linejoin="round"/>
+      <g transform="translate(285,44)">
+        <circle r="14" fill="none" stroke="#c3e934" stroke-width="6"/>
+        <circle r="4" fill="#c3e934"/>
+        <g stroke="#c3e934" stroke-width="6" stroke-linecap="round">
+          <line y1="-24" y2="-18"/><line y1="18" y2="24"/>
+          <line x1="-24" x2="-18"/><line x1="18" x2="24"/>
+          <line x1="-17" y1="-17" x2="-13" y2="-13"/><line x1="13" y1="13" x2="17" y2="17"/>
+          <line x1="17" y1="-17" x2="13" y2="-13"/><line x1="-13" y1="13" x2="-17" y2="17"/>
+        </g>
+      </g>
+      <text x="285" y="96" text-anchor="middle" fill="#c3e934" font-weight="700" font-size="19" letter-spacing="6">SYSTEM</text>
+      <g fill="#161616">
+        <rect x="236" y="136" width="12" height="12" transform="rotate(18 242 142)"/>
+        <rect x="292" y="146" width="9" height="9" transform="rotate(-12 296 150)"/>
+        <rect x="352" y="140" width="14" height="14" transform="rotate(30 359 147)"/>
+        <circle cx="266" cy="154" r="4"/><circle cx="330" cy="158" r="5"/><circle cx="388" cy="152" r="4"/>
+      </g>
+      <g stroke="#c3e934" stroke-width="5" fill="none">
+        <path d="M96 10 h-26 v30"/><path d="M524 10 h26 v30"/>
+        <path d="M96 122 h-26 v-30"/><path d="M524 122 h26 v-30"/>
+      </g>
+    </g>
+  </svg>
+
+  <svg class="badge" width="72" height="80" viewBox="0 0 72 80">
+    <path d="M36 4 66 22 66 58 36 76 6 58 6 22 Z" fill="none" stroke="#161616" stroke-width="4"/>
+    <text x="36" y="49" text-anchor="middle" font-family="Archivo" font-weight="800" font-size="26" fill="#161616">01</text>
+  </svg>
+</body>
+</html>

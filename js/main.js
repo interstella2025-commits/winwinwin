@@ -472,18 +472,8 @@ function engineSetup() {
       { color: "#ffffff" }, { color: "#ffffff", duration: .01 }, at);
   });
 
-  /* ② 啟動完成後：掃描線持續巡迴，經過的節點跟著閃一下 */
-  boot.eventCallback("onComplete", () => {
-    const SWEEP = 5.6;
-    const loop = gsap.timeline({ repeat: -1, repeatDelay: 1.4 });
-    loop.fromTo(scan, { y: -160 }, { y: () => H() + 60, duration: SWEEP, ease: "none" }, 0);
-    rows.forEach((row, i) => {
-      const at = SWEEP * (i + .55) / rows.length;
-      const node = row.querySelector(".lr-node");
-      loop.to(node, { scale: 1.65, duration: .22, ease: "power2.out" }, at)
-          .to(node, { scale: 1, duration: .6, ease: "power2.in" }, at + .22);
-    });
-  });
+  /* ② 通電完成即收束：掃描線淡出，之後互動交給 CSS hover（避免無限動畫造成低階裝置卡頓） */
+  boot.to(scan, { autoAlpha: 0, duration: .5 }, "+=.2");
 }
 
 /* ═══ 三階段：手機橫滑、桌面三欄 ═══ */

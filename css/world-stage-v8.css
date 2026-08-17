@@ -1,0 +1,236 @@
+/* A7 — 教育世界足跡定位圖：點陣世界地圖上的發光地標與放射航線（純靜態＋輕量輪替）。 */
+.world-stage-v8[hidden] {
+  display: none;
+}
+
+.world-stage-v8 {
+  position: relative;
+  width: 100vw;
+  margin: clamp(48px, 7vw, 78px) 0 0 calc(50% - 50vw);
+  overflow: hidden;
+  background: #050605;
+  contain: layout paint style;
+}
+
+.ws8-frame {
+  position: relative;
+  width: 100%;
+  height: clamp(500px, 52vw, 740px);
+  overflow: hidden;
+  isolation: isolate;
+  color: var(--ink, #f4f4f0);
+  background:
+    radial-gradient(ellipse at 62% 44%, rgba(200, 247, 74, .06), transparent 46%),
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, .04), transparent 42%),
+    linear-gradient(128deg, #0b0d0b 0%, #040504 52%, #090b09 100%);
+}
+
+/* 邊緣壓暗，讓地圖沉進畫面 */
+.ws8-frame::before {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  content: "";
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(3, 4, 3, .9), transparent 8%, transparent 92%, rgba(3, 4, 3, .9)),
+    linear-gradient(180deg, rgba(3, 4, 3, .8), transparent 20%, transparent 76%, rgba(3, 4, 3, .95));
+}
+
+.ws8-svg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 1;
+  width: min(96%, 1240px);
+  transform: translate(-50%, -50%);
+}
+
+.ws8-map-img {
+  filter: brightness(2.7) contrast(1.04);
+  opacity: .82;
+}
+
+/* ── 發光航線：台灣放射到各主 pin ── */
+.ws8-arc {
+  fill: none;
+  stroke: rgba(200, 247, 74, .55);
+  stroke-width: 1.6;
+  stroke-dasharray: 3 7;
+  stroke-linecap: round;
+  filter:
+    drop-shadow(0 0 4px rgba(200, 247, 74, .7))
+    drop-shadow(0 0 12px rgba(200, 247, 74, .35));
+}
+
+/* ── Pin ── */
+.ws8-pin {
+  opacity: 1;
+}
+
+.ws8-pin-head {
+  filter:
+    drop-shadow(0 0 5px rgba(200, 247, 74, .85))
+    drop-shadow(0 0 16px rgba(200, 247, 74, .45))
+    drop-shadow(0 0 34px rgba(200, 247, 74, .25));
+}
+
+.ws8-pin-head path {
+  fill: var(--lime, #c8f74a);
+}
+
+.ws8-pin-hole {
+  fill: #0a0c07;
+}
+
+.ws8-base {
+  fill: rgba(200, 247, 74, .9);
+  filter: drop-shadow(0 0 5px rgba(200, 247, 74, .8));
+}
+
+.ws8-label {
+  font-family: var(--label, "Archivo", sans-serif);
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  fill: #f2f5ea;
+}
+
+/* 場地副標已停用：只留國家名，避免視覺混亂 */
+.ws8-label .ws8-label-sub {
+  display: none;
+}
+
+/* 次要地標：A/B 兩組輪替顯示，群聚區不會同時擠滿 */
+.ws8-cyc-a,
+.ws8-cyc-b {
+  animation: ws8-cycle 10s ease-in-out infinite;
+}
+
+.ws8-cyc-b {
+  animation-delay: -5s;
+}
+
+@keyframes ws8-cycle {
+  0%, 40%   { opacity: 1; }
+  48%, 90%  { opacity: 0; }
+  98%, 100% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ws8-cyc-a,
+  .ws8-cyc-b {
+    animation: none;
+  }
+}
+
+/* 台灣起點：靜態強調圈 */
+.ws8-pin--tw .ws8-pulse {
+  fill: none;
+  stroke: rgba(200, 247, 74, .45);
+  stroke-width: 1.4;
+}
+
+/* ── 頂部 meta ── */
+.ws8-meta {
+  position: absolute;
+  top: clamp(18px, 3vw, 30px);
+  left: clamp(20px, 4vw, 46px);
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: var(--label, "Archivo", sans-serif);
+}
+
+.ws8-meta span {
+  font-size: clamp(10px, 1.1vw, 12px);
+  font-weight: 700;
+  letter-spacing: .34em;
+  color: var(--lime, #c8f74a);
+}
+
+.ws8-meta i {
+  font-size: clamp(9px, 1vw, 10.5px);
+  font-style: normal;
+  letter-spacing: .26em;
+  color: rgba(244, 244, 240, .62);
+}
+
+/* ── 底部 lockup ── */
+.ws8-lockup {
+  position: absolute;
+  bottom: clamp(20px, 3.4vw, 36px);
+  left: clamp(20px, 4vw, 46px);
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--label, "Archivo", sans-serif);
+}
+
+.ws8-lockup span {
+  font-size: clamp(9px, 1vw, 11px);
+  font-weight: 700;
+  letter-spacing: .3em;
+  color: rgba(244, 244, 240, .66);
+}
+
+.ws8-lockup strong {
+  font-family: var(--display, "Anton", sans-serif);
+  font-size: clamp(24px, 3.6vw, 44px);
+  font-weight: 400;
+  line-height: 1.04;
+  letter-spacing: .02em;
+  color: #f4f4f0;
+}
+
+.ws8-lockup strong em {
+  font-style: normal;
+  color: var(--lime, #c8f74a);
+}
+
+/* ── 手機：完整地圖靜態一張圖，地名改列在圖下方 ── */
+@media (max-width: 700px) {
+  .ws8-frame {
+    height: clamp(360px, 106vw, 430px);
+  }
+
+  .ws8-svg {
+    top: 40%;
+    width: 100%;
+  }
+
+  .ws8-label {
+    display: none;
+  }
+
+  .ws8-pin--tw .ws8-pulse {
+    display: none;
+  }
+
+  .ws8-pin-head {
+    filter:
+      drop-shadow(0 0 2px rgba(200, 247, 74, .8))
+      drop-shadow(0 0 6px rgba(200, 247, 74, .35));
+  }
+
+  .ws8-base {
+    filter: none;
+  }
+
+  .ws8-arc {
+    stroke-width: 1.1;
+    stroke: rgba(200, 247, 74, .4);
+    filter: drop-shadow(0 0 3px rgba(200, 247, 74, .45));
+  }
+
+  .ws8-lockup {
+    bottom: clamp(20px, 6vw, 30px);
+  }
+
+  .ws8-lockup strong {
+    font-size: clamp(22px, 7vw, 30px);
+  }
+
+}

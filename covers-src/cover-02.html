@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@600;700;800&family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 820px; height: 1025px; }
+  body {
+    background: #f4f1e4;
+    font-family: "Archivo", sans-serif;
+    color: #101010;
+    display: flex; flex-direction: column; align-items: center;
+    padding-top: 52px; overflow: hidden;
+  }
+  .kicker {
+    font-size: 21px; font-weight: 700; letter-spacing: .42em; text-indent: .42em;
+    display: flex; align-items: center; gap: 22px;
+  }
+  .kicker::before, .kicker::after { content: ""; width: 46px; height: 3px; background: #c3e934; }
+  .title {
+    font-family: "Anton", sans-serif;
+    font-size: 178px; line-height: .96; margin-top: 26px;
+    letter-spacing: .02em; transform: scaleY(1.06);
+  }
+  .en {
+    margin-top: 20px;
+    font-size: 33px; font-weight: 800; letter-spacing: .1em; text-indent: .1em;
+    white-space: nowrap;
+  }
+  .zh {
+    margin-top: 16px;
+    font-family: "Noto Sans TC", sans-serif;
+    font-size: 30px; font-weight: 700; letter-spacing: .5em; text-indent: .5em;
+    display: flex; align-items: center; gap: 20px;
+  }
+  .zh::before, .zh::after { content: ""; width: 58px; height: 3px; background: #c3e934; }
+  .art { margin-top: 30px; }
+  .badge { position: absolute; bottom: 34px; left: 50%; transform: translateX(-50%); }
+</style>
+</head>
+<body>
+  <div class="kicker">EXPERT TO ENTERPRISE</div>
+  <div class="title">DESIGN</div>
+  <div class="en">ONE-PAGE ENTERPRISE BLUEPRINT</div>
+  <div class="zh">一頁式事業放大藍圖</div>
+
+  <svg class="art" width="600" height="470" viewBox="0 0 600 470">
+    <!-- 周圍藍圖區塊 -->
+    <g fill="#161616">
+      <rect x="30" y="10" width="170" height="130" rx="14"/>
+      <rect x="30" y="156" width="170" height="120" rx="14"/>
+      <rect x="30" y="292" width="170" height="130" rx="14"/>
+      <rect x="400" y="10" width="170" height="130" rx="14"/>
+      <rect x="400" y="156" width="170" height="120" rx="14"/>
+      <rect x="400" y="292" width="170" height="130" rx="14"/>
+      <rect x="216" y="10" width="168" height="70" rx="14"/>
+      <rect x="216" y="352" width="168" height="70" rx="14"/>
+    </g>
+
+    <!-- 中央十字形螢光綠區塊 -->
+    <path d="M252 96 h96 v56 h96 v128 h-96 v56 h-96 v-56 h-96 v-128 h96 Z"
+          fill="#c3e934" stroke="#161616" stroke-width="6" stroke-linejoin="round"/>
+
+    <!-- 圓規 icon -->
+    <g transform="translate(300,216)" stroke="#161616" stroke-linecap="round" fill="none">
+      <circle cy="-42" r="12" stroke-width="8"/>
+      <line x1="0" y1="-30" x2="-30" y2="48" stroke-width="9"/>
+      <line x1="0" y1="-30" x2="30" y2="48" stroke-width="9"/>
+      <line x1="-30" y1="48" x2="-36" y2="60" stroke-width="6"/>
+      <line x1="30" y1="48" x2="36" y2="60" stroke-width="6"/>
+      <line x1="-12" y1="4" x2="12" y2="4" stroke-width="5"/>
+    </g>
+
+    <!-- 區塊裝飾：點陣 -->
+    <g fill="#c3e934">
+      <g transform="translate(58,40)">
+        <circle r="4"/><circle cx="18" r="4"/><circle cx="36" r="4"/><circle cx="54" r="4"/>
+        <circle cy="16" r="4"/><circle cx="18" cy="16" r="4"/><circle cx="36" cy="16" r="4"/><circle cx="54" cy="16" r="4"/>
+      </g>
+      <g transform="translate(58,326)">
+        <circle r="4"/><circle cx="18" r="4"/><circle cx="36" r="4"/>
+        <circle cy="16" r="4"/><circle cx="18" cy="16" r="4"/><circle cx="36" cy="16" r="4"/>
+      </g>
+    </g>
+    <!-- 區塊裝飾：規格線 -->
+    <g stroke="#f4f1e4" stroke-width="3" opacity=".9">
+      <line x1="428" y1="42" x2="524" y2="42"/><circle cx="532" cy="42" r="4" fill="#f4f1e4"/>
+      <line x1="428" y1="62" x2="524" y2="62"/><circle cx="532" cy="62" r="4" fill="#f4f1e4"/>
+      <line x1="428" y1="82" x2="508" y2="82"/><circle cx="516" cy="82" r="4" fill="#f4f1e4"/>
+      <line x1="428" y1="326" x2="516" y2="326"/><circle cx="524" cy="326" r="4" fill="#f4f1e4"/>
+      <line x1="428" y1="346" x2="500" y2="346"/><circle cx="508" cy="346" r="4" fill="#f4f1e4"/>
+    </g>
+    <!-- 區塊裝飾：對角線 -->
+    <g stroke="#8a8a80" stroke-width="2">
+      <line x1="40" y1="166" x2="190" y2="266"/>
+      <line x1="190" y1="166" x2="40" y2="266"/>
+    </g>
+    <!-- 中央區塊定位角 -->
+    <g stroke="#161616" stroke-width="4" fill="none">
+      <path d="M366 110 h14 v14"/>
+      <path d="M234 344 h-14 v-14"/>
+    </g>
+  </svg>
+
+  <svg class="badge" width="72" height="80" viewBox="0 0 72 80">
+    <path d="M36 4 66 22 66 58 36 76 6 58 6 22 Z" fill="none" stroke="#161616" stroke-width="4"/>
+    <text x="36" y="49" text-anchor="middle" font-family="Archivo" font-weight="800" font-size="26" fill="#161616">02</text>
+  </svg>
+</body>
+</html>
