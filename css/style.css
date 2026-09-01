@@ -88,13 +88,17 @@ strong { font-weight: 700; color: var(--ink); }
   margin-bottom: 26px;
 }
 .hero-kicker .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--lime); flex-shrink: 0; box-shadow: 0 0 12px var(--lime); }
-.hero-title { font-family: var(--display); font-weight: 400; line-height: .96; color: var(--ink); }
-.ht-line { display: block; overflow: hidden; font-size: clamp(34px, 9vw, 58px); letter-spacing: .01em; }
+.hero-title {
+  font-family: var(--display); font-weight: 400; line-height: 1; color: var(--ink);
+  display: flex; align-items: baseline; flex-wrap: wrap;
+  column-gap: .22em; row-gap: 0;
+}
+.ht-line { display: block; overflow: hidden; font-size: clamp(26px, 7.2vw, 58px); letter-spacing: .01em; }
 .ht-outline {
-  font-size: clamp(22px, 5.4vw, 36px);
+  font-size: inherit;
   color: transparent;
   -webkit-text-stroke: 1.4px rgba(244,244,240,.85);
-  line-height: 1.12;
+  line-height: inherit;
 }
 .ht-red { color: var(--lime); }
 .hero-sub {
@@ -1227,8 +1231,8 @@ strong { font-weight: 700; color: var(--ink); }
   }
   .hero-top { width: min(52%, 700px); margin: 0; }
   .hero-kicker { font-size: 13px; margin-bottom: 30px; }
-  .ht-line { font-size: clamp(40px, 3.8vw, 60px); }
-  .ht-outline { font-size: clamp(26px, 2.6vw, 40px); -webkit-text-stroke-width: 1.5px; }
+  .ht-line { font-size: clamp(32px, 3.2vw, 52px); }
+  .ht-outline { -webkit-text-stroke-width: 1.5px; }
   .hero-sub { margin-top: 28px; font-size: clamp(42px, 4.6vw, 70px); }
   .hero-cta-wrap { margin: 34px 0 0; }
   .cta-btn { padding: 19px 34px; font-size: 16px; }
