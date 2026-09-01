@@ -188,6 +188,22 @@ function init() {
     .to(".hero-card img", { scale: 1, duration: 1.4, ease: "power3.out" }, "<")
     .to("#marquee1", { yPercent: 0, rotate: -1.6, scale: 1.03, duration: .8, ease: "power3.out" }, "-=.8");
 
+  /* ── 保險絲 ──
+     分頁在背景時，瀏覽器會凍住 requestAnimationFrame，intro 會停在半路，
+     loader 的黑幕就一直蓋著整頁（症狀＝Hero 不見了）。
+     載入 4 秒後、或使用者切回這個分頁時，若黑幕還在就直接跳到動畫結尾。 */
+  const introStart = Date.now();
+  const rescueIntro = () => {
+    const l = document.getElementById("loader");
+    if (!l || getComputedStyle(l).display === "none") return;   /* 已經正常收掉 */
+    if (Date.now() - introStart < 3800) return;                 /* 還在正常播放中 */
+    intro.progress(1);
+  };
+  setTimeout(rescueIntro, 4000);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) rescueIntro();
+  });
+
   /* Hero 視差：桌面收斂位移，手機保留較明顯的上下景深 */
   motionMedia.add({
     isDesktop: "(min-width: 1024px)",
