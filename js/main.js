@@ -690,6 +690,9 @@ function signupSetup() {
 
       form.hidden = true;
       document.querySelector(".modal-head").hidden = true;
+      const thanks = (cfg.THANKYOU_URL || "").trim();
+      if (thanks) { location.href = thanks; return; }   /* 有感謝頁就跳頁，OTO 在那裡 */
+
       done.hidden = false;
       if (!reduced) gsap.fromTo(done,
         { autoAlpha: 0, y: 20 }, { autoAlpha: 1, y: 0, duration: .5, ease: "power3.out" });

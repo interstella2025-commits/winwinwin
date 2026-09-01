@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>策略包已寄出｜EXPERT TO ENTERPRISE</title>
+<meta name="description" content="E2E™ 事業放大策略包已寄出。加購 VIP 席位，取得公開課席位、完整回放與總裁班教材。">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<style>
+/* ══ OTO 頁面樣式 ══ */
+body{background:var(--bg)}
+.oto-top{padding:34px 0 0}
+.oto-brand{font-family:var(--label);font-size:11.5px;font-weight:700;letter-spacing:.3em;
+           color:var(--ink-faint);text-align:center}
+
+/* 確認條 */
+.confirm{margin:44px auto 0;text-align:center}
+.confirm-mark{width:56px;height:56px;border-radius:50%;border:1.5px solid var(--lime);
+              display:grid;place-items:center;margin:0 auto 26px}
+.confirm-mark::after{content:"";width:17px;height:9px;border-left:2px solid var(--lime);
+              border-bottom:2px solid var(--lime);transform:rotate(-45deg) translate(1px,-2px)}
+.confirm h1{font-size:clamp(30px,5.4vw,54px);font-weight:900;line-height:1.35;
+            letter-spacing:-.01em;color:var(--ink)}
+.confirm h1 em{color:var(--lime);font-style:normal}
+.confirm p{margin-top:20px;font-size:16.5px;line-height:1.95;color:var(--ink-dim)}
+
+/* 資訊列 */
+.meta{margin-top:38px;border:1px solid var(--line);border-radius:14px;overflow:hidden;
+      display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line)}
+.meta div{background:var(--bg2);padding:20px 12px;text-align:center}
+.meta dt{font-family:var(--label);font-size:10.5px;font-weight:700;letter-spacing:.2em;
+         color:var(--ink-faint);margin-bottom:9px}
+.meta dd{font-size:15px;font-weight:700;color:var(--ink)}
+@media(max-width:640px){.meta{grid-template-columns:repeat(2,1fr)}}
+
+/* 通用 */
+.claim{font-size:clamp(26px,4.2vw,46px);font-weight:900;line-height:1.42;
+       letter-spacing:-.01em;color:var(--ink)}
+.claim.mid{font-size:clamp(21px,3vw,32px)}
+.claim em{color:var(--lime);font-style:normal}
+.lead{font-size:16.5px;line-height:1.95;color:var(--ink-dim);max-width:44em}
+.lead+.lead{margin-top:15px}
+.lead em{color:var(--ink);font-style:normal;font-weight:700}
+.rule{height:1px;background:var(--line);margin:0}
+
+/* 贈品卡 */
+.gift{margin-top:40px;border:1px solid var(--line-lime);border-radius:16px;
+      background:linear-gradient(180deg,rgba(200,247,74,.07),transparent 70%);padding:34px 30px}
+.gift-tag{display:inline-block;font-family:var(--label);font-size:10.5px;font-weight:700;
+          letter-spacing:.22em;color:var(--bg);background:var(--lime);
+          padding:6px 12px;border-radius:4px;margin-bottom:20px}
+.gift h3{font-size:clamp(20px,2.9vw,27px);font-weight:900;line-height:1.5;color:var(--ink)}
+.gift p{margin-top:14px;font-size:15.5px;line-height:1.9;color:var(--ink-dim)}
+.gift .cta-btn{margin-top:26px}
+
+/* 贈品三份 */
+.giftlist{list-style:none;margin:28px 0 0;padding:0;display:grid;gap:1px;background:var(--line);
+          border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.giftlist li{background:var(--bg);padding:22px 0;display:grid;grid-template-columns:auto 1fr;gap:18px;
+             align-items:start;padding-left:2px}
+.giftlist b{font-family:var(--display);font-size:20px;color:var(--lime);opacity:.85;line-height:1.4}
+.gl-en{font-family:var(--label);font-size:10px;font-weight:700;letter-spacing:.22em;
+       color:var(--ink-faint);margin-bottom:7px}
+.giftlist em{display:block;font-style:normal;font-weight:700;font-size:17px;color:var(--ink);line-height:1.55}
+.gl-sub{display:block;font-family:var(--label);font-size:12.5px;color:var(--ink-faint);
+        letter-spacing:.04em;margin-top:3px}
+.giftlist small{display:block;margin-top:10px;font-size:14.5px;line-height:1.85;color:var(--ink-dim)}
+.gl-task{display:block;margin-top:10px;font-size:14px;font-weight:700;color:var(--lime);line-height:1.7}
+
+/* 編號清單 */
+.numlist{list-style:none;margin-top:36px;padding:0;display:grid;gap:1px;background:var(--line);
+         border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.numlist li{background:var(--bg);padding:24px 26px;font-size:16px;line-height:1.8;
+            color:var(--ink-dim);display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:start}
+.numlist b{font-family:var(--display);font-size:21px;color:var(--lime);opacity:.85;line-height:1.35}
+.numlist em{color:var(--ink);font-style:normal;font-weight:700}
+.numlist small{display:block;margin-top:6px;font-size:14.5px;color:var(--ink-faint);line-height:1.75}
+
+/* 方案盒 */
+.offer{margin-top:46px;border:1px solid var(--line-lime);border-radius:18px;
+       background:var(--bg2);overflow:hidden}
+.offer-head{padding:34px 30px 30px;text-align:center;border-bottom:1px solid var(--line)}
+.offer-kicker{font-family:var(--label);font-size:11px;font-weight:700;letter-spacing:.26em;
+              color:var(--lime);margin-bottom:16px}
+.offer-name{font-size:clamp(24px,3.6vw,34px);font-weight:900;color:var(--ink);line-height:1.4}
+.price{margin-top:22px;font-family:var(--display);font-size:clamp(48px,9vw,86px);
+       line-height:1;color:var(--lime);letter-spacing:.01em}
+.price sup{font-family:var(--label);font-size:.26em;font-weight:700;vertical-align:.9em;
+           letter-spacing:.1em;margin-right:.15em}
+.price-note{margin-top:14px;font-size:14.5px;color:var(--ink-faint);line-height:1.8}
+.offer-body{padding:8px 30px 34px}
+.offer-body .numlist{margin-top:26px;border-radius:0;border:0;background:transparent;gap:0}
+.offer-body .numlist li{background:transparent;border-bottom:1px solid var(--line);padding:22px 0}
+.offer-body .numlist li:last-child{border-bottom:0}
+.offer-cta{padding:0 30px 34px;text-align:center}
+.offer-cta .cta-btn{width:100%;justify-content:center}
+.decline{display:inline-block;margin-top:22px;font-size:14.5px;color:var(--ink-faint);
+         text-decoration:underline;text-underline-offset:4px;background:none;border:0;cursor:pointer;
+         font-family:var(--sans)}
+.decline:hover{color:var(--ink-dim)}
+
+/* 見證（老師本人） */
+.proof{border-top:1px solid var(--line);background:var(--bg2)}
+.proof-quote{border-left:3px solid var(--lime);padding:6px 0 6px 26px;margin:36px 0;
+             font-size:clamp(19px,2.6vw,26px);font-weight:700;line-height:1.6;color:var(--ink)}
+.awards{margin-top:38px;display:flex;flex-wrap:wrap;gap:10px}
+.awards span{border:1px solid var(--line);border-radius:100px;padding:9px 16px;
+             font-size:13.5px;color:var(--ink-dim)}
+.proof-photo{margin-top:40px;border-radius:16px;overflow:hidden;border:1px solid var(--line)}
+.proof-photo img{width:100%;display:block}
+
+/* FAQ */
+.faq{margin-top:34px;border-top:1px solid var(--line)}
+.faq details{border-bottom:1px solid var(--line)}
+.faq summary{padding:24px 0;font-size:16.5px;font-weight:700;color:var(--ink);cursor:pointer;
+             list-style:none;display:flex;justify-content:space-between;gap:20px;align-items:center}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";font-family:var(--display);font-size:22px;color:var(--lime);flex:0 0 auto}
+.faq details[open] summary::after{content:"–"}
+.faq p{padding:0 0 24px;font-size:15.5px;line-height:1.9;color:var(--ink-dim);max-width:44em}
+
+/* 婉拒後的狀態 */
+.bye{display:none;margin-top:44px;padding:34px 30px;border:1px solid var(--line);
+     border-radius:16px;background:var(--bg2);text-align:center}
+.bye.on{display:block}
+.bye h3{font-size:22px;font-weight:900;color:var(--ink)}
+.bye p{margin-top:14px;font-size:15.5px;line-height:1.9;color:var(--ink-dim)}
+
+footer{padding:60px 0 70px;text-align:center;border-top:1px solid var(--line)}
+footer p{font-size:13px;color:var(--ink-faint);line-height:1.9}
+</style>
+</head>
+<body>
+
+<div class="oto-top">
+  <p class="oto-brand">EXPERT TO ENTERPRISE™</p>
+</div>
+
+<!-- ═══ 1. 確認 ═══ -->
+<section class="section" style="padding-top:clamp(40px,8vw,70px);padding-bottom:clamp(60px,12vw,90px)">
+  <div class="wrap confirm">
+    <span class="confirm-mark" aria-hidden="true"></span>
+    <h1>策略包<em>已經寄出</em>。</h1>
+    <p>
+      三份都在信裡了。<br>
+      十分鐘後還沒看到，記得看一下垃圾郵件匣。
+    </p>
+  </div>
+</section>
+
+<hr class="rule">
+
+<!-- ═══ 2. 免費贈品 ═══ -->
+<section class="section" style="padding-top:clamp(70px,13vw,110px);padding-bottom:clamp(70px,13vw,110px)">
+  <div class="wrap">
+    <p class="sec-kicker">YOUR GIFT</p>
+    <h2 class="claim">這三份，<br>現在就能用。</h2>
+
+    <div class="gift">
+      <span class="gift-tag">免費贈送</span>
+      <h3 data-cfg="giftName">E2E™ 事業放大策略包</h3>
+      <p>
+        從診斷、設計到行動，三步找出你的下一個成長槓桿。
+      </p>
+
+      <ol class="giftlist">
+        <li>
+          <b>01</b>
+          <div>
+            <p class="gl-en">DIAGNOSE</p>
+            <em>專業收入槓桿診斷</em>
+            <span class="gl-sub">Income Leverage Audit</span>
+            <small>找出你目前的收入，主要依賴「本人、內容，還是系統」，看見真正限制成長的瓶頸。</small>
+            <span class="gl-task">這一份的任務就是：知道問題在哪裡。</span>
+          </div>
+        </li>
+        <li>
+          <b>02</b>
+          <div>
+            <p class="gl-en">DESIGN</p>
+            <em>一頁式事業放大藍圖</em>
+            <span class="gl-sub">One-Page Enterprise Blueprint</span>
+            <small>一次盤點客群、價值、產品、收入、通路、交付與合作，把零散的專業整理成一套可以被市場理解、成交與複製的商業模式。</small>
+            <span class="gl-task">這一份的任務就是：知道事業應該長什麼樣子。</span>
+          </div>
+        </li>
+        <li>
+          <b>03</b>
+          <div>
+            <p class="gl-en">SCALE</p>
+            <em>30 天事業放大行動圖</em>
+            <span class="gl-sub">30-Day Scale-Up Roadmap</span>
+            <small>根據你的定位、內容、產品、成交與合作現況，排出未來 30 天最重要的優先順序，知道先做什麼、後做什麼、什麼暫時不要做。</small>
+            <span class="gl-task">這一份的任務就是：知道下一步怎麼走。</span>
+          </div>
+        </li>
+      </ol>
+
+      <a class="cta-btn" data-gift href="#" role="button">
+        <span>下載策略包</span><span class="cta-arr" aria-hidden="true">→</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<hr class="rule">
+
+<!-- ═══ 3. 轉折 ═══ -->
+<section class="section" style="padding-top:clamp(70px,13vw,110px);padding-bottom:clamp(50px,9vw,80px)">
+  <div class="wrap">
+    <h2 class="claim">先別關掉這一頁。</h2>
+    <p class="lead" style="margin-top:26px">
+      有一件事，我只在這裡講一次。
+    </p>
+    <p class="lead">
+      接下來我會開一場兩小時的線上公開課，我會講三件事。
+    </p>
+
+    <ol class="numlist">
+      <li><b>01</b><span><em>九成的人賣不好的三個原因。</em>這三個錯誤，我在課堂上看過太多次。</span></li>
+      <li><b>02</b><span><em>AI 時代，為什麼信任比內容值錢。</em>內容越來越便宜，能被相信的東西越來越貴。</span></li>
+      <li><b>03</b><span><em>世界大師的三種銷售漏斗。</em>當大師、私人顧問，還有一種你可能沒聽過的。聽完你會知道自己適合走哪一條。</span></li>
+    </ol>
+
+    <p class="lead" style="margin-top:34px">
+      名額開放的時候，我會先寄給你。
+    </p>
+    <p class="lead">
+      但有些東西，兩小時放不進去。
+    </p>
+  </div>
+</section>
+
+<!-- ═══ 4. VIP 方案 ═══ -->
+<section class="section" style="padding-top:0;padding-bottom:clamp(70px,13vw,110px)">
+  <div class="wrap">
+    <p class="lead">
+      商業模式怎麼設計、通路怎麼談、產品怎麼分層、客戶怎麼分群——
+      這些我在總裁班講了整整十一堂，<em>教材原本只給企業主</em>。
+    </p>
+    <p class="lead">
+      其中一堂的完整教材，今天可以給你。
+    </p>
+
+    <div class="offer" id="offer">
+      <div class="offer-head">
+        <p class="offer-kicker">VIP SEAT</p>
+        <p class="offer-name">公開課 VIP 席位</p>
+        <p class="price"><sup>NT$</sup>380</p>
+        <p class="price-note">一次付清・這個價格只在這一頁</p>
+      </div>
+
+      <div class="offer-body">
+        <ol class="numlist">
+          <li><b>01</b><span><em>公開課保留席位</em><small>名額開放前先幫你留一個，不用跟其他人搶。</small></span></li>
+          <li><b>02</b><span><em>公開課完整回放</em><small>一般場結束就關掉，只有 VIP 留得住。</small></span></li>
+          <li><b>03</b><span><em>總裁班〈商業模式與用戶思維〉完整教材</em><small>投影片與課堂案例，原本只發給總裁班學員。</small></span></li>
+          <li><b>04</b><span><em>一頁式商業模式檢查表</em><small>上課那天就能跟著填，不用回家再想。</small></span></li>
+          <li><b>05</b><span><em>說明會架構模板</em><small>我自己每一場都在用的那一份。</small></span></li>
+          <li><b>06</b><span><em>問答優先權</em><small>公開課留了一段問答時間，VIP 的問題先回答。</small></span></li>
+        </ol>
+      </div>
+
+      <div class="offer-cta">
+        <a class="cta-btn" data-pay href="#" role="button">
+          <span>成為 VIP・NT$380</span><span class="cta-arr" aria-hidden="true">→</span>
+        </a>
+        <br>
+        <button class="decline" type="button" id="declineBtn">不用了，我先看策略包就好。</button>
+      </div>
+    </div>
+
+    <div class="bye" id="bye">
+      <h3>好，那我們信箱見。</h3>
+      <p>
+        三份策略包已經寄到你的信箱，不受影響。<br>
+        這一頁關掉之後就不會再出現，不用再回來找。
+      </p>
+    </div>
+  </div>
+</section>
+
+<hr class="rule">
+
+<!-- ═══ 5. 為什麼是 380 ═══ -->
+<section class="section" style="padding-top:clamp(70px,13vw,110px);padding-bottom:clamp(70px,13vw,110px)">
+  <div class="wrap">
+    <h2 class="claim mid">你可能會想，<br>我還沒上課，怎麼知道值不值得。</h2>
+    <p class="lead" style="margin-top:28px">
+      所以我把它壓到 380。
+    </p>
+    <p class="lead">
+      這個數字不是要賺你錢。是要確認一件事：
+      你是真的想解決這個問題，還是隨手報了個名。
+    </p>
+    <p class="lead">
+      願意付 380 的人，兩小時會聽得比較認真。這是我這幾年辦講座學到的。
+    </p>
+  </div>
+</section>
+
+<!-- ═══ 6. 見證：老師本人 ═══ -->
+<section class="section proof">
+  <div class="wrap">
+    <p class="sec-kicker">WHY ME</p>
+    <h2 class="claim mid">這套方法，<br>我自己走過一次。</h2>
+
+    <p class="lead" style="margin-top:30px">
+      我十八歲創業做補教，在第一線站了八年。
+      二十六歲那年我看人口曲線，發現死亡人口開始超過出生人口，判斷市場要衰退，
+      提前三年布局，把股份脫手離開。
+    </p>
+    <p class="lead">
+      離開的時候我還有錢，離開的那家公司還能繼續增長。
+    </p>
+    <p class="lead">
+      離場的條件是簽競業條款，五年不能碰補教。
+      五年到期之後，好幾家補教業回頭來找我。他們說的話我記得很清楚——
+    </p>
+
+    <p class="proof-quote">「老師你不用講課，你來招生就好。」</p>
+
+    <p class="lead">
+      那五年我一堂課都沒上。
+      他們要的已經不是我會不會講，是那套<em>已經離開我本人、還在市場上運作的東西</em>。
+    </p>
+
+    <div class="awards">
+      <span>臺北科技大學 經營管理博士</span>
+      <span>美國哈佛商業評論 拉姆·查蘭管理實踐獎</span>
+      <span>新加坡 Brands For Good 商業向善獎</span>
+      <span>史丹佛大學 訪問學者</span>
+      <span>柏克萊加州大學 訪問學者</span>
+      <span>新加坡 SIMOC 國際教育舞台</span>
+      <span>北京 京台科學家論壇 主講</span>
+      <span>鼎盛全球科技（股）董事長</span>
+    </div>
+
+    <figure class="proof-photo">
+      <img src="assets/award-stage.jpg" alt="林嘉宏 WIN 博士於新加坡 Brands For Good 頒獎典禮" loading="lazy">
+    </figure>
+  </div>
+</section>
+
+<hr class="rule">
+
+<!-- ═══ 7. FAQ ═══ -->
+<section class="section" style="padding-top:clamp(70px,13vw,110px)">
+  <div class="wrap">
+    <p class="sec-kicker">FAQ</p>
+    <h2 class="claim mid">三個常被問到的問題</h2>
+
+    <div class="faq">
+      <details>
+        <summary>付款之後，東西什麼時候給我？</summary>
+        <p>付款完成後，教材、檢查表與模板會立刻寄到你剛才填的那個信箱。公開課回放在課程結束後 24 小時內補寄。</p>
+      </details>
+      <details>
+        <summary>公開課還沒公布日期，現在付會不會太早？</summary>
+        <p>教材、檢查表與模板付款後立刻寄給你，不用等公開課。日期公布時我會先通知 VIP，席位已經幫你留著。真的來不了也沒關係，回放只有 VIP 拿得到。</p>
+      </details>
+      <details>
+        <summary>這 380 可以折抵之後的課程嗎？</summary>
+        <p data-cfg="credit">【待老師確認：建議可折抵兩天課學費，寫進來會明顯提高轉換】</p>
+      </details>
+    </div>
+
+    <div style="margin-top:54px;text-align:center">
+      <a class="cta-btn" data-pay href="#" role="button">
+        <span>成為 VIP・NT$380</span><span class="cta-arr" aria-hidden="true">→</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>EXPERT TO ENTERPRISE™　·　林嘉宏 WIN 博士<br>本頁僅於領取策略包後顯示，關閉後不再出現。</p>
+</footer>
+
+<script>
+// ═══════════ 設定區（只需改這裡）═══════════
+window.OTO_CONFIG = {
+  // ① 金流付款連結（綠界 / 藍新 / Stripe Payment Link 皆可）
+  PAY_URL: "",
+
+  // ② 免費贈品的下載網址（PDF 直連或雲端連結）
+  GIFT_URL: "",
+
+  // ③ 贈品名稱（預設為老師定稿的「E2E™ 事業放大策略包」，要改才填）
+  GIFT_NAME: "",
+
+  // ④ 公開課日期，例如 "10/15（三）20:00"（尚未公布可留空）
+  CLASS_DATE: ""
+};
+
+(function () {
+  var cfg = window.OTO_CONFIG || {};
+
+  function fill(key, val) {
+    if (!val) return;
+    document.querySelectorAll('[data-cfg="' + key + '"]').forEach(function (el) {
+      el.textContent = val;
+    });
+  }
+  fill("giftName", cfg.GIFT_NAME);
+  fill("date", cfg.CLASS_DATE);
+
+  function wire(sel, url, label) {
+    document.querySelectorAll(sel).forEach(function (a) {
+      if (url) { a.href = url; return; }
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        alert(label + "尚未串接，請在 oto.html 的設定區填入網址。");
+      });
+    });
+  }
+  wire("[data-pay]", (cfg.PAY_URL || "").trim(), "付款連結");
+  wire("[data-gift]", (cfg.GIFT_URL || "").trim(), "贈品下載連結");
+
+  var btn = document.getElementById("declineBtn");
+  var bye = document.getElementById("bye");
+  var offer = document.getElementById("offer");
+  if (btn) {
+    btn.addEventListener("click", function () {
+      offer.style.display = "none";
+      bye.classList.add("on");
+      bye.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  }
+})();
+</script>
+</body>
+</html>

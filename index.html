@@ -10,6 +10,53 @@
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css?v=20260818-v11">
 <link rel="stylesheet" href="css/world-stage-v8.css?v=20260818-static7">
+<style>
+/* ══ V11 新增區塊 ══ */
+.hero-say{margin-top:18px;font-size:clamp(15px,1.9vw,18px);line-height:1.9;color:var(--ink-dim);max-width:32em}
+.v11-q .q{border-top:1px solid var(--line);padding:26px 0;font-size:clamp(18px,2.5vw,26px);
+          font-weight:700;line-height:1.55;color:var(--ink)}
+.v11-q .q:last-of-type{border-bottom:1px solid var(--line)}
+.v11-verdict{margin-top:30px;font-size:clamp(17px,2.2vw,22px);font-weight:700;line-height:1.7;color:var(--ink)}
+.v11-verdict em{color:var(--lime);font-style:normal}
+.v11-note{margin-top:18px;font-size:16px;line-height:1.95;color:var(--ink-dim);max-width:42em}
+.v11-blocks{list-style:none;margin:44px 0 0;padding:0;display:grid;gap:1px;background:var(--line);
+            border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.v11-blocks li{background:var(--bg);padding:28px 26px}
+.v11-blocks .vb-id{font-family:var(--display);font-size:20px;color:var(--lime);opacity:.85;margin-bottom:10px}
+.v11-blocks h4{font-size:clamp(18px,2.3vw,23px);font-weight:900;color:var(--ink);line-height:1.5}
+.v11-blocks p{margin-top:12px;font-size:15.5px;line-height:1.9;color:var(--ink-dim)}
+.v11-blocks strong{color:var(--ink)}
+.v11-pull{border-left:3px solid var(--lime);padding:8px 0 8px 24px;margin:40px 0;
+          font-size:clamp(19px,2.5vw,27px);font-weight:700;line-height:1.6;color:var(--ink)}
+.v11-pull em{color:var(--lime);font-style:normal}
+.v11-layers{margin-top:38px;display:grid;gap:1px;background:var(--line);
+            border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.v11-layers div{background:var(--bg);padding:26px}
+.v11-layers h5{font-size:17.5px;font-weight:900;color:var(--lime);line-height:1.5}
+.v11-layers p{margin-top:10px;font-size:15.5px;line-height:1.9;color:var(--ink-dim)}
+.v11-table{margin-top:40px;width:100%;border-collapse:collapse;font-size:15px}
+.v11-table th,.v11-table td{border:1px solid var(--line);padding:16px 14px;text-align:left;line-height:1.7}
+.v11-table th{font-family:var(--label);font-size:11.5px;letter-spacing:.16em;color:var(--ink-faint);font-weight:700}
+.v11-table td:first-child{font-weight:700;color:var(--ink);white-space:nowrap}
+.v11-table tr:last-child td{background:rgba(200,247,74,.06)}
+.v11-table tr:last-child td:first-child,.v11-table em{color:var(--lime);font-style:normal;font-weight:700}
+.v11-wrapscroll{overflow-x:auto}
+.v11-big{margin-top:44px;font-size:clamp(24px,4.4vw,46px);font-weight:900;line-height:1.35;color:var(--ink);letter-spacing:-.01em}
+.v11-big em{color:var(--lime);font-style:normal}
+.v11-big small{display:block;margin-top:14px;font-size:clamp(15px,1.8vw,17px);font-weight:400;color:var(--ink-dim);line-height:1.9}
+.v11-pfm{margin-top:40px;display:grid;gap:34px}
+.v11-pfm h4{font-size:clamp(22px,3vw,30px);font-weight:900;color:var(--lime);line-height:1.4}
+.v11-pfm p{margin-top:12px;font-size:15.5px;line-height:1.95;color:var(--ink-dim);max-width:44em}
+.lr-en{display:block;font-family:var(--label);font-size:10.5px;font-weight:700;letter-spacing:.22em;
+       color:var(--ink-faint);margin-bottom:5px}
+.v11-story p{font-size:16.5px;line-height:2;color:var(--ink-dim);max-width:44em}
+.v11-story p+p{margin-top:16px}
+.v11-story strong{color:var(--ink)}
+/* story 內的大字與引言不吃上面那條 p 規則 */
+.v11-story p.v11-pull{font-size:clamp(19px,2.5vw,27px);font-weight:700;line-height:1.6;color:var(--ink);max-width:none}
+.v11-story p.v11-big{font-size:clamp(24px,4.4vw,46px);font-weight:900;line-height:1.35;color:var(--ink);max-width:none}
+.v11-story p.v11-big small{font-size:clamp(15px,1.8vw,17px);font-weight:400;line-height:1.9;color:var(--ink-dim)}
+</style>
 </head>
 <body>
 
@@ -33,9 +80,12 @@
       <span class="ht-line ht-red" data-split>ENTERPRISE</span>
     </h1>
     <p class="hero-sub" data-clauses>
-      <span class="cl">把你的專業，</span>
-      <span class="cl">變成市場認可、願意買單、</span>
-      <span class="cl">能夠放大的<em>影響力資產</em>。</span>
+      <span class="cl">你的影響力，</span>
+      <span class="cl">從你<em>不在場</em>開始。</span>
+    </p>
+    <p class="hero-say" data-clauses>
+      <span class="cl">把你的專業，變成市場認可、</span>
+      <span class="cl">願意買單、能夠放大的影響力資產。</span>
     </p>
     <div class="hero-cta-wrap" data-reveal>
       <a href="#gifts" class="cta-btn js-cta">免費領取 E2E™ 事業放大策略包<span class="cta-arr">→</span></a>
@@ -61,6 +111,27 @@
 </header>
 
 <main>
+
+<!-- ═══════════ V11-A 三個問題 ═══════════ -->
+<section class="section v11-q">
+  <div class="wrap">
+    <p class="sec-kicker" data-reveal>THREE QUESTIONS</p>
+    <h2 class="sec-title" data-lines>先回答三個問題</h2>
+
+    <p class="q" data-clauses><span class="cl">如果拿掉你本人，</span><span class="cl">你的思想還能不能被傳播？</span></p>
+    <p class="q" data-clauses><span class="cl">如果你不親自銷售，</span><span class="cl">你的專業還能不能成交？</span></p>
+    <p class="q" data-clauses><span class="cl">如果公司擴張，</span><span class="cl">你的方法能不能被團隊複製？</span></p>
+
+    <p class="v11-verdict" data-clauses>
+      <span class="cl">三個都不能，你是<em>專家</em>。</span>
+      <span class="cl">三個都能，你已經是<em>企業</em>。</span>
+    </p>
+    <p class="v11-note" data-reveal>
+      大部分人的答案落在中間——而中間是最貴的位置。
+      因為你已經付出了企業家的時間，拿到的卻還是專家的收入結構。
+    </p>
+  </div>
+</section>
 
 <!-- ═══════════ S4 痛點 HOOK（深色）═══════════ -->
 <section class="pain-hook section dark">
@@ -166,6 +237,41 @@
         </p>
       </div>
     </div>
+  </div>
+</section>
+
+<!-- ═══════════ V11-B 為什麼是現在 ═══════════ -->
+<section class="section v11-now">
+  <div class="wrap">
+    <p class="sec-kicker" data-reveal>WHY NOW</p>
+    <h2 class="sec-title" data-lines>為什麼是現在</h2>
+    <p class="sec-sub" data-clauses>
+      <span class="cl">這件事十年前就成立。</span>
+      <span class="cl">但這兩年，它從「值得處理」</span>
+      <span class="cl">變成「來不及不處理」。</span>
+    </p>
+
+    <ol class="v11-blocks">
+      <li>
+        <p class="vb-id">01</p>
+        <h4>內容的成本歸零了</h4>
+        <p>一份教材，AI 三分鐘生完。一支影片，一個下午做十支。市面上的課程、內容、專家，從來沒有這麼多過。</p>
+        <p>內容不值錢了。但 AI 做不到一件事：它可以生出內容，卻決定不了什麼值得被相信。</p>
+        <p><strong>所以現在難的不是「怎麼講」，是「講什麼」，以及你把這些內容組織成什麼樣子。</strong></p>
+      </li>
+      <li>
+        <p class="vb-id">02</p>
+        <h4>台灣正在交棒</h4>
+        <p>這幾年有一批公司在換手。交棒交得下去的，靠的從來不是感情，是上一代的判斷方式已經被寫下來、教得出去。</p>
+        <p><strong>方法沒有離開創辦人的公司，交不了棒。只能換人，不能傳承。</strong></p>
+      </li>
+      <li>
+        <p class="vb-id">03</p>
+        <h4>只能由本人交付的專業，正在貶值</h4>
+        <p>專業每多累積一年，價值應該越高。但如果它只跟著你走，實際上是反過來的——你的時間越來越少，體力越來越差，而市場每年都在換新的人。</p>
+        <p><strong>專業會增值。「只能由本人交付的專業」會貶值。</strong></p>
+      </li>
+    </ol>
   </div>
 </section>
 
@@ -319,6 +425,99 @@
   </div>
 </section>
 
+<!-- ═══════════ V11-C 分水嶺 ═══════════ -->
+<section class="section dark">
+  <div class="wrap">
+    <p class="sec-kicker" data-reveal>THE DIVIDE</p>
+    <h2 class="sec-title" data-lines>影響力，終究是在個人</h2>
+    <p class="sec-sub" data-clauses>
+      <span class="cl">你講話有魅力、台風穩、</span>
+      <span class="cl">臨場反應快——這些都是真本事。</span>
+      <span class="cl">但它們只到你為止。</span>
+      <span class="cl">你在，影響力在；你不在，就沒了。</span>
+    </p>
+
+    <p class="v11-pull" data-reveal>
+      <em>教育影響力</em>，是你的專業能讓多少人聽懂、信任，然後行動。<br>
+      而且不必你親自到場。
+    </p>
+
+    <div class="v11-layers">
+      <div>
+        <h5>第一層　聽懂</h5>
+        <p>不是你講得夠清楚，是市場能用他自己的話，把你的價值講給別人聽。你講了十分鐘，對方轉述給朋友時只剩一句話。那一句是什麼，決定了你的定位。</p>
+      </div>
+      <div>
+        <h5>第二層　信任</h5>
+        <p>不是他覺得你厲害，是他能預測跟你合作會得到什麼。信任不是感覺，是可預測性。而可預測性來自你的方法有名字、有步驟、有標準。</p>
+      </div>
+      <div>
+        <h5>第三層　行動</h5>
+        <p>不是他想買，是他知道下一步該做什麼，而且那一步不需要你在旁邊推。</p>
+      </div>
+    </div>
+
+    <p class="v11-note" data-reveal>
+      九成的專業者卡在第一層。少數人做到第二層，但信任綁在他本人身上。
+      第三層幾乎沒有人做到——<strong>而那一層，才是事業跟工作的分界線。</strong>
+    </p>
+
+    <div class="v11-wrapscroll">
+      <table class="v11-table">
+        <tr><th></th><th>教育對他來說是</th><th>結果</th></tr>
+        <tr><td>講師</td><td>商品</td><td>講完就結束，收入跟場次綁死</td></tr>
+        <tr><td>一般企業家</td><td>成本</td><td>預算一緊就砍</td></tr>
+        <tr><td>教育型企業家</td><td><em>引擎</em></td><td>不在場的時候，影響力還在發生</td></tr>
+      </table>
+    </div>
+
+    <p class="v11-note" data-reveal>
+      <strong>教育型企業家，是用教育做生意的人。</strong>不是賣課的人，是把教育放進商業模式裡的人。
+      他用教育開發市場、成交客戶、複製團隊、擴張通路、培養接班人。
+      教育不是他的產品，是他拿到這五件事的方法。
+    </p>
+  </div>
+</section>
+
+<!-- ═══════════ V11-D 這不是新方法 ═══════════ -->
+<section class="section">
+  <div class="wrap">
+    <p class="sec-kicker" data-reveal>THE EVIDENCE</p>
+    <h2 class="sec-title" data-lines>這不是新方法</h2>
+    <p class="v11-note" data-reveal>
+      以往我們是這樣經營企業的：有好產品，就會有人買。花錢買廣告，就會有流量。
+      員工不會做，就送去上課。客戶不了解，就多解釋幾次。老闆帶頭衝，團隊跟著跑。
+    </p>
+    <p class="v11-note" data-reveal>
+      但這幾年你會發現：產品好，市場不一定聽得懂。廣告一停，流量就沒了。
+      上完課回來，還是照舊。解釋一百次，不如讓他自己想通一次。老闆一停，公司就停。
+    </p>
+    <p class="v11-note" data-reveal>
+      差別在哪？前面那五件事，都是你在推。真正有效的，是讓對方自己走過來。
+      <strong>而讓人自己走過來的方法，就是教育。</strong>
+    </p>
+    <p class="v11-note" data-reveal>
+      Apple 沒有在賣規格，它教消費者理解科技。Nike 沒有在賣鞋，它教市場理解運動這件事。
+      HubSpot 更直接，它用內容教育整個行業，然後行業回頭跟它買軟體。
+      而企業大學，則是把創辦人的方法、文化與 Know-how，變成組織的資產。
+    </p>
+
+    <p class="v11-big" data-reveal>
+      Every Company Is<br>an <em>Education</em> Company.
+      <small>每一家企業，都應該具備教育市場的能力。</small>
+    </p>
+
+    <p class="v11-note" data-reveal style="margin-top:40px">
+      你花錢買的曝光是租來的，預算一停就沒了。但一個人聽懂了你的話，下次還會來聽；
+      聽了三次，他開始相信你；相信你之後，他才會買。
+    </p>
+    <p class="v11-pull" data-reveal>
+      買來的注意力會消失，<em>教會的理解會留下</em>。<br>
+      這是市場上唯一一種會複利的資產。
+    </p>
+  </div>
+</section>
+
 <!-- ═══════════ S7 專業複利法 ═══════════ -->
 <section class="method section">
   <div class="wrap">
@@ -366,7 +565,7 @@
         <article class="loop-row" data-row>
           <span class="lr-node" aria-hidden="true"></span>
           <div class="lr-head"><p class="lr-id">LOOP 01</p><p class="lr-state">待機</p></div>
-          <h4 class="lr-name">市場定位</h4>
+          <h4 class="lr-name"><span class="lr-en">POSITION</span>市場定位</h4>
           <p class="lr-desc" data-clauses>
             <span class="cl">讓市場在特定問題上，</span>
             <span class="cl">優先想到你。</span>
@@ -377,7 +576,7 @@
         <article class="loop-row" data-row>
           <span class="lr-node" aria-hidden="true"></span>
           <div class="lr-head"><p class="lr-id">LOOP 02</p><p class="lr-state">待機</p></div>
-          <h4 class="lr-name">內容資產</h4>
+          <h4 class="lr-name"><span class="lr-en">IP</span>內容資產</h4>
           <p class="lr-desc" data-clauses>
             <span class="cl">讓做過一次的內容，</span>
             <span class="cl">不再只創造一次價值。</span>
@@ -388,7 +587,7 @@
         <article class="loop-row" data-row>
           <span class="lr-node" aria-hidden="true"></span>
           <div class="lr-head"><p class="lr-id">LOOP 03</p><p class="lr-state">待機</p></div>
-          <h4 class="lr-name">產品收入</h4>
+          <h4 class="lr-name"><span class="lr-en">ENTERPRISE</span>產品收入</h4>
           <p class="lr-desc" data-clauses>
             <span class="cl">讓客戶買的不是你的時間，</span>
             <span class="cl">而是一個清楚的結果。</span>
@@ -399,7 +598,7 @@
         <article class="loop-row" data-row>
           <span class="lr-node" aria-hidden="true"></span>
           <div class="lr-head"><p class="lr-id">LOOP 04</p><p class="lr-state">待機</p></div>
-          <h4 class="lr-name">成交決策</h4>
+          <h4 class="lr-name"><span class="lr-en">VOICE</span>成交決策</h4>
           <p class="lr-desc" data-clauses>
             <span class="cl">讓一場表達不只得到掌聲，</span>
             <span class="cl">而是累積成你的信任資產。</span>
@@ -410,7 +609,7 @@
         <article class="loop-row" data-row>
           <span class="lr-node" aria-hidden="true"></span>
           <div class="lr-head"><p class="lr-id">LOOP 05</p><p class="lr-state">待機</p></div>
-          <h4 class="lr-name">合作成長</h4>
+          <h4 class="lr-name"><span class="lr-en">ACADEMY</span>合作成長</h4>
           <p class="lr-desc" data-clauses>
             <span class="cl">讓你不再只靠自己增加產能，</span>
             <span class="cl">而是透過夥伴擴大市場。</span>
@@ -428,6 +627,38 @@
       </div>
     </div>
 
+  </div>
+</section>
+
+<!-- ═══════════ V11-E 人財物 ═══════════ -->
+<section class="section">
+  <div class="wrap">
+    <p class="sec-kicker" data-reveal>WHAT YOU GET BACK</p>
+    <h2 class="sec-title" data-lines>練成之後，你換回什麼</h2>
+    <p class="sec-sub" data-clauses>
+      <span class="cl">商業模式畫布上，</span>
+      <span class="cl">人、財、物叫做關鍵資源。</span>
+      <span class="cl">過去你得用時間、人情</span>
+      <span class="cl">或折扣去換。</span>
+    </p>
+
+    <div class="v11-pfm">
+      <div>
+        <h4>人</h4>
+        <p>招人的時候，你不必再靠加薪跟人情。你講得出這家公司要去哪裡、為什麼值得跟，對的人自己會找上門。</p>
+        <p>進來之後，你也不必每一個都親自帶。方法有教材、有標準、有可以照著做的步驟，第二個人就做得出跟你差不多的結果。你的公司才有可能大於你一個人。</p>
+      </div>
+      <div>
+        <h4>財</h4>
+        <p>客戶不是被你說服才買的，是他自己搞懂了怎麼判斷，然後選了你。這種成交比較快，殺價也比較少——因為他買的不是便宜，是確定。</p>
+        <p>募資也一樣。投資人不是看你講得多熱血，是看你能不能說清楚這門生意怎麼運轉、憑什麼是你做得起來。講不清楚，估值就打折。</p>
+      </div>
+      <div>
+        <h4>物</h4>
+        <p>通路、據點、異業合作，談的時候對方要的不是你的熱情，是「跟你合作我拿得到什麼」。</p>
+        <p>通路要嘛靠權力，要嘛靠關係。你沒有權力的時候，剩下的方法就是讓對方先聽懂，然後願意賭你一把。</p>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -757,6 +988,36 @@
   </div>
 </section>
 
+<!-- ═══════════ V11-F 這條路我走過一次 ═══════════ -->
+<section class="section v11-story">
+  <div class="wrap">
+    <p class="sec-kicker" data-reveal>WHY ME</p>
+    <h2 class="sec-title" data-lines>這條路，我走過一次</h2>
+
+    <p data-reveal style="margin-top:30px">
+      我十八歲創業做補教，在第一線站了八年。二十六歲那年，我看人口曲線，
+      發現死亡人口開始超過出生人口，判斷市場要衰退，提前三年布局，把股份脫手離開。
+    </p>
+    <p data-reveal>離開的時候我還有錢，離開的那家公司還能繼續增長。</p>
+    <p data-reveal>
+      離場的條件是簽競業條款，五年不能碰補教。五年到期之後，好幾家補教業回頭來找我。
+      他們說的話我記得很清楚——
+    </p>
+
+    <p class="v11-pull" data-reveal>「老師你不用講課，<em>你來招生就好</em>。」</p>
+
+    <p data-reveal>
+      那五年我一堂課都沒上。他們要的已經不是我會不會講，
+      是那套<strong>已經離開我本人、還在市場上運作的東西</strong>。
+    </p>
+
+    <p class="v11-big" data-reveal style="margin-top:52px">
+      這不是一套<br>從國外買回來的<em>課程</em>。
+      <small>它是在台灣的第一線長出來的，然後拿到國際舞台上，驗證了一次又一次。</small>
+    </p>
+  </div>
+</section>
+
 <!-- ═══════════ S10 診斷（深色）═══════════ -->
 <section class="diagnose section dark">
   <div class="wrap">
@@ -792,6 +1053,31 @@
       </p>
       <p class="df-words"><span>定位</span><span>內容</span><span>產品</span><span>成交</span><span>合作</span></p>
     </div>
+  </div>
+</section>
+
+<!-- ═══════════ V11-G 如果先不處理 ═══════════ -->
+<section class="section dark">
+  <div class="wrap">
+    <p class="sec-kicker" data-reveal>THE COST OF WAITING</p>
+    <h2 class="sec-title" data-lines>如果先不處理</h2>
+
+    <p class="v11-note" data-reveal style="margin-top:26px">
+      不會怎樣。你明年還是接得到案子，還是有人找你上課，收入大概也差不多。
+    </p>
+    <p class="v11-note" data-reveal><strong>問題不在明年，在第五年。</strong></p>
+    <p class="v11-note" data-reveal>
+      現在市場還分得出來，哪些是 AI 生的，哪些是真的有人做過。但這個縫隙正在關。
+      等到 AI 生的東西看起來跟你講的一樣好，你剩下的賣點就只有「本人到場」——
+      而本人是最貴的、最難複製的，也是最先被拿掉的。
+    </p>
+    <p class="v11-note" data-reveal>
+      你的方法在腦袋裡放越久，越難拆出來。今年整理跟三年後整理，是同一件事，
+      但三年後你會多累三年。
+    </p>
+    <p class="v11-pull" data-reveal>
+      這件事晚做沒有比較容易，<em>只會比較貴</em>。
+    </p>
   </div>
 </section>
 
@@ -907,7 +1193,10 @@ window.LP_CONFIG = {
 
   // ② 若你想改成直接外連到現成報名頁（例如 Google 表單），
   //    填在這裡；填了之後 CTA 就不會開啟站內表單。
-  SIGNUP_URL: ""
+  SIGNUP_URL: "",
+
+  // ③ 報名成功後導向的感謝頁 / OTO 頁。留空則沿用站內「已送出」提示。
+  THANKYOU_URL: "oto.html"
 };
 </script>
 <script src="js/gsap.min.js"></script>
