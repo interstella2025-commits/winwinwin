@@ -711,7 +711,15 @@ strong { font-weight: 700; color: var(--ink); }
 }
 .pf-main { font-size: clamp(17px, 4.6vw, 21px); font-weight: 900; line-height: 1.7; }
 .pf-main em { color: var(--lime); }
-.pf-sub { margin-top: 10px; font-size: 14px; color: var(--ink-faint); }
+.pf-sub {
+  margin-top: 22px;
+  font-size: clamp(19px, 4.6vw, 27px);
+  font-weight: 900;
+  line-height: 1.6;
+  letter-spacing: -.005em;
+  color: var(--ink);
+}
+.pf-sub .cl:last-child { color: var(--lime); }
 
 /* ─── S9 講師 ─── */
 .mentor { background: var(--bg); }
