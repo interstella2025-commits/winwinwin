@@ -193,13 +193,35 @@ function init() {
      loader 的黑幕就一直蓋著整頁（症狀＝Hero 不見了）。
      載入 4 秒後、或使用者切回這個分頁時，若黑幕還在就直接跳到動畫結尾。 */
   const introStart = Date.now();
+  let rescued = false;
+
+  /* 直接把 hero 設成「動畫播完」的樣子。
+     背景分頁的 requestAnimationFrame 是凍住的，intro.progress(1) 不保證
+     render 得出來，所以這裡逐項 gsap.set，完全不依賴 timeline 有沒有跑。 */
+  const forceIntroEnd = () => {
+    if (rescued) return;
+    rescued = true;
+    intro.progress(1);
+    gsap.set("#loader", { display: "none" });
+    gsap.set(".hero-kicker, .hero-cta-wrap", { autoAlpha: 1, y: 0 });
+    gsap.set(".hero-title .char, .hero-sub .cl", { yPercent: 0 });
+    gsap.set(".hero-card", { clipPath: "inset(0% 0% 0% 0%)", yPercent: 0 });
+    gsap.set(".hero-card img", { scale: 1 });
+    gsap.set("#marquee1", { yPercent: 0, rotation: -1.6, scale: 1.03 });
+    ScrollTrigger.refresh();   /* 背景載入時算錯的觸發點重算一次 */
+  };
+
   const rescueIntro = () => {
     const l = document.getElementById("loader");
     if (!l || getComputedStyle(l).display === "none") return;   /* 已經正常收掉 */
-    if (Date.now() - introStart < 3800) return;                 /* 還在正常播放中 */
-    intro.progress(1);
+    if (Date.now() - introStart < 3800) {                       /* 還在正常播放，晚點再看一次 */
+      setTimeout(rescueIntro, 3800 - (Date.now() - introStart) + 200);
+      return;
+    }
+    forceIntroEnd();
   };
   setTimeout(rescueIntro, 4000);
+  setTimeout(rescueIntro, 9000);            /* 背景分頁 timer 被節流時的第二道保險 */
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) rescueIntro();
   });
