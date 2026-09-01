@@ -1,0 +1,20 @@
+# macOS
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# 編輯器
+.vscode/
+.idea/
+*.swp
+
+# 部署與相依（本專案是純靜態，正常不會有，先擋著）
+node_modules/
+.vercel/
+.env
+.env.local
