@@ -1,0 +1,7 @@
+import { sqliteTable, text, integer, uniqueIndex } from 'drizzle-orm/sqlite-core';
+export const applications = sqliteTable('applications', {id:text('id').primaryKey(),name:text('name').notNull(),email:text('email').notNull(),phone:text('phone').notNull(),profession:text('profession').notNull(),stage:text('stage').notNull(),topic:text('topic').notNull(),sessionCode:text('session_code'),lineName:text('line_name'),createdAt:text('created_at').notNull()});
+
+export const paymentOrders=sqliteTable('payment_orders',{
+ id:text('id').primaryKey(),applicationId:text('application_id').notNull(),orderNo:text('order_no').notNull(),merchant:text('merchant').notNull(),amount:integer('amount').notNull(),token:text('token').notNull(),requestId:text('request_id').notNull(),status:text('status').notNull().default('pending'),createdAt:text('created_at').notNull(),consentAt:text('consent_at').notNull(),source:text('source').notNull(),paidAt:text('paid_at'),providerTradeNo:text('provider_trade_no'),notifyCount:integer('notify_count').notNull().default(0),emailStatus:text('email_status').notNull().default('pending'),emailId:text('email_id'),emailLease:integer('email_lease').notNull().default(0)
+},t=>[uniqueIndex('payment_order_no_unique').on(t.orderNo),uniqueIndex('payment_token_unique').on(t.token),uniqueIndex('payment_request_unique').on(t.requestId),uniqueIndex('payment_provider_trade_unique').on(t.providerTradeNo)]);
+export const paymentRateLimits=sqliteTable('payment_rate_limits',{bucket:text('bucket').primaryKey(),attempts:integer('attempts').notNull()});
