@@ -1,0 +1,83 @@
+diff --git a/app/api/payuni/checkout/route.ts b/app/api/payuni/checkout/route.ts
+index 20d094e..2d63813 100644
+--- a/app/api/payuni/checkout/route.ts
++++ b/app/api/payuni/checkout/route.ts
+@@ -1,8 +1,9 @@
+ import { AMOUNT,PRODUCT,VERSION,encrypt,hash,escape } from '../../../../lib/payuni/core';
+-import { settings,orderBy,json } from '../../../../lib/payuni/server';
++import { settings,orderBy,json,publicOrigin } from '../../../../lib/payuni/server';
+ export async function GET(request:Request){try{
+  const token=new URL(request.url).searchParams.get('token');if(!token||! /^[0-9a-f-]{36}$/i.test(token))return json({error:'付款連結無效。'},400);
+  const c=settings(),order=await orderBy('token',token);if(!order)return json({error:'找不到訂單。'},404);
++ c.origin=publicOrigin(order.source);
+  if(order.status==='paid')return Response.redirect(c.origin+`/payment?token=${token}`,303);
+  if(order.status!=='pending'||Date.now()-Date.parse(order.created_at)>20*60000)return Response.redirect(c.origin+`/payment?token=${token}`,303);
+  const EncryptInfo=encrypt({MerID:c.merchant,Timestamp:Math.floor(Date.now()/1000),MerTradeNo:order.order_no,TradeAmt:order.amount,ProdDesc:order.source==='win-test-1'?'WIN NT$1 金流驗收測試':PRODUCT,ReturnURL:c.origin+'/api/payuni/return',NotifyURL:c.origin+'/api/payuni/notify',BackURL:c.origin+`/payment?token=${token}`,Credit:1,TradeLExpireSec:600,Lang:'zh-tw'},c);
+diff --git a/app/api/payuni/create/route.ts b/app/api/payuni/create/route.ts
+index ae547d2..f1ea9bc 100644
+--- a/app/api/payuni/create/route.ts
++++ b/app/api/payuni/create/route.ts
+@@ -1,5 +1,5 @@
+ import { AMOUNT,digest,validate } from '../../../../lib/payuni/core';
+-import { db,settings,json,orderBy } from '../../../../lib/payuni/server';
++import { db,settings,json,orderBy,VERCEL_ORIGIN } from '../../../../lib/payuni/server';
+ export async function POST(request:Request){
+  const origin=request.headers.get('origin');if(!origin||origin!==new URL(request.url).origin)return json({error:'請從本頁送出報名。'},403);
+  let c;try{c=settings()}catch{return json({error:'付款服務尚未開放，請稍後再試。'},503)}
+@@ -19,7 +19,7 @@ export async function POST(request:Request){
+  const id=crypto.randomUUID(),token=crypto.randomUUID(),application=crypto.randomUUID(),now=new Date().toISOString();const orderNo='WIN'+Date.now().toString(36).toUpperCase()+crypto.randomUUID().replaceAll('-','').slice(0,10).toUpperCase();
+  await db().batch([
+  db().prepare('INSERT INTO applications (id,name,email,phone,profession,stage,topic,session_code,line_name,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)').bind(application,data.name,data.email,data.phone,data.profession,data.stage,data.topic,data.sessionCode,data.lineName,now),
+- db().prepare('INSERT INTO payment_orders (id,application_id,order_no,merchant,amount,token,request_id,status,created_at,consent_at,source) VALUES (?,?,?,?,?,?,?,\'pending\',?,?,?)').bind(id,application,orderNo,c.merchant,AMOUNT,token,requestKey,now,now,c.origin+'/#apply')]);
++ db().prepare('INSERT INTO payment_orders (id,application_id,order_no,merchant,amount,token,request_id,status,created_at,consent_at,source) VALUES (?,?,?,?,?,?,?,\'pending\',?,?,?)').bind(id,application,orderNo,c.merchant,AMOUNT,token,requestKey,now,now,(request.headers.get('x-win-public-origin')===VERCEL_ORIGIN?VERCEL_ORIGIN:c.origin)+'/#apply')]);
+  return json({checkoutUrl:`/api/payuni/checkout?token=${token}`});
+  }catch{return json({error:'暫時無法建立付款，請保留資料稍後再試。'},503)}
+ }
+diff --git a/app/api/payuni/return/route.ts b/app/api/payuni/return/route.ts
+index 8f9df40..a975868 100644
+--- a/app/api/payuni/return/route.ts
++++ b/app/api/payuni/return/route.ts
+@@ -1,10 +1,10 @@
+ import { decode,verifyOrder } from '../../../../lib/payuni/core';
+-import { settings,readCallback,orderBy } from '../../../../lib/payuni/server';
++import { settings,readCallback,orderBy,publicOrigin } from '../../../../lib/payuni/server';
+ export async function POST(request:Request){
+  const origin='https://signature-speaker.elsaliao.chatgpt.site';
+  try{const c=settings(),data=decode(await readCallback(request),c),order=await orderBy('order_no',data.MerTradeNo||'');if(!order)throw new Error();verifyOrder(data,order,c);
+  // Browser return never changes payment status. Only the verified notification does.
+- return Response.redirect(origin+`/payment?token=${order.token}`,303);
++ return Response.redirect(publicOrigin(order.source)+`/payment?token=${order.token}`,303);
+  }catch{return Response.redirect(origin+'/payment?state=invalid',303)}
+ }
+ export function GET(){return Response.redirect('https://signature-speaker.elsaliao.chatgpt.site/payment?state=invalid',303)}
+diff --git a/checks/payment.test.cjs b/checks/payment.test.cjs
+index 0f13dcf..58f9a6e 100644
+--- a/checks/payment.test.cjs
++++ b/checks/payment.test.cjs
+@@ -41,5 +41,15 @@ assert.equal((await notify.POST(callback(values))).status,200);assert.match(last
+ assert.equal(sqlite.prepare("SELECT count(*) n FROM payment_orders WHERE source='win-test-1'").get().n,1);
+ });
+ await test('per-minute checkout rate limit enforced',async()=>{let limited=false;for(let i=0;i<6;i++){const r=await create.POST(request({...valid,requestId:crypto.randomUUID()}));if(r.status===429)limited=true}assert.ok(limited)});
++await test('Vercel orders use only the allowlisted origin for signed callbacks and browser return',async()=>{
++ const vercel='https://win-lecturer-20261018.vercel.app';
++ const req=request({...valid,requestId:crypto.randomUUID()});req.headers.set('cf-connecting-ip','192.0.2.2');req.headers.set('x-win-public-origin',vercel);
++ const created=await create.POST(req);assert.equal(created.status,200);const url=(await created.json()).checkoutUrl;
++ const token=new URL(url,origin).searchParams.get('token');const order=sqlite.prepare('SELECT * FROM payment_orders WHERE token=?').get(token);assert.equal(order.source,vercel+'/#apply');
++ const html=await (await checkout.GET(new Request(origin+url))).text();const fields=Object.fromEntries([...html.matchAll(/name="([^"]+)" value="([^"]+)"/g)].map(m=>[m[1],m[2]]));
++ const data=core.decode(fields,cfg);assert.equal(data.NotifyURL,vercel+'/api/payuni/notify');assert.equal(data.ReturnURL,vercel+'/api/payuni/return');assert.equal(data.BackURL,vercel+'/payment?token='+token);assert.equal(data.TradeAmt,'399');
++ const r=await returned.POST(callback({MerID:cfg.merchant,MerTradeNo:order.order_no,TradeAmt:399,TradeStatus:'1',TradeNo:'VERCELMOCK'}));assert.equal(r.headers.get('location'),vercel+'/payment?token='+token);assert.equal(sqlite.prepare('SELECT status FROM payment_orders WHERE token=?').get(token).status,'pending');
++ const server=load('lib/payuni/server.ts');assert.equal(server.publicOrigin('https://evil.example/#apply'),origin);
++});
+ console.log(`${passes} payment checks passed; mock credentials, in-memory database, no real payments or emails.`);
+ })().catch(e=>{console.error(e);process.exitCode=1});
+diff --git a/lib/payuni/server.ts b/lib/payuni/server.ts
+index 98deeca..7a2c89d 100644
+--- a/lib/payuni/server.ts
++++ b/lib/payuni/server.ts
+@@ -28,3 +28,6 @@ export async function sendPaidEmail(order:Order){
+  await db().prepare("UPDATE payment_orders SET email_status='sent',email_id=?,email_lease=0 WHERE id=?").bind(result.id||null,order.id).run();return true;
+  }catch{await db().prepare("UPDATE payment_orders SET email_status='failed',email_lease=0 WHERE id=? AND email_status='sending'").bind(order.id).run();return false}
+ }
++
++export const VERCEL_ORIGIN="https://win-lecturer-20261018.vercel.app";
++export function publicOrigin(source:string){return source===VERCEL_ORIGIN+"/#apply"?VERCEL_ORIGIN:settings().origin}
