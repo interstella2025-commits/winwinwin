@@ -1,6 +1,7 @@
 # WIN Vercel deployment
 
-Production URL: https://win-lecturer-20261018.vercel.app
+Production URL: https://2027course.win-lin.com
+Previous Vercel alias remains available: https://win-lecturer-20261018.vercel.app
 Project: interstellas-projects/win-lecturer-20261018
 GitHub production branch: win-sites-2026-10-18
 Root directory: vercel-win

@@ -51,7 +51,7 @@ index 8f9df40..a975868 100644
  }
  export function GET(){return Response.redirect('https://signature-speaker.elsaliao.chatgpt.site/payment?state=invalid',303)}
 diff --git a/checks/payment.test.cjs b/checks/payment.test.cjs
-index 0f13dcf..58f9a6e 100644
+index 0f13dcf..e6641b5 100644
 --- a/checks/payment.test.cjs
 +++ b/checks/payment.test.cjs
 @@ -41,5 +41,15 @@ assert.equal((await notify.POST(callback(values))).status,200);assert.match(last
@@ -59,7 +59,7 @@ index 0f13dcf..58f9a6e 100644
  });
  await test('per-minute checkout rate limit enforced',async()=>{let limited=false;for(let i=0;i<6;i++){const r=await create.POST(request({...valid,requestId:crypto.randomUUID()}));if(r.status===429)limited=true}assert.ok(limited)});
 +await test('Vercel orders use only the allowlisted origin for signed callbacks and browser return',async()=>{
-+ const vercel='https://win-lecturer-20261018.vercel.app';
++ const vercel='https://2027course.win-lin.com';
 + const req=request({...valid,requestId:crypto.randomUUID()});req.headers.set('cf-connecting-ip','192.0.2.2');req.headers.set('x-win-public-origin',vercel);
 + const created=await create.POST(req);assert.equal(created.status,200);const url=(await created.json()).checkoutUrl;
 + const token=new URL(url,origin).searchParams.get('token');const order=sqlite.prepare('SELECT * FROM payment_orders WHERE token=?').get(token);assert.equal(order.source,vercel+'/#apply');
@@ -71,7 +71,7 @@ index 0f13dcf..58f9a6e 100644
  console.log(`${passes} payment checks passed; mock credentials, in-memory database, no real payments or emails.`);
  })().catch(e=>{console.error(e);process.exitCode=1});
 diff --git a/lib/payuni/server.ts b/lib/payuni/server.ts
-index 98deeca..7a2c89d 100644
+index 98deeca..4b62f11 100644
 --- a/lib/payuni/server.ts
 +++ b/lib/payuni/server.ts
 @@ -28,3 +28,6 @@ export async function sendPaidEmail(order:Order){
@@ -79,5 +79,5 @@ index 98deeca..7a2c89d 100644
   }catch{await db().prepare("UPDATE payment_orders SET email_status='failed',email_lease=0 WHERE id=? AND email_status='sending'").bind(order.id).run();return false}
  }
 +
-+export const VERCEL_ORIGIN="https://win-lecturer-20261018.vercel.app";
-+export function publicOrigin(source:string){return source===VERCEL_ORIGIN+"/#apply"?VERCEL_ORIGIN:settings().origin}
++export const VERCEL_ORIGIN="https://2027course.win-lin.com";
++export function publicOrigin(source:string){return [VERCEL_ORIGIN,"https://win-lecturer-20261018.vercel.app"].find(origin=>source===origin+"/#apply")||settings().origin}

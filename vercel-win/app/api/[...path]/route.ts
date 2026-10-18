@@ -1,12 +1,13 @@
 const BACKEND='https://signature-speaker.elsaliao.chatgpt.site';
-const PUBLIC='https://win-lecturer-20261018.vercel.app';
+const PUBLIC='https://2027course.win-lin.com';
+const ORIGINS=new Set([PUBLIC,'https://win-lecturer-20261018.vercel.app']);
 const allowed=new Set(['payuni/create','payuni/checkout','payuni/status','payuni/notify','payuni/return','apply']);
 export const dynamic='force-dynamic';
 export const maxDuration=30;
 async function proxy(request:Request,{params}:{params:Promise<{path:string[]}>}){
  const path=(await params).path.join('/');
  if(!allowed.has(path))return new Response('Not found',{status:404});
- if(request.method==='POST'&&['payuni/create','apply'].includes(path)&&request.headers.get('origin')!==PUBLIC)return Response.json({error:'請從本頁送出報名。'},{status:403});
+ if(request.method==='POST'&&['payuni/create','apply'].includes(path)&&!ORIGINS.has(request.headers.get('origin')||''))return Response.json({error:'請從本頁送出報名。'},{status:403});
  const headers=new Headers();
  for(const key of ['content-type','accept']){const value=request.headers.get(key);if(value)headers.set(key,value)}
  headers.set('origin',BACKEND);headers.set('x-win-public-origin',PUBLIC);

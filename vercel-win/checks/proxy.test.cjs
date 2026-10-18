@@ -1,6 +1,6 @@
 const assert=require('node:assert/strict');const vm=require('node:vm');const ts=require('typescript');const fs=require('node:fs');
 const code=ts.transpileModule(fs.readFileSync('app/api/[...path]/route.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
-const origin='https://win-lecturer-20261018.vercel.app';let calls=[];
+const origin='https://2027course.win-lin.com';let calls=[];
 const ctx={exports:{},Request,Response,Headers,URL,AbortSignal,fetch:async(url,options)=>{calls.push({url,options});return new Response('OK',{headers:{'content-type':'text/plain'}})}};vm.runInNewContext(code,ctx);
 const params=path=>({params:Promise.resolve({path:path.split('/')})});
 (async()=>{
