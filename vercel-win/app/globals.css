@@ -50,3 +50,8 @@ section.precourse-info{padding:80px 8%;text-align:center;background:radial-gradi
 main>div:first-of-type>section{container-type:inline-size}
 .blueprint-cta-hit{left:12.75%;top:90.55%;width:74.5%;height:5.55%;display:flex;align-items:center;justify-content:center;gap:3cqw;background:linear-gradient(105deg,#ffe673 0%,#fff4a3 36%,#ffe46c 70%,#ffda4b 100%);border:2px solid #dba42f;box-shadow:inset 0 0 0 2px #fff8c6,0 0 12px #e7b23a99;color:#092e4b;font-family:Arial,'Noto Sans TC','Microsoft JhengHei',sans-serif;font-size:4.25cqw;font-weight:800;line-height:1;white-space:nowrap}
 .blueprint-cta-hit svg{width:2.2cqw;height:3.9cqw;fill:none;stroke:currentColor;stroke-width:2}
+
+/* Keep each registration heading phrase intact; wrap only after the comma. */
+.registration .form-heading{container-type:inline-size}
+.registration .form-heading h2{font-size:min(44px,8.8cqw)}
+.registration .form-heading h2 span{display:inline-block;white-space:nowrap}
