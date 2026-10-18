@@ -55,3 +55,16 @@ main>div:first-of-type>section{container-type:inline-size}
 .registration .form-heading{container-type:inline-size}
 .registration .form-heading h2{font-size:min(44px,8.8cqw)}
 .registration .form-heading h2 span{display:inline-block;white-space:nowrap}
+
+@media(max-width:600px){
+ .wrap-unit{display:inline-block;white-space:nowrap}
+ .precourse-info{container-type:inline-size}
+ .precourse-info h2{font-size:min(34px,11cqw)}
+ .heading-phrase{white-space:nowrap}
+ .precourse-info p,.registration p,.registration .consent,footer{text-wrap:pretty}
+ .course-summary p>span,.registration .consent>span{min-width:0}
+ .registration .form-heading>p:last-child{font-size:clamp(14px,4vw,17px)}
+ .precourse-cta{font-size:clamp(15px,4.2vw,17px);white-space:nowrap}
+ .precourse-cta>span{flex-shrink:0}
+ .precourse-details dd{min-width:0}
+}
