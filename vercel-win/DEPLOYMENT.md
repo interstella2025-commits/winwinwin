@@ -12,8 +12,10 @@ Architecture: Vercel serves Next.js pages and a fixed allowlist of uncached API 
 
 New Vercel orders store the allowlisted Vercel origin. Their encrypted PAYUNi ReturnURL/NotifyURL/BackURL point to Vercel; callbacks preserve raw signed form fields and forward to the existing verifying backend. Old orders keep the original origin. The browser return never marks an order paid. Only a verified provider notification does.
 
-Backend changes relative to sites-win-2026-10-18 are in backend-vercel-bridge.patch. Runtime deployment v24 backend SHA: 09ff801e7a381c7227a793ef68e73153c41d43f7. The patch additionally includes a mocked migration regression check.
+Backend changes relative to sites-win-2026-10-18 are in backend-vercel-bridge.patch. Runtime deployment v25 backend SHA: 037db2a33ced8bd645dfdbe3356eae67e89cd8dd. The patch additionally includes a mocked migration regression check.
 
 Validation: Next production build, npm audit 0 findings, 17 mocked backend payment checks, proxy regression checks; live homepage 200; live create fixes amount at NT$399; signed gateway form generated; forged callback 400 INVALID; previous real NT$1 order readable as paid/emailSent via Vercel. Resend dashboard previously confirmed Delivered. No new NT$399 charge was performed during migration.
 
 Commands: npm ci; npm run build; node checks/proxy.test.cjs.
+
+Custom domain DNS: 2027course CNAME 0cc939a0c7526627.vercel-dns-016.com (DNS only). Vercel reported Valid Configuration; HTTPS and custom-domain checkout checked on 2026-10-18. Existing root/www and Resend DNS records preserved.
