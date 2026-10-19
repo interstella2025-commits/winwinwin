@@ -148,3 +148,7 @@ main>div:first-of-type>section{container-type:inline-size}
 
 .credential-gallery .revision-photo{aspect-ratio:4/5;background:#f5f9fc}
 .credential-gallery .revision-photo img{object-fit:contain}
+
+/* Keep the header action together on narrow phones. */
+.nav-cta{white-space:nowrap;flex-shrink:0}
+@media(max-width:360px){header{gap:10px}nav{flex-shrink:0}}
