@@ -1,4 +1,4 @@
 import type { Metadata } from 'next';
 import './globals.css';
-export const metadata: Metadata = {title:'WIN 講師班｜銷講・招商・募資實戰',description:'兩天實戰訓練，從銷售路演、加盟招商到募資簡報，打通商業模式，讓專業成為能推動事業的提案。'};
+export const metadata: Metadata = {title:'WIN 講師班｜銷講・招商・募資實戰',description:'兩天正課，另安排一天正式舞台 PK。從銷售演講、招商加盟到募資簡報，讓專業成為能推動事業的提案。'};
 export default function RootLayout({children}:{children:React.ReactNode}) {return <html lang="zh-Hant"><body>{children}<a className="line-support" href="https://line.me/R/ti/p/%40dmd9019a" target="_blank" rel="noopener noreferrer" aria-label="專人協助，透過 LINE 聯絡我們（另開視窗）"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><path d="M20.5 10.5c0 4.4-4.1 8-9.2 8H9.8L5 21l.9-4.2C3.8 15.3 2.5 13 2.5 10.5c0-4.4 4-8 9-8s9 3.6 9 8Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/><path d="M7 10.5h.01M11.5 10.5h.01M16 10.5h.01" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/></svg><span>專人協助</span></a></body></html>}
