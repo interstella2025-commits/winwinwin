@@ -152,3 +152,7 @@ main>div:first-of-type>section{container-type:inline-size}
 /* Keep the header action together on narrow phones. */
 .nav-cta{white-space:nowrap;flex-shrink:0}
 @media(max-width:360px){header{gap:10px}nav{flex-shrink:0}}
+
+/* Reduce the marked gap between lecture photos and community experience. */
+.lecture-gallery{padding-bottom:24px}
+.lecture-gallery .revision-photo-grid{margin-bottom:0}
