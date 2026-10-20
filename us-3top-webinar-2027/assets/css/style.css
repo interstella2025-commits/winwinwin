@@ -315,3 +315,9 @@ p,li,td,blockquote,.qx-zh,.qx-en,dd,label,span{text-wrap:pretty;line-break:stric
 nav a,header a,.nav a,header .btn,th{white-space:nowrap}
 @media(max-width:1100px){.nav ul{gap:16px;font-size:13px}}@media(max-width:860px){.nav ul{gap:12px;font-size:12.5px}.nav .btn{padding-left:12px;padding-right:12px}}
 @media(min-width:700px) and (max-width:860px){.nav .logo small{display:none}}
+
+.logo img{display:block;height:40px;width:auto}
+@media(max-width:700px){.logo img{height:34px}}
+footer .flogo{display:block;width:64px;height:auto;margin-bottom:14px}
+footer .flogo{width:auto;height:48px}footer p.credits{max-width:1200px;margin:18px auto 0!important;padding:0 24px;box-sizing:border-box}
+.logo img{height:44px}@media(max-width:700px){.logo img{height:38px}}
