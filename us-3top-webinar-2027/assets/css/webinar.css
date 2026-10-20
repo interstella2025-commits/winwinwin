@@ -58,9 +58,12 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;font-size:13px}
   .w-meta{flex-wrap:wrap}
 }
 /* hero photo 4_bfg_led_stage */
-.speaker img{object-position:40% 30%}
-@media (min-width:761px){.sp-card{bottom:-36px}}
+.speaker img{object-position:50% 40%}
+
 @media (max-width:760px){
   .speaker figure{aspect-ratio:4/5!important}
   .sp-card{position:relative!important;left:auto!important;right:auto!important;bottom:auto!important;margin:-56px 12px 0}
 }
+/* speaker card always below photo, never overlapping (2026-10-20) */
+.speaker .sp-card{position:static!important;margin:14px 0 0!important;left:auto;right:auto;bottom:auto}
+.speaker .frame{display:none}
