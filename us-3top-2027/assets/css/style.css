@@ -158,7 +158,7 @@ table.q td small{display:block;font-family:var(--sans);font-weight:400;color:var
 /* founder */
 .founder .wrap{display:grid;grid-template-columns:5fr 7fr;gap:72px;align-items:center}
 .f-photo{position:relative}
-.f-photo img{border-radius:6px;aspect-ratio:4/5;object-fit:cover;object-position:40% 30%}
+.f-photo img{border-radius:6px;aspect-ratio:4/5;object-fit:cover;object-position:50% 40%}
 .f-photo .frame{border-color:rgba(200,164,92,.5)}
 .founder blockquote{font-family:var(--serif);font-size:38px;color:#fff;line-height:1.35;margin:10px 0 26px}
 .founder .name{font-size:15px;color:var(--mut);margin-bottom:24px}
