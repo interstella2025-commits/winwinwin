@@ -54,10 +54,5 @@ export default function CourseRevision({ index }: { index: number }) {
         <img className="pk-inset-photo" src={image + 'ryla.webp'} alt="WIN 與同台交流人士的實拍照片" loading="lazy" />
       </div> : <img src={art.src} width={art.width} height={art.height} alt={art.alt} loading="lazy" />}
     </section>
-    {index === 15 && <>
-      <section className="generated-artwork award-summary">
-        <img src={image + 'restore-award-context-approved.webp'} width={2172} height={724} alt="此獎項被譽為中國管理界奧斯卡獎" loading="lazy" />
-      </section>
-    </>}
   </>;
 }
