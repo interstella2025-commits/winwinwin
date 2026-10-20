@@ -154,3 +154,12 @@ section.generated-artwork{padding-top:20px}
 .generated-course-cta:focus-visible{outline:4px solid #102d52;outline-offset:4px}
 .evidence-panel{padding-top:20px;padding-bottom:36px}
 .evidence-panel .jury-block{margin-top:0;border-top:0;padding-top:0}
+
+.international>.exchange-title-art{display:block;width:100%;height:auto;margin:0 0 28px}
+.art-source-links{display:flex;justify-content:center;gap:24px;flex-wrap:wrap;margin:0;padding:16px 20px 24px;background:#edf6fc;font-size:13px;color:#365879}
+.art-source-links a{text-decoration:underline;text-underline-offset:3px}
+
+.pk-poster{position:relative}
+.pk-poster>.pk-layout{display:block;width:100%;height:auto}
+.pk-poster>.pk-inset-photo{position:absolute;left:5.2%;top:55.5%;width:89.6%;height:27.35%;object-fit:cover;object-position:center 45%;border-radius:1.8cqw}
+.pk-schedule-note{text-align:center;margin:0;padding:12px 24px 24px;background:#edf6fc;font-size:13px;line-height:1.7;color:#536d87}
