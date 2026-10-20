@@ -12,6 +12,12 @@
  function wrap(node,clauses){
   var t=node.nodeValue;if(!CJK.test(t))return;
   var f=document.createDocumentFragment();
+  // keep punctuation that touches a neighbouring inline element (e.g. <strong>經歷</strong>，…) as plain text so it glues to it;
+  // inline-block clause boxes would otherwise allow a break right before 「，」
+  var lead=(t.match(/^[，、。；：！？」』）》…—・｜|,.!?;:)\]]+/)||[''])[0],tail=(t.match(/[「『（《(\[]+$/)||[''])[0];
+  if(lead.length+tail.length>=t.length)return;
+  t=t.slice(lead.length,t.length-tail.length);
+  if(lead)f.appendChild(document.createTextNode(lead));
   var parts=clauses?t.split(/(?<=[，、；：！？・｜|。＋])(?![」』）》。，、])/):[t];
   if(clauses){var m=[];parts.forEach(function(x){if(m.length&&m[m.length-1].replace(/[\s，、；：！？・｜|。＋「」『』]/g,'').length<=3)m[m.length-1]+=x;else m.push(x)});
     if(m.length>1&&m[m.length-1].replace(/[\s，、；：！？・｜|。＋「」『』]/g,'').length<=2){var y=m.pop();m[m.length-1]+=y}parts=m}
@@ -27,8 +33,10 @@
    if(ws.length>=2&&vis(ws[0])<=2&&CJK.test(ws[0])&&!/\s$/.test(ws[0])){var a0=ws.shift();ws[0]=a0+ws[0]}
       ws.forEach(function(w){
      if(/^\s+$/.test(w)||!CJK.test(w)&&w.length<2){box.appendChild(document.createTextNode(w));return}
-     var s=document.createElement('span');s.className='cjw';s.textContent=w;box.appendChild(s)});
+     var s=document.createElement('span');s.className='cjw';var mm=w.match(/^(.*?)(\s*[・｜]\s*)$/);
+     if(mm&&mm[1]){s.textContent=mm[1];var q=document.createElement('span');q.className='sep';q.textContent=mm[2];s.appendChild(q)}else s.textContent=w;box.appendChild(s)});
   });
+  if(tail)f.appendChild(document.createTextNode(tail));
   var par=node.parentNode,d=getComputedStyle(par).display;
   if(/flex|grid/.test(d)){var g=document.createElement('span');g.className='cjg';g.appendChild(f);f=g}
   par.replaceChild(f,node);
@@ -42,5 +50,12 @@
   ns.forEach(function(x){var b=x.parentNode;while(b!==document.body&&/^inline/.test(getComputedStyle(b).display))b=b.parentNode;
     wrap(x,(b.textContent||'').trim().length<=48)});
  }
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run);else run();
+ // hide a ・／｜ separator when it lands at the end of a line
+ function nextTop(el){var w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);w.currentNode=el.lastChild||el;var n;
+   while(n=w.nextNode()){if(el.contains(n))continue;var t=n.nodeValue,i=t.search(/\S/);if(i<0)continue;var r=document.createRange();r.setStart(n,i);r.setEnd(n,i+1);var b=r.getClientRects()[0];return b?b.top:null}return null}
+ function edges(){document.querySelectorAll('.sep').forEach(function(s){s.style.visibility='';var r=s.getBoundingClientRect();if(!r.width)return;var t=nextTop(s);
+   s.style.visibility=(t!==null&&t>r.bottom-2)?'hidden':''})}
+ var et;function sched(){clearTimeout(et);et=setTimeout(edges,120)}
+ function start(){run();edges();if(document.fonts)document.fonts.ready.then(edges);addEventListener('resize',sched);addEventListener('load',edges)}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();
