@@ -414,3 +414,25 @@ ol.apply-steps h3{font-size:16px;margin:8px 0 4px}}
 .sch-l li{position:relative;padding-left:14px;font-size:14px;font-weight:600;color:#0B1B3A;line-height:1.6;margin-bottom:4px}
 .sch-l li:before{content:"●";position:absolute;left:0;font-size:8px;top:.35em;color:#B8323A}
 .days .day p{line-height:1.65}
+
+/* pain v3: heading on top, cards below */
+.pain-intro{font-size:16px;color:#566176;margin:14px 0 0;max-width:640px}
+.pain-cta{margin-top:22px}
+@media(min-width:768px){
+.pain .wrap{grid-template-columns:1fr!important;gap:36px!important}
+.pain .quote-big{position:static}
+.pain .after{grid-column:1!important}
+.pain .cards2{grid-template-columns:1fr 1fr}
+.pain .card p .cjp{display:inline}
+}
+@media(min-width:1100px){.pain .cards2{grid-template-columns:repeat(4,1fr)}.pain .card{padding:26px 22px}}
+
+.w6-intro{max-width:36em;margin-top:18px}
+.w6-intro p{font-size:16.5px;line-height:1.9;color:#3d4a60;margin:0 0 14px}
+.w6-intro strong{color:#0B1B3A}
+.w6-intro .cjp{display:inline}
+@media(min-width:601px){.w6-intro strong{white-space:nowrap}}
+
+.net-stmt{font-family:var(--serif);font-weight:700;font-size:clamp(22px,2.6vw,34px);line-height:1.5;color:#E8C77A;margin:44px 0 0;padding-top:30px;border-top:1px solid rgba(232,199,122,.3);max-width:28em}
+.net-stmt .nw{white-space:normal}
+@media(min-width:601px){.net-stmt .nw{white-space:nowrap}}
