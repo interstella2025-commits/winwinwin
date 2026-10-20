@@ -7,7 +7,7 @@
 .w-meta b{color:#E8C77A;margin-right:8px;font-weight:600}
 .speaker{position:relative}
 .speaker figure{border-radius:6px;overflow:hidden;aspect-ratio:4/5;margin:0}
-.speaker img{width:100%;height:100%;object-fit:cover;object-position:50% 15%}
+.speaker img{width:100%;height:100%;object-fit:cover;object-position:40% 30%}
 .sp-card{position:absolute;left:-24px;bottom:28px;right:40px;background:rgba(11,20,38,.92);border:1px solid rgba(232,199,122,.5);border-radius:8px;padding:20px 22px;backdrop-filter:blur(8px);display:flex;flex-direction:column;gap:2px}
 .sp-card .k{font-size:12px;letter-spacing:.2em;color:#E8C77A}
 .sp-card b{font-family:var(--serif);font-size:22px;color:#fff}
@@ -56,4 +56,11 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;font-size:13px}
   .quotes-s p{font-size:17px}
   input,select,textarea{font-size:16px!important;min-height:46px}
   .w-meta{flex-wrap:wrap}
+}
+/* hero photo 4_bfg_led_stage */
+.speaker img{object-position:40% 30%}
+@media (min-width:761px){.sp-card{bottom:-36px}}
+@media (max-width:760px){
+  .speaker figure{aspect-ratio:4/5!important}
+  .sp-card{position:relative!important;left:auto!important;right:auto!important;bottom:auto!important;margin:-56px 12px 0}
 }
