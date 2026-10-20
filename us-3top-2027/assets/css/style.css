@@ -309,3 +309,11 @@ h2{font-size:28px}.lead{font-size:16px}
 .atm-fig img{width:100%;aspect-ratio:16/10;object-fit:cover}
 .wg3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.wg3 figure{position:relative;margin:0;border-radius:8px;overflow:hidden;aspect-ratio:4/3}.wg3 img{width:100%;height:100%;object-fit:cover}.wg3 figcaption{position:absolute;left:0;right:0;bottom:0;padding:24px 10px 8px;color:#fff;font-size:13px;background:linear-gradient(transparent,rgba(0,0,0,.8))}@media(max-width:860px){.wg3{grid-template-columns:1fr 1fr 1fr;gap:6px}.wg3 figcaption{font-size:10px}}
 .f-photo picture{display:block}.f-photo img{width:100%;height:auto}
+
+/* line-breaking: avoid orphans */
+h1,h2,h3,h4,.btn,button,b,th,figcaption,.qx-role,.qx-src,.mc-t{text-wrap:balance;line-break:strict}
+p,li,td,blockquote,.qx-zh,.qx-en,dd,label,span{text-wrap:pretty;line-break:strict}
+.nw{white-space:nowrap}
+nav a,header a,.nav a,header .btn,th{white-space:nowrap}
+@media(max-width:1100px){.nav ul{gap:16px;font-size:13px}}@media(max-width:860px){.nav ul{gap:12px;font-size:12.5px}.nav .btn{padding-left:12px;padding-right:12px}}
+@media(min-width:700px) and (max-width:860px){.nav .logo small{display:none}}
