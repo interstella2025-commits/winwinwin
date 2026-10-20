@@ -335,3 +335,15 @@ footer .flogo{width:auto;height:48px}footer p.credits{max-width:1200px;margin:18
 .pain-intro{font-size:15px;color:#566176;margin:10px 0 18px}
 .urgent p+p{margin-top:6px}
 br.d-only{display:none}@media(min-width:901px){br.d-only{display:inline}}
+
+/* pain v3: heading on top, cards below */
+.pain-intro{font-size:16px;color:#566176;margin:14px 0 0;max-width:640px}
+.pain-cta{margin-top:22px}
+@media(min-width:768px){
+.pain .wrap{grid-template-columns:1fr!important;gap:36px!important}
+.pain .quote-big{position:static}
+.pain .after{grid-column:1!important}
+.pain .cards2{grid-template-columns:1fr 1fr}
+.pain .card p .cjp{display:inline}
+}
+@media(min-width:1100px){.pain .cards2{grid-template-columns:repeat(4,1fr)}.pain .card{padding:26px 22px}}
