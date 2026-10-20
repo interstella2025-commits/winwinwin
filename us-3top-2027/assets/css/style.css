@@ -436,3 +436,31 @@ ol.apply-steps h3{font-size:16px;margin:8px 0 4px}}
 .net-stmt{font-family:var(--serif);font-weight:700;font-size:clamp(22px,2.6vw,34px);line-height:1.5;color:#E8C77A;margin:44px 0 0;padding-top:30px;border-top:1px solid rgba(232,199,122,.3);max-width:28em}
 .net-stmt .nw{white-space:normal}
 @media(min-width:601px){.net-stmt .nw{white-space:nowrap}}
+
+/* visit block (原官方「我們擁有…」) */
+.visit{margin:40px 0;background:radial-gradient(900px 400px at 20% 0,#1d2f52,#0B1426 70%);color:#C9D1E0;border-radius:12px;padding:40px 40px 44px}
+.visit-k{font-family:var(--serif);color:#E8C77A;font-size:18px;letter-spacing:.06em}
+.visit .stats.visit-stats{margin-top:18px;padding-top:22px}
+.visit .st2 .st-n b{font-size:48px}
+.visit-body{display:grid;grid-template-columns:1fr 480px;gap:36px;align-items:center;margin-top:36px;padding-top:32px;border-top:1px solid rgba(255,255,255,.12)}
+.visit-q{font-family:var(--serif);color:#E8C77A;font-size:28px;font-weight:700}
+.visit h3{color:#fff;font-size:24px;margin:4px 0 14px}
+.visit-tx p{font-size:15px;line-height:1.85;color:#C9D1E0;margin:0 0 12px}
+.visit-tx .cjp{display:inline}
+.visit-img{margin:0;border-radius:8px;overflow:hidden;background:#000}
+.visit-img img{display:block;width:100%;height:auto}
+@media(max-width:900px){.visit-body{grid-template-columns:1fr}}
+@media(max-width:600px){.visit{padding:28px 20px;margin:28px -4px}.visit .st2 .st-n b{font-size:38px}}
+
+/* logo wall (HTML) */
+.logo-wall{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.logo-wall li{aspect-ratio:3/2;background:linear-gradient(160deg,#16294a,#0f1d36);border:1px solid rgba(232,199,122,.22);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:10px;min-width:0}
+.logo-wall i{display:block;width:72%;height:30px;background:#fff;-webkit-mask:var(--lg) center/contain no-repeat;mask:var(--lg) center/contain no-repeat}
+.logo-wall span{font-size:11px;letter-spacing:.04em;color:#8A96AD;white-space:nowrap}
+@media(max-width:600px){.logo-wall{gap:8px}.logo-wall i{height:24px}.logo-wall span{font-size:10px}}
+.logo-wall img{display:block;width:72%;height:30px;object-fit:contain;filter:brightness(0) invert(1);opacity:.92}
+@media(max-width:600px){.logo-wall img{height:24px}}
+
+.sv-wall{display:block;width:100%;height:auto;border-radius:12px;border:1px solid rgba(232,199,122,.18)}
+.sv-fig{margin:0}.sv-cr{margin-top:6px;font-size:10px;color:#6B7690;line-height:1.4}
+
