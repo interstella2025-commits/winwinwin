@@ -55,12 +55,6 @@ export default function CourseRevision({ index }: { index: number }) {
       </div> : <img src={art.src} width={art.width} height={art.height} alt={art.alt} loading="lazy" />}
     </section>
     {index === 15 && <>
-      <section className="revision-panel evidence-panel">
-        <div className="revision-photo-grid credential-gallery">
-          <Photo src="hbr-award.webp" caption="2024 拉姆・查蘭獎得獎照片" hideCaption />
-          <Photo src="ceo.webp" caption="The CEO Institute｜Certified CEO（Provisional）證書" hideCaption />
-        </div>
-      </section>
       <section className="generated-artwork award-summary">
         <img src={image + 'restore-award-context-approved.webp'} width={2172} height={724} alt="此獎項被譽為中國管理界奧斯卡獎" loading="lazy" />
       </section>
