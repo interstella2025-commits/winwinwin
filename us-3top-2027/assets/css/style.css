@@ -495,3 +495,8 @@ figcaption{text-wrap:balance}
 .prof h3 .nw{white-space:nowrap}
 @media(min-width:769px) and (max-width:1180px){.hero h1{font-size:46px}}
 @media(min-width:769px){.founder .wrap{align-items:start}.founder .wrap>:first-child{position:sticky;top:100px}}
+@media(max-width:640px){.hero .sub .sep{display:none}.hero .sub .hl-2{display:block}}
+/* overflow safety */
+html,body{overflow-x:clip;max-width:100%}
+@media(max-width:1024px){.hero .wrap{grid-template-columns:minmax(0,1fr)!important}.hero .wrap>*{min-width:0;max-width:100%}.hero-photo{max-width:100%}}
+@media(max-width:400px){.hero h1 em{white-space:normal}.eyebrow{white-space:normal}.nw{white-space:normal}}
