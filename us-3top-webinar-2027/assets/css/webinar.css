@@ -68,3 +68,10 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;font-size:13px}
 .speaker .sp-card{position:static!important;margin:14px 0 0!important;left:auto;right:auto;bottom:auto}
 .speaker .frame{display:none}
 .wg figure:last-child:nth-child(3n+2){grid-column:span 2;aspect-ratio:8/3}
+@media(max-width:600px){
+.fac4{grid-template-columns:1fr!important;gap:14px}
+.fac4 .prof{display:grid;grid-template-columns:76px 1fr;column-gap:16px;align-items:start;padding:18px;min-width:0}
+.fac4 .prof .ph-p{grid-row:1/span 3;width:76px;height:76px;margin:0;border-radius:50%}
+.fac4 .prof h3,.fac4 .prof .aff,.fac4 .prof p{grid-column:2;margin-top:0}
+.fac4 .prof p{margin-top:6px}
+}
