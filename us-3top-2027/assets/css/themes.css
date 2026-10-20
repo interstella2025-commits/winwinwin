@@ -1,0 +1,41 @@
+/* 色系主題：預設（無 data-theme）= A 深藍。切換：index.html?theme=b|c|d */
+:root{--net:79,209,232}
+/* ---------- C 香檳金＋炭灰（深色系） ---------- */
+html[data-theme=c]{--ink:#1B1B1D;--deep:#262528;--paper:#F3EDE1;--red:#C9A560;--cyan:#D9BC7A;--gold:#C9A560;--mut:#9A948A;--net:217,188,122}
+html[data-theme=c] .hero{background:radial-gradient(1100px 600px at 80% 20%,#3a3226 0,transparent 60%),var(--ink)}
+html[data-theme=c] .btn-red,html[data-theme=c] .plan .tag{background:linear-gradient(180deg,#E3C47F,#B48C42);color:#1B1B1D}
+html[data-theme=c] .logo b{background:#B48C42;color:#1B1B1D}
+html[data-theme=c] .eyebrow{color:#9C7A34}
+html[data-theme=c] .final{background:linear-gradient(135deg,#2e2b27,#1b1b1d)}
+html[data-theme=c] .nav.solid,html[data-theme=c] .mcta{background:rgba(27,27,29,.92)}
+html[data-theme=c] .hero-photo:after{background:linear-gradient(180deg,transparent 55%,rgba(27,27,29,.88))}
+/* ---------- D 暖白＋深酒紅（深色區塊＝酒紅） ---------- */
+html[data-theme=d]{--ink:#3E0C1A;--deep:#521428;--paper:#FAF6F0;--red:#C21F3E;--cyan:#EBCB98;--gold:#C8A45C;--mut:#B79A9F;--net:235,203,152}
+html[data-theme=d] .hero{background:radial-gradient(1100px 600px at 80% 20%,#6d1a33 0,transparent 60%),var(--ink)}
+html[data-theme=d] .eyebrow{color:#8E1B32}
+html[data-theme=d] .final{background:linear-gradient(135deg,#5e1730,#3e0c1a)}
+html[data-theme=d] .nav.solid,html[data-theme=d] .mcta{background:rgba(62,12,26,.93)}
+html[data-theme=d] .hero-photo:after{background:linear-gradient(180deg,transparent 55%,rgba(62,12,26,.88))}
+html[data-theme=d] .btn-red{background:linear-gradient(180deg,#d4314f,#9e1530)}
+/* ---------- B 白／象牙＋華沃紅＋金（全亮色編輯風） ---------- */
+html[data-theme=b]{--ink:#F5EFE3;--deep:#FBF8F1;--paper:#FFFFFF;--red:#B0122B;--cyan:#B0122B;--gold:#A8822F;--tx:#16130F;--txl:#16130F;--mut:#8A8174;--net:176,18,43;--tx2:#5A534A}
+html[data-theme=b] .hero{background:radial-gradient(900px 500px at 85% 15%,rgba(200,164,92,.22) 0,transparent 60%),linear-gradient(180deg,#FFFDF8,#F5EFE3)}
+html[data-theme=b] .dark,html[data-theme=b] .deep{color:var(--tx)}
+html[data-theme=b] .deep{border-top:1px solid #EADFC9;border-bottom:1px solid #EADFC9}
+html[data-theme=b] :is(.hero h1,.hero .schools,.stats div b,.out h3,.svri b,.mod h3,.plan h3,.plan .dur,.founder blockquote,.founder .name b,.final h2,footer b,.logo),
+html[data-theme=b] :is(.dark,.deep,.hero,.final) [style*="color:#fff"]{color:var(--tx)!important}
+html[data-theme=b] .hero h1 em{background:linear-gradient(90deg,#B0122B,#C8A45C);-webkit-background-clip:text;background-clip:text}
+html[data-theme=b] :is(.dark .lead,.deep .lead,.out p,.svri p,.chip,.plan dd,.creds li,.as span,.hero .sub,.hero .sch,.nav ul,select){color:var(--tx2)}
+html[data-theme=b] .nav ul a:hover{color:var(--red)}
+html[data-theme=b] :is(.stats,.mods,.chip,.plan,.plan dl div,.as,.final,input,select){border-color:rgba(60,40,10,.14)}
+html[data-theme=b] .mods{background:rgba(60,40,10,.1)}
+html[data-theme=b] .mod{background:#fff}
+html[data-theme=b] :is(.plan,.as){background:#fff;box-shadow:0 20px 40px -30px rgba(80,50,10,.35)}
+html[data-theme=b] input{background:#fff;color:var(--tx)}
+html[data-theme=b] .btn-line{border-color:var(--tx);color:var(--tx)}
+html[data-theme=b] .final{background:linear-gradient(135deg,#FFFFFF,#F7F0E2)}
+html[data-theme=b] .nav.solid{background:rgba(255,253,248,.92);border-bottom-color:#EADFC9}
+html[data-theme=b] .mcta{background:rgba(255,253,248,.95);border-top-color:#EADFC9}
+html[data-theme=b] .proj-img .badge,html[data-theme=b] .cmp .us{background:#16130F;color:#fff}
+html[data-theme=b] .eyebrow{color:var(--red)!important}
+html[data-theme=b] .hero-photo{box-shadow:0 30px 60px -30px rgba(80,50,10,.45)}
