@@ -376,4 +376,5 @@ figcaption{text-wrap:balance}
 /* overflow safety */
 html,body{overflow-x:clip;max-width:100%}
 @media(max-width:1024px){.hero .wrap{grid-template-columns:minmax(0,1fr)!important}.hero .wrap>*{min-width:0;max-width:100%}.hero-photo{max-width:100%}}
-@media(max-width:400px){.hero h1 em{white-space:normal}.eyebrow{white-space:normal}.nw{white-space:normal}}
+.phr{display:inline-block;max-width:100%}
+@media(max-width:400px){.nw{white-space:normal;display:inline-block;max-width:100%}.hero h1 em{white-space:normal;display:inline-block;max-width:100%}.hero-eb{letter-spacing:.1em;font-size:12px}}
