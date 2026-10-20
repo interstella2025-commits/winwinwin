@@ -307,3 +307,11 @@ h2{font-size:28px}.lead{font-size:16px}
 .value-s{position:relative}
 .atm-fig{position:relative;margin:0;border-radius:8px;overflow:hidden;box-shadow:0 30px 60px -30px rgba(15,23,42,.6);border:1px solid var(--gold)}
 .atm-fig img{width:100%;aspect-ratio:16/10;object-fit:cover}
+
+/* line-breaking: avoid orphans */
+h1,h2,h3,h4,.btn,button,b,th,figcaption,.qx-role,.qx-src,.mc-t{text-wrap:balance;line-break:strict}
+p,li,td,blockquote,.qx-zh,.qx-en,dd,label,span{text-wrap:pretty;line-break:strict}
+.nw{white-space:nowrap}
+nav a,header a,.nav a,header .btn,th{white-space:nowrap}
+@media(max-width:1100px){.nav ul{gap:16px;font-size:13px}}@media(max-width:860px){.nav ul{gap:12px;font-size:12.5px}.nav .btn{padding-left:12px;padding-right:12px}}
+@media(min-width:700px) and (max-width:860px){.nav .logo small{display:none}}
