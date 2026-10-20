@@ -323,3 +323,4 @@ nav a,header a,.nav a,header .btn,th{white-space:nowrap}
 footer .flogo{display:block;width:64px;height:auto;margin-bottom:14px}
 footer .flogo{width:auto;height:48px}footer p.credits{max-width:1200px;margin:18px auto 0!important;padding:0 24px;box-sizing:border-box}
 .logo img{height:44px}@media(max-width:700px){.logo img{height:38px}}
+.nw{white-space:nowrap;display:inline-block}.qx-hint{display:none}
