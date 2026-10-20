@@ -24,4 +24,4 @@ document.querySelectorAll('canvas.net').forEach(c=>{
 if(matchMedia('(prefers-reduced-motion: reduce)').matches||!('IntersectionObserver' in window))return;
 function run(e){var to=+e.dataset.to,t0=null;function f(t){if(!t0)t0=t;var k=Math.min(1,(t-t0)/1200),v=1-Math.pow(1-k,3);e.textContent=Math.round(to*v);if(k<1)requestAnimationFrame(f);else e.textContent=to}e.textContent='0';requestAnimationFrame(f)}
 var io=new IntersectionObserver(function(es){es.forEach(function(x){if(x.isIntersecting){io.unobserve(x.target);run(x.target)}})},{threshold:.6});
-els.forEach(function(e){e.style.minWidth=String(e.dataset.to).length+'ch';io.observe(e)})})();
+els.forEach(function(e){e.style.minWidth=Math.ceil(e.getBoundingClientRect().width)+'px';io.observe(e)})})();

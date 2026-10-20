@@ -347,3 +347,29 @@ br.d-only{display:none}@media(min-width:901px){br.d-only{display:inline}}
 .pain .card p .cjp{display:inline}
 }
 @media(min-width:1100px){.pain .cards2{grid-template-columns:repeat(4,1fr)}.pain .card{padding:26px 22px}}
+
+/* mobile audit fixes */
+.nw{white-space:nowrap}
+.stats.st2 .st-n i{margin-left:4px}
+.stats.st2 .st-n{display:flex;align-items:baseline;gap:0}
+dd.opts>span{display:block}
+p.sch{display:flex;flex-wrap:wrap;align-items:center;column-gap:0}
+p.sch .dot{flex:none}
+@media(max-width:640px){
+ .stats.st2{grid-template-columns:1fr 1fr!important}
+ .stats.st2 .st>span{min-height:3em}
+ .stats.st2 .st>span>.nw{display:block}
+ p.sch .sep{display:none}
+ p.sch>.nw{flex:0 0 100%;padding-left:20px;white-space:normal}
+ p.sch .dot{position:absolute;left:0;top:.62em}p.sch{position:relative;gap:0;line-height:1.6}
+ body{padding-bottom:0!important}
+ footer{padding-bottom:110px!important}
+}
+dd.opts>span{padding-left:1.25em;text-indent:-1.25em}
+.gallery figure:last-child:nth-child(odd){grid-column:1/-1}
+.gallery figure:last-child:nth-child(odd){aspect-ratio:16/9}.gallery figure:last-child:nth-child(odd) img{height:100%}
+figcaption{text-wrap:balance}
+.stats.st2 .st>span>.nw{display:block;white-space:normal}
+.stats.st2 .st>span{text-wrap:balance}
+
+.tbc,[hidden]{display:none!important}

@@ -75,3 +75,6 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;font-size:13px}
 .fac4 .prof h3,.fac4 .prof .aff,.fac4 .prof p{grid-column:2;margin-top:0}
 .fac4 .prof p{margin-top:6px}
 }
+@media(max-width:640px){.wg{gap:10px}.wg figure{aspect-ratio:1/1}.wg figure:last-child:nth-child(odd){grid-column:1/-1;aspect-ratio:16/9}.wg figcaption{font-size:12.5px;line-height:1.45;padding:28px 10px 9px;text-wrap:balance}}
+.fee-note{margin-top:14px;padding-top:14px;border-top:1px solid rgba(11,20,38,.08)}
+.nw{white-space:nowrap}
