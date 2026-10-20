@@ -329,3 +329,7 @@ footer .flogo{width:auto;height:48px}footer p.credits{max-width:1200px;margin:18
 .cjp{display:inline-block;max-width:100%}
 @media (max-width:1000px){.faq .wrap{grid-template-columns:1fr;gap:36px}}
 @media (max-width:400px){.vs{padding:24px 12px 20px}.vs b{font-size:16px}}
+
+.prof img.avatar{object-fit:cover;display:block;background:none}
+.proof-grid .pf:last-child{grid-column:span 2}
+.plan .dur{white-space:nowrap}
