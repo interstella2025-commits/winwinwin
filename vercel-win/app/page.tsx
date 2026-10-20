@@ -3,7 +3,6 @@ import FlowText from '../components/flow-text';
 import { useState } from 'react';
 import assets from './assets.json';
 import { COURSE_SESSIONS } from '../lib/course-sessions';
-import PrecourseInfo from './precourse-info';
 import CourseRevision,{revisedIndexes,MentorGallery,InternationalExchange} from './course-revisions';
 export default function Page(){
  const [status,setStatus]=useState('');const [busy,setBusy]=useState(false);
@@ -14,7 +13,7 @@ export default function Page(){
  if(body.resetRequest)sessionStorage.removeItem('win-checkout-id');
  if(!r.ok||!body.checkoutUrl)throw new Error(body.error||'目前無法前往付款。');setStatus('報名資料已保存，即將前往付款…');location.assign(body.checkoutUrl);
  }catch(e){setStatus(e instanceof Error?e.message:'暫時無法建立付款，請稍後再試。');setBusy(false)}}
- return <><header><a className="brand" href="#top">EXPERT TO <b>ENTERPRISE</b></a><nav><a href="#curriculum">課綱</a><a href="#mentor">導師</a><a className="nav-cta" href="#apply">報名前導課 →</a></nav></header><main id="top"><h1 className="sr-only">Expert to Enterprise｜WIN 講師班・銷講・招商・募資實戰</h1>{assets.map((a,i)=><div key={a.src}>{i===18?<PrecourseInfo/>:revisedIndexes.has(i)?<CourseRevision index={i}/>:<section className={i===0?"source-hero":undefined} id={i===7?'curriculum':undefined} aria-label={a.alt}><img src={a.src} width={a.width} height={a.height} alt={a.alt} loading={i===0?'eager':'lazy'} fetchPriority={i===0?'high':'auto'}/>{i===0&&<a className="blueprint-cta-hit" href="#apply" aria-label="報名線上90分鐘前導課"></a>}</section>}{i===13&&<MentorGallery/>}{i===16&&<InternationalExchange/>}</div>)}<section className="application registration" id="apply" aria-labelledby="registration-title"><div className="form-shell">
+ return <><header><a className="brand" href="#top">EXPERT TO <b>ENTERPRISE</b></a><nav><a href="#curriculum">課綱</a><a href="#mentor">導師</a><a className="nav-cta" href="#apply">報名前導課 →</a></nav></header><main id="top"><h1 className="sr-only">Expert to Enterprise｜WIN 講師班・銷講・招商・募資實戰</h1>{assets.map((a,i)=><div key={a.src}>{revisedIndexes.has(i)?<CourseRevision index={i}/>:<section className={i===0?"source-hero":undefined} id={i===7?'curriculum':undefined} aria-label={a.alt}><img src={a.src} width={a.width} height={a.height} alt={a.alt} loading={i===0?'eager':'lazy'} fetchPriority={i===0?'high':'auto'}/>{i===0&&<a className="blueprint-cta-hit" href="#apply" aria-label="報名線上90分鐘前導課"></a>}</section>}{i===13&&<MentorGallery/>}{i===16&&<InternationalExchange/>}</div>)}<section className="application registration" id="apply" aria-labelledby="registration-title"><div className="form-shell">
 <div className="form-heading"><p className="eyebrow">WIN · ONLINE EXPERIENCE</p><h2 id="registration-title">選一場，<br/><span>把專業帶上下一個舞台</span></h2><p><FlowText parts={["WIN 講師班｜","90分鐘線上前導課"]}/></p></div>
 <div className="course-summary" aria-label="課程摘要"><p><strong>時間：</strong><span><FlowText parts={["19:30–21:00，","四場擇一參加"]}/></span></p><p><strong>方式：</strong><span><FlowText parts={["線上課程，","上課連結另行通知"]}/></span></p><p><strong>費用：</strong><span><FlowText parts={["NT$399／人，","將全數捐予","「國際青少年","希望教育計劃」。"]}/></span></p></div>
 <p className="schedule-notice"><FlowText parts={["以下為暫定場次，","日期與時間","尚待確認，","實際安排以","主辦方通知為準。"]}/></p>
