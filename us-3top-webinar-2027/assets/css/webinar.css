@@ -67,3 +67,4 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;font-size:13px}
 /* speaker card always below photo, never overlapping (2026-10-20) */
 .speaker .sp-card{position:static!important;margin:14px 0 0!important;left:auto;right:auto;bottom:auto}
 .speaker .frame{display:none}
+.wg figure:last-child:nth-child(3n+2){grid-column:span 2;aspect-ratio:8/3}
