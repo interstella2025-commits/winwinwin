@@ -105,14 +105,6 @@ main>div:first-of-type>section{container-type:inline-size}
 .city-grid strong{font-size:20px}
 .exchange-caption{font-size:14px;line-height:1.8;color:#5b738d;margin-top:26px;text-align:center}
 .source-hero>img{position:relative}
-.hero-brand-fix,.hero-footer-fix,.hero-digital-fix,.hero-caption-fix{position:absolute;display:flex;align-items:center;justify-content:center;text-align:center}
-.hero-brand-fix{left:6.3%;top:7.25%;width:41%;height:1.75%;background:linear-gradient(105deg,#fff,#eaf6fe);font-size:2.13cqw;letter-spacing:.23cqw;font-weight:700;color:#0c2949}
-.hero-caption-fix{top:59.55%;width:25.7%;height:7.1%;background:linear-gradient(120deg,#fff,#edfbff);flex-direction:column;gap:.5cqw;border-radius:0 0 10px 10px;color:#082746}
-.hero-caption-fix strong{font-size:3.4cqw;font-weight:900;line-height:1.2}
-.hero-caption-fix>span{font-size:1.95cqw;line-height:1.45;font-weight:600}
-.hero-sales{left:6.1%}.hero-franchise{left:37.3%}.hero-franchise strong{color:#e32e34}
-.hero-digital-fix{left:65.4%;top:81.7%;width:20%;height:2%;background:linear-gradient(90deg,#e8f8ff,#fff);font-size:2.05cqw;font-weight:700}
-.hero-footer-fix{left:27%;top:97.6%;width:46%;height:1.8%;background:linear-gradient(90deg,#14375d,#1c4b77,#153b63);font-size:1.7cqw;letter-spacing:.55cqw;color:white}
 @media(max-width:600px){
  .wrap-tail{white-space:nowrap}
  .revision-panel{padding:48px 20px;container-type:inline-size}
@@ -135,13 +127,8 @@ main>div:first-of-type>section{container-type:inline-size}
  .mentor-profile h3{font-size:27px}.mentor-profile dd{font-size:16px}
  .city-grid{gap:14px 8px}.city-grid>div{padding:10px 4px}.city-grid svg{height:50px}.city-grid strong{font-size:16px}
  .revision-note{font-size:13px}
- .hero-brand-fix{letter-spacing:.13cqw}
 }
 
-.hero-caption-fix strong{font-size:4cqw}
-.hero-caption-fix>span{font-size:2.1cqw}
-.hero-digital-fix{left:66%;top:81.9%;width:14.5%;height:1.55%;background:linear-gradient(90deg,#d3eaf7,#eef9ff);font-size:1.95cqw;white-space:nowrap}
-.hero-footer-fix{background:linear-gradient(90deg,transparent,#173b63 12%,#1c4b77 50%,#173b63 88%,transparent)}
 
 .international .photo-grid img{aspect-ratio:4/3;object-fit:cover;object-position:center 30%}
 .revision-note a{text-decoration:underline;text-underline-offset:3px}
@@ -156,3 +143,6 @@ main>div:first-of-type>section{container-type:inline-size}
 /* Reduce the marked gap between lecture photos and community experience. */
 .lecture-gallery{padding-bottom:24px}
 .lecture-gallery .revision-photo-grid{margin-bottom:0}
+
+/* Generated artwork includes its own button lettering; this is a transparent hit area. */
+.source-hero .blueprint-cta-hit{background:transparent;border:0;box-shadow:none}
