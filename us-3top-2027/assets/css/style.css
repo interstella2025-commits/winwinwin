@@ -307,3 +307,4 @@ h2{font-size:28px}.lead{font-size:16px}
 .value-s{position:relative}
 .atm-fig{position:relative;margin:0;border-radius:8px;overflow:hidden;box-shadow:0 30px 60px -30px rgba(15,23,42,.6);border:1px solid var(--gold)}
 .atm-fig img{width:100%;aspect-ratio:16/10;object-fit:cover}
+.wg3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.wg3 figure{position:relative;margin:0;border-radius:8px;overflow:hidden;aspect-ratio:4/3}.wg3 img{width:100%;height:100%;object-fit:cover}.wg3 figcaption{position:absolute;left:0;right:0;bottom:0;padding:24px 10px 8px;color:#fff;font-size:13px;background:linear-gradient(transparent,rgba(0,0,0,.8))}@media(max-width:860px){.wg3{grid-template-columns:1fr 1fr 1fr;gap:6px}.wg3 figcaption{font-size:10px}}
