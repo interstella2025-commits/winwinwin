@@ -373,3 +373,7 @@ figcaption{text-wrap:balance}
 .stats.st2 .st>span{text-wrap:balance}
 
 .tbc,[hidden]{display:none!important}
+/* overflow safety */
+html,body{overflow-x:clip;max-width:100%}
+@media(max-width:1024px){.hero .wrap{grid-template-columns:minmax(0,1fr)!important}.hero .wrap>*{min-width:0;max-width:100%}.hero-photo{max-width:100%}}
+@media(max-width:400px){.hero h1 em{white-space:normal}.eyebrow{white-space:normal}.nw{white-space:normal}}

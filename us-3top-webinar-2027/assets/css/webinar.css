@@ -78,3 +78,9 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;font-size:13px}
 @media(max-width:640px){.wg{gap:10px}.wg figure{aspect-ratio:1/1}.wg figure:last-child:nth-child(odd){grid-column:1/-1;aspect-ratio:16/9}.wg figcaption{font-size:12.5px;line-height:1.45;padding:28px 10px 9px;text-wrap:balance}}
 .fee-note{margin-top:14px;padding-top:14px;border-top:1px solid rgba(11,20,38,.08)}
 .nw{white-space:nowrap}
+
+.lead-xl{font-size:22px;line-height:1.6;font-weight:500;color:#fff;margin-top:26px;max-width:760px}
+.lead-xl strong{color:#E8C77A;font-weight:700}
+.lead-sub{font-size:16px;line-height:1.8;color:#9AA6BD;margin-top:18px;max-width:700px}
+@media(max-width:640px){.lead-xl{font-size:19px;line-height:1.65}.lead-sub{font-size:14.5px;margin-top:16px}}
+@media(max-width:400px){.nw{white-space:normal}}
