@@ -1,11 +1,1 @@
-/* v3: layouts without unknown-licence photos */
-.atm-bg{background:linear-gradient(135deg,#0B1426,#1d2b4a 60%,#2a3a5e)!important}
-.wg3.wg2{grid-template-columns:repeat(2,1fr)}
-@media(min-width:769px){.proof-grid.pg5{grid-template-columns:repeat(4,1fr)!important;grid-template-rows:repeat(2,240px)!important}}
-@media(max-width:768px){.proof-grid.pg5 .pf:last-child{grid-column:auto}}
-.school .top.photo{background:linear-gradient(135deg,#0B1426,#24365c)}
-.proj-call{background:var(--ink,#0B1426);color:#fff;border-radius:8px;padding:40px 36px;font-size:17px;line-height:1.7;border-left:4px solid var(--cyan,#4fd1e0)}
-.proj-call b{font-family:var(--serif);font-size:28px;display:block;color:var(--cyan,#4fd1e0);margin-bottom:10px}
-.avatar.ini{background:linear-gradient(135deg,#1d2b4a,#3a4d75);color:#fff;font-family:var(--serif);font-size:22px;letter-spacing:.04em}
 .qx-ini{width:56px;height:56px;border-radius:50%;flex:none;display:grid;place-items:center;background:linear-gradient(135deg,#1d2b4a,#3a4d75);color:#fff;font-family:var(--serif);font-size:18px}
-.cert .wrap{grid-template-columns:1fr!important}
