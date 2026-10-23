@@ -1,1 +1,5 @@
 .qx-ini{width:56px;height:56px;border-radius:50%;flex:none;display:grid;place-items:center;background:linear-gradient(135deg,#1d2b4a,#3a4d75);color:#fff;font-family:var(--serif);font-size:18px}
+/* v5 balance */
+@media (min-width:761px){.proof-grid .pf:last-child{grid-column:1/-1;height:260px}
+.founder .gallery{grid-template-columns:repeat(3,1fr)}
+.founder .gallery figure:last-child:nth-child(odd){grid-column:auto;aspect-ratio:1}}
