@@ -211,3 +211,5 @@ section.generated-artwork{padding-top:20px}
  .mp-sep{display:none}
  .mp-foot-sep{display:none}.mp-foot-en,.mp-foot-zh{display:block}.mp-foot-zh{margin-top:6px;letter-spacing:.3em}
 }
+
+.international .exchange-grid figure:nth-child(n+3) img{aspect-ratio:16/9;object-position:center}

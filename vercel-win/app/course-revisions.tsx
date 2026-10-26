@@ -23,13 +23,13 @@ type Slot = { src?: string; caption: string; malaysia?: boolean };
 /* 國際舞台現場：只標國家／城市。src 未填的格位（照片尚未提供）不渲染。 */
 const stagePhotos: Slot[] = [
   { src: 'beijing.webp', caption: '中國・北京' },
-  { src: 'singapore.webp', caption: '新加坡' },
+  { src: 'stage-singapore.webp', caption: '新加坡' },
   { src: 'japan.webp', caption: '日本' },
   { src: 'teaching-map.webp', caption: '馬來西亞・吉隆坡', malaysia: true },
-  { caption: '美國・賓州' },
-  { caption: '柬埔寨・直播' },
-  { caption: '英國・劍橋' },
-  { caption: '美國・加州' },
+  { src: 'stage-usa-pennsylvania.webp', caption: '美國・賓州' },
+  { src: 'stage-cambodia-live.webp', caption: '柬埔寨・直播' },
+  { src: 'stage-uk-cambridge.webp', caption: '英國・劍橋' },
+  { src: 'stage-usa-california.webp', caption: '美國・加州' },
 ];
 
 export function MentorGallery() {
@@ -48,9 +48,9 @@ type Mentor = { src?: string; name: string; title: string };
 const mentors: Mentor[] = [
   { src: '/images/gary-v.webp', name: 'GaryVee', title: '美國著名創業家、世界社群行銷大師' },
   { src: '/images/grant-cardone.webp', name: 'Grant Cardone', title: '美國著名企業家、世界銷售培訓專家' },
-  { name: 'Blair Singer', title: '國際銷售與領導大師' },
-  { name: '清水健二', title: '日本微表情大師' },
-  { name: '天田幸宏', title: '日韓創業教父' },
+  { src: '/images/revision/exchange-blair-singer.webp', name: 'Blair Singer', title: '國際銷售與領導大師' },
+  { src: '/images/revision/exchange-shimizu-kenji.webp', name: '清水健二', title: '日本微表情大師' },
+  { src: '/images/revision/exchange-amada-yukihiro.webp', name: '天田幸宏', title: '日韓創業教父' },
 ];
 
 export function InternationalExchange() {
@@ -81,7 +81,7 @@ const profile: { label: string; icon: 'edu' | 'work' | 'academic'; items: [strin
     ['美國矽谷研究院', '院士'],
     ['史丹佛大學', '訪問學者'],
     ['柏克萊加州大學', '訪問學者'],
-    ['美國瑪麗蘭德大學', '台灣項目教授'],
+    ['美國瑪麗伍德大學', '台灣項目教授'],
     ['美國加州州立大學', '國際講師認證專案教授'],
   ] },
 ];
