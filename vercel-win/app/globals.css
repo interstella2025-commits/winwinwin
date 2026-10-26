@@ -167,3 +167,60 @@ section.generated-artwork{padding-top:20px}
 .photo-grid figcaption span{display:inline-block;text-wrap:balance}
 .photo-row{display:flex;align-items:flex-start;margin-top:24px}.photo-row figure{flex:var(--r) 1 0;min-width:0}.international .photo-row img{aspect-ratio:auto;object-fit:fill}
 @media(max-width:600px){.photo-row{flex-direction:column;align-items:stretch;margin-top:20px}.photo-row figure{flex:none}}
+
+/* Registration: same visual language as the poster sections (open blue field, heavy headline, red underlined key phrase, soft white cards, gold pill action). */
+.application.registration{position:relative;overflow:hidden;padding:96px 8% 88px;background:radial-gradient(ellipse 42% 240px at 50% 0,#fff 0,#fff0 100%),linear-gradient(0deg,#fff 0,#fff0 200px),radial-gradient(ellipse 85% 60% at 50% 38%,#fff 22%,#f1f9ff 58%,#dcf1fd 100%);color:#0d1f3c;isolation:isolate}
+.application.registration:before,.application.registration:after{content:"";position:absolute;z-index:-1;width:170%;height:150px;left:-35%;background:linear-gradient(180deg,#c6e6fb00,#c6e6fb59 50%,#c6e6fb00);transform:rotate(-24deg);pointer-events:none}
+.application.registration:before{top:4%}.application.registration:after{bottom:9%;height:110px}
+.registration .form-shell{max-width:780px;margin:0 auto;padding:0;border:0;border-radius:0;background:none;box-shadow:none}
+.registration .form-heading{margin-bottom:44px}
+.registration .form-heading .eyebrow{margin:0 0 22px;font-size:13px;letter-spacing:4px;font-weight:800;color:#c82e35}
+.registration .form-heading h2{margin:0;font-size:min(68px,9.4cqw);line-height:1.32;font-weight:900;letter-spacing:-.02em;color:#0d1f3c}
+.registration .form-heading h2 span{color:#e0262d;padding-bottom:.1em;background:linear-gradient(#e0262d,#e0262d) left bottom/100% .075em no-repeat}
+.registration .form-heading>p:last-child{margin:26px 0 0;font-size:clamp(16px,2.3vw,22px);font-weight:800;color:#263e59;letter-spacing:.5px}
+.registration .course-summary{gap:0;margin:0 0 18px;padding:8px 32px;background:#ffffffd9;border:1px solid #fff;border-radius:22px;box-shadow:0 14px 40px #5da2c51a}
+.registration .course-summary p{display:flex;gap:14px;align-items:baseline;margin:0;padding:22px 0;border:0;border-bottom:1px solid #dceaf2;border-radius:0;background:none;color:#0d1f3c;font-size:clamp(16px,2.2vw,20px);line-height:1.7;font-weight:700}
+.registration .course-summary p:last-child{border-bottom:0}
+.registration .course-summary strong{flex-shrink:0;color:#e0262d;font-weight:900;font-size:1.06em}
+.registration .schedule-notice{margin:0 0 52px;padding:0 12px;border:0;background:none;text-align:center;font-size:14px;line-height:1.8;color:#536d87;font-weight:500}
+.registration .session-fieldset{margin:0 0 36px}
+.registration legend{margin-bottom:18px;padding:0;font-size:clamp(20px,2.6vw,26px);font-weight:900;color:#0d1f3c;letter-spacing:.5px}
+.registration .session-grid{gap:16px}
+.registration .session-option label{position:relative;gap:8px;padding:22px 56px 22px 24px;border:2px solid #fff;border-radius:18px;background:#ffffffe6;box-shadow:0 8px 26px #5da2c51a;color:#3e536b;transition:border-color .18s,box-shadow .18s,transform .18s}
+.registration .session-option label:after{content:"";position:absolute;top:22px;right:22px;width:22px;height:22px;border-radius:50%;border:2px solid #b9cfe0;background:#fff;box-sizing:border-box;transition:all .18s}
+.registration .session-option label:hover{border-color:#cfe5f4;transform:translateY(-2px);box-shadow:0 12px 30px #5da2c526}
+.registration .session-option .session-badge{align-self:flex-start;padding:3px 12px;border-radius:99px;background:#fdecee;color:#c82e35;font-size:12px;font-weight:800;letter-spacing:.5px}
+.registration .session-option strong{font-size:clamp(20px,2.6vw,24px);font-weight:900;color:#0d1f3c;letter-spacing:.3px}
+.registration .session-option label>span:last-child{font-size:14px;color:#536d87;font-weight:500}
+.registration .session-option input:checked+label{padding:22px 56px 22px 24px;border:2px solid #0d1f3c;background:#fff;box-shadow:0 12px 30px #0d1f3c1f}
+.registration .session-option input:checked+label:after{border:0;background:#e0262d url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Cpath d='M6 11.5l3.3 3.3L16 8' fill='none' stroke='%23fff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/100% no-repeat}
+.registration .session-option input:focus-visible+label{outline:3px solid #285887;outline-offset:3px}
+.registration .field-grid{gap:0 20px;padding:30px 32px 8px;background:#ffffffd9;border:1px solid #fff;border-radius:22px;box-shadow:0 14px 40px #5da2c51a;margin-bottom:24px}
+.registration .field-grid>label{margin-bottom:22px;font-size:16px;font-weight:800;color:#0d1f3c}
+.registration .field-grid input{margin-top:10px;min-height:54px;padding:14px 16px;border:1px solid #d3e3ef;border-radius:12px;background:#f7fbfe;font-size:16px;color:#0d1f3c;transition:border-color .15s,background .15s}
+.registration .field-grid input::placeholder{color:#8aa0b5}
+.registration .field-grid input:focus{outline:0;border-color:#0d1f3c;background:#fff;box-shadow:0 0 0 4px #2858872e}
+.registration .field-grid input:focus-visible{box-shadow:0 0 0 4px #2858872e}
+.registration .consent{margin:0 4px 28px;font-size:14px;color:#3e536b;line-height:1.8;font-weight:500}
+.registration .consent input{width:20px;height:20px;margin:3px 10px 0 0;accent-color:#c82e35}
+.registration .submit-button{display:flex;align-items:center;justify-content:center;width:100%;min-height:68px;padding:20px 24px;border:1px solid #c99a34;border-radius:99px;background:linear-gradient(180deg,#fff0a1,#f2cb64);box-shadow:0 8px 20px #8b6b2226;color:#071e41;font-size:clamp(18px,2.6vw,24px);font-weight:900;letter-spacing:.5px;transition:background .15s,transform .15s,box-shadow .15s}
+.registration .submit-button:hover{background:linear-gradient(180deg,#fff4b6,#f5d477);transform:translateY(-1px);box-shadow:0 10px 24px #8b6b2233}
+.registration .submit-button:focus-visible{outline:3px solid #071e41;outline-offset:5px}
+.registration .form-note{margin:18px 0 0;font-size:13px;color:#536d87}
+@media(max-width:600px){
+ .application.registration{padding:60px 18px 56px}
+ .application.registration:before{height:90px}.application.registration:after{height:70px}
+ .registration .form-shell{padding:0;border-radius:0}
+ .registration .form-heading{margin-bottom:32px}
+ .registration .form-heading .eyebrow{font-size:11px;letter-spacing:2.5px;margin-bottom:16px}
+ .registration .form-heading h2{font-size:min(36px,9.4cqw)}
+ .registration .form-heading>p:last-child{margin-top:18px;font-size:clamp(14px,4.2vw,17px)}
+ .registration .course-summary{padding:4px 20px;border-radius:18px}
+ .registration .course-summary p{padding:16px 0;gap:8px;font-size:15px;border-radius:0}
+ .registration .schedule-notice{margin-bottom:40px;font-size:13px}
+ .registration .session-option label,.registration .session-option input:checked+label{padding:18px 52px 18px 20px}
+ .registration .session-option label:after{top:18px;right:18px}
+ .registration .session-option strong{font-size:20px}
+ .registration .field-grid{padding:24px 20px 4px;border-radius:18px}
+ .registration .submit-button{min-height:60px;font-size:17px;padding:16px 18px}
+}
