@@ -18,10 +18,10 @@
     "alt": "產業成長模型拆解"
   },
   "6": {
-    "src": "/images/revision/restore-06-approved.webp",
+    "src": "/images/revision/pk21-06-outcomes.webp",
     "width": 1059,
     "height": 1486,
-    "alt": "兩天正課＋舞台PK日，六件提案成果"
+    "alt": "2+1 天課程，完成六件帶得走的提案成果"
   },
   "8": {
     "src": "/images/revision/restore-08-approved.webp",
@@ -30,10 +30,10 @@
     "alt": "DAY 2｜趨勢、募資與舞台實戰"
   },
   "9": {
-    "src": "/images/revision/restore-09-strict.webp",
+    "src": "/images/revision/pk21-09-stage.webp",
     "width": 1024,
     "height": 1536,
-    "alt": "真實事業上台的三關實戰"
+    "alt": "第三天舞台PK日（免費加贈）：正式舞台PK，帶著你的真實事業上台"
   },
   "13": {
     "src": "/images/revision/footer-13-expert.webp",
@@ -60,9 +60,15 @@
     "alt": "商業表達課程常見問題"
   },
   "5": {
-    "src": "/images/revision/restore-05-approved.webp",
+    "src": "/images/revision/pk21-05-two-day.webp",
     "width": 1024,
     "height": 1536,
-    "alt": "兩天正課，從信念到募資，另安排舞台PK日"
+    "alt": "2+1 天課程：兩天正課，從信念到募資；第三天舞台PK日免費加贈，每三梯次舉辦一場"
+  },
+  "20": {
+    "src": "/images/revision/pk21-20-faq.webp",
+    "width": 1024,
+    "height": 1536,
+    "alt": "參加前常見問答：正式舞台PK如何參加？第三天免費加贈，每三梯次舉辦一場。"
   }
 }
