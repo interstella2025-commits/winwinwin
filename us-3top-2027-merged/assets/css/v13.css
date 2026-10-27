@@ -112,3 +112,20 @@
 .wv-grid>*{min-width:0}
 .wv-player{align-self:start;width:100%;height:auto}
 @media(min-width:1025px){.wv-grid{grid-template-columns:1.6fr 1fr;align-items:center}.wv-ag .ag{padding:15px 20px}.wv-ag .ag p{font-size:13.5px;line-height:1.65}.wv-ag .ag h3{font-size:17px;margin:4px 0}}
+/* v13.1 說明會改回 Win 教授主講：主講人卡放進影片位 */
+.wv-host{flex-direction:row;justify-content:flex-start;text-align:left;padding:4px 26px 18px;position:relative}
+.wv-host .spk{margin:0;padding:0;border:0;background:none;backdrop-filter:none;grid-template-columns:150px 1fr;gap:24px;width:100%}
+.wv-host .spk img{width:150px;height:auto;aspect-ratio:4/5;border-radius:10px;border:1px solid rgba(232,199,122,.35);box-shadow:0 20px 40px -20px rgba(0,0,0,.8)}
+.wv-host .spk-n{font-size:24px;margin:4px 0 10px}
+.wv-host .spk ul{gap:5px}.wv-host .spk li{font-size:14px;line-height:1.5}
+.wv-host .spk-d{margin-top:10px;font-size:13.5px}
+.wv-host .wv-play{position:absolute;left:26px;top:4px;z-index:2;width:150px;height:auto;aspect-ratio:4/5;border-radius:10px;margin:0;background:linear-gradient(180deg,transparent 45%,rgba(5,10,22,.55));border:0;backdrop-filter:none;display:grid;place-items:center}
+.wv-host .wv-play svg{width:46px;height:46px;padding:12px;border-radius:50%;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.4);backdrop-filter:blur(6px);margin:0;box-sizing:content-box}
+@media(max-width:760px){
+ .wv-player{aspect-ratio:auto!important}
+ .wv-host{padding:4px 16px 18px}
+ .wv-host .spk{grid-template-columns:96px 1fr;gap:14px;align-items:start}
+ .wv-host .spk img.spk-ph{width:96px;height:auto;aspect-ratio:4/5}
+ .wv-host .wv-play{left:16px;width:96px}.wv-host .wv-play svg{width:26px;height:26px;padding:9px}
+ .wv-host .spk-n{font-size:19px;margin:2px 0 8px}.wv-host .spk li{font-size:13px}
+}
