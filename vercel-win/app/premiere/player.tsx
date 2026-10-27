@@ -1,8 +1,9 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { PREMIERE } from '@/lib/premiere/config';
+import { formatTimestamp, kindLabel, normalizeMessages, visibleMessages, type PremiereMessage } from '@/lib/premiere/messages';
 import type { PremiereState } from '@/lib/premiere/state';
-import { formatCountdown, formatDuration, formatTaipei, formatTwd, playbackTarget, shouldResync } from '@/lib/premiere/schedule';
+import { formatCountdown, formatTwd, playbackTarget, shouldResync } from '@/lib/premiere/schedule';
 
 const copy = PREMIERE.copy;
 
@@ -13,13 +14,16 @@ export default function Player({ initial }: { initial: PremiereState }) {
   const [muted, setMuted] = useState(true);
   const [needsGesture, setNeedsGesture] = useState(false);
   const [videoError, setVideoError] = useState(false);
-  const [registerStatus, setRegisterStatus] = useState('');
-  const [registerBusy, setRegisterBusy] = useState(false);
+  const [script, setScript] = useState<PremiereMessage[]>([]);
+  const [tab, setTab] = useState<'chat' | 'product'>('chat');
+  const [sheet, setSheet] = useState(false);
   const [payStatus, setPayStatus] = useState('');
   const [payBusy, setPayBusy] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const feedRef = useRef<HTMLDivElement>(null);
   const offsetRef = useRef(0);
   const stateRef = useRef(state);
+  const offered = useRef(false);
   stateRef.current = state;
 
   useEffect(() => {
@@ -56,8 +60,18 @@ export default function Player({ initial }: { initial: PremiereState }) {
   }, []);
 
   useEffect(() => {
-    const saved = sessionStorage.getItem('win-premiere-attendance');
-    if (saved) void attend(saved);
+    let stop = false;
+    async function pull() {
+      try {
+        const response = await fetch('/api/premiere/messages', { cache: 'no-store' });
+        if (!response.ok) return;
+        const body = await response.json() as { messages?: unknown };
+        if (!stop) setScript(normalizeMessages(body.messages));
+      } catch { /* an empty script still lets the film play */ }
+    }
+    void pull();
+    const timer = window.setInterval(pull, 20000);
+    return () => { stop = true; window.clearInterval(timer); };
   }, []);
 
   const now = mounted ? Date.now() + offsetRef.current : Date.parse(state.serverNow);
@@ -71,27 +85,10 @@ export default function Player({ initial }: { initial: PremiereState }) {
   void tick;
 
   useEffect(() => {
-    const root = document.documentElement;
-    const nodes = [...document.querySelectorAll('.reveal')];
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduce || nodes.length === 0) {
-      nodes.forEach(node => node.classList.add('is-in'));
-      return undefined;
-    }
-    root.classList.add('premiere-motion');
-    const io = new IntersectionObserver(entries => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
-        entry.target.classList.add('is-in');
-        io.unobserve(entry.target);
-      }
-    }, { threshold: 0.16 });
-    nodes.forEach(node => io.observe(node));
-    return () => {
-      io.disconnect();
-      root.classList.remove('premiere-motion');
-    };
-  }, [phase]);
+    if (!offerOpen || phase === 'ended' || offered.current) return;
+    offered.current = true;
+    setTab('product');
+  }, [offerOpen, phase]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -175,34 +172,9 @@ export default function Player({ initial }: { initial: PremiereState }) {
     void video.play().then(() => { setMuted(false); setNeedsGesture(false); }).catch(() => setNeedsGesture(true));
   }
 
-  async function register(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setRegisterBusy(true);
-    setRegisterStatus('');
-    const form = event.currentTarget;
-    const values = Object.fromEntries(new FormData(form));
-    try {
-      const response = await fetch('/api/premiere/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...values, sessionCode: PREMIERE.sessionCode }),
-      });
-      const body = await response.json().catch(() => ({})) as { error?: string; token?: string; already?: boolean };
-      if (response.status === 404) { setRegisterStatus(copy.registerUnavailable); return; }
-      if (response.ok && body.already && !body.token) { setRegisterStatus(copy.registerDone); form.reset(); return; }
-      if (!response.ok || !body.token) throw new Error(body.error || copy.registerError);
-      sessionStorage.setItem('win-premiere-attendance', body.token);
-      void attend(body.token);
-      setRegisterStatus(copy.registerDone);
-      form.reset();
-    } catch (error) {
-      setRegisterStatus(error instanceof Error ? error.message : copy.registerError);
-    } finally { setRegisterBusy(false); }
-  }
-
   async function pay(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!state.checkoutEnabled) return;
+    if (!state.checkoutEnabled || phase === 'ended') return;
     setPayBusy(true);
     setPayStatus('');
     const form = event.currentTarget;
@@ -214,7 +186,7 @@ export default function Player({ initial }: { initial: PremiereState }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: values.name, email: values.email, phone: values.phone, lineName: values.lineName || '',
+          name: values.name, email: values.email, phone: values.phone, lineName: '',
           profession: '', stage: '', topic: '', sessionCode: PREMIERE.sessionCode,
           consent: values.consent === 'on', website: values.website || '',
           product: state.productCode, requestId,
@@ -232,112 +204,120 @@ export default function Player({ initial }: { initial: PremiereState }) {
   }
 
   const percent = state.durationSeconds ? Math.min(100, (position / state.durationSeconds) * 100) : 0;
+  const shown = visibleMessages(script, phase === 'countdown' ? -1 : position);
   const parts = clockParts(start - now);
-  const purchaseOpen = offerOpen && phase !== 'ended' && state.checkoutEnabled;
-  const dockOffer = phase === 'playing' && offerOpen;
-  return <main className={`premiere premiere--${phase}`} data-phase={phase}>
-    <header className="premiere-nav">
-      <a className="premiere-brand" href="/">EXPERT <em>TO</em> ENTERPRISE</a>
-      <a className="premiere-back" href="/">{copy.backHome}</a>
+
+  useEffect(() => {
+    const node = feedRef.current;
+    if (!node) return;
+    node.scrollTop = node.scrollHeight;
+  }, [shown.length, tab]);
+  return <main className={`stage stage--${phase}`} data-phase={phase} data-tab={tab}>
+    <header className="stage-bar">
+      <a className="stage-brand" href="/">EXPERT <em>TO</em> ENTERPRISE</a>
+      <a className="stage-back" href="/">{copy.backHome}</a>
     </header>
-    <p className="sr-only" aria-live="polite">{phase === 'countdown' ? `${copy.countdown} ${remain}` : phase === 'playing' ? copy.playing : copy.endedTitle}</p>
-    {phase === 'countdown' && <section className="premiere-hero" aria-label={copy.eyebrow}>
-      <img className="premiere-hero-photo" src="/images/revision/stage-singapore.webp" alt="" />
-      <div className="premiere-hero-shade" />
-      <div className="premiere-hero-copy">
-        <p className="premiere-kicker">{copy.eyebrow}</p>
-        <h1>{titleLines(copy.title)}</h1>
-        <p className="premiere-lead">{copy.lead}</p>
-        <div className="premiere-clock" aria-hidden="true">
-          <p className="premiere-clock-label">{copy.countdown}</p>
-          <div className="premiere-clock-row">{parts.map(([label, value]) => <div key={label}><b>{value}</b><span>{label}</span></div>)}</div>
+    <div className="stage-grid">
+      <section className="stage-player" aria-label={copy.eyebrow}>
+        <div className="frame">
+          {phase === 'playing' && state.hlsUrl ? <>
+            <video ref={videoRef} playsInline muted autoPlay preload="auto" disablePictureInPicture />
+            <div className="frame-progress" role="progressbar" aria-label={copy.progressLabel} aria-valuemin={0} aria-valuemax={state.durationSeconds} aria-valuenow={Math.floor(position)} aria-valuetext={copy.playing}><span style={{ width: `${percent}%` }} /></div>
+            {(muted || needsGesture) && <button type="button" className="frame-engage" onClick={engage}>{needsGesture ? copy.startPlayback : copy.unmute}</button>}
+            {videoError && <p className="frame-note">{copy.videoError}</p>}
+          </> : <>
+            <img className="frame-still" src="/images/revision/stage-singapore.webp" alt="" />
+            {phase === 'countdown' && <div className="frame-countdown">
+              <p>{copy.countdown}</p>
+              <div className="frame-clock" aria-hidden="true">{parts.map(([label, value]) => <span key={label}><b>{value}</b>{label}</span>)}</div>
+              <p className="sr-only">{copy.countdown} {remain}</p>
+            </div>}
+            {phase === 'ended' && <div className="frame-ended"><h2>{splitTitle(copy.endedTitle)}</h2><p>{copy.endedBody}</p></div>}
+            {phase === 'playing' && <>
+              <p className="frame-live"><span />{copy.playing}</p>
+              <div className="frame-progress" role="progressbar" aria-label={copy.progressLabel} aria-valuemin={0} aria-valuemax={state.durationSeconds} aria-valuenow={Math.floor(position)} aria-valuetext={copy.playing}><span style={{ width: `${percent}%` }} /></div>
+              <p className="frame-note">{copy.videoMissing}</p>
+            </>}
+          </>}
         </div>
-      </div>
-    </section>}
-    {phase === 'playing' && <section className="premiere-cinema" aria-label={copy.eyebrow}>
-      <div className="premiere-screen">
-        {state.hlsUrl ? <>
-          <video ref={videoRef} playsInline muted autoPlay preload="auto" disablePictureInPicture />
-          <div className="premiere-progress" role="progressbar" aria-label={copy.progressLabel} aria-valuemin={0} aria-valuemax={state.durationSeconds} aria-valuenow={Math.floor(position)} aria-valuetext={copy.playing}><span style={{ width: `${percent}%` }} /></div>
-          {(muted || needsGesture) && <button type="button" className="premiere-engage" onClick={engage}>{needsGesture ? copy.startPlayback : copy.unmute}</button>}
-          {videoError && <p className="premiere-video-note">{copy.videoError}</p>}
-        </> : <img className="premiere-hero-photo" src="/images/revision/stage-singapore.webp" alt="" />}
-      </div>
-      <div className="premiere-cinema-copy">
-        <p className="premiere-kicker">{copy.eyebrow}</p>
-        <h1>{titleLines(copy.title)}</h1>
-        <p className="premiere-onair">{copy.playing}</p>
-        {!state.hlsUrl && <p className="premiere-video-note">{copy.videoMissing}</p>}
-      </div>
-    </section>}
-    {phase === 'ended' && <section className="premiere-hero premiere-hero--ended" aria-label={copy.eyebrow}>
-      <img className="premiere-hero-photo" src="/images/revision/cambridge.webp" alt="" />
-      <div className="premiere-hero-shade" />
-      <div className="premiere-hero-copy">
-        <p className="premiere-kicker">{copy.eyebrow}</p>
-        <h1>{titleLines(copy.endedTitle)}</h1>
-        <p className="premiere-lead">{copy.endedBody}</p>
-      </div>
-    </section>}
-    {phase !== 'ended' && <section className={`premiere-spread${phase === 'playing' ? ' premiere-spread--plain' : ''} reveal`} aria-labelledby="premiere-register-title">
-      <div className="premiere-spread-copy">
-        <p className="premiere-index">01</p>
-        <h2 id="premiere-register-title">{copy.registerTitle}</h2>
-        <p className="premiere-copy">{copy.registerLead}</p>
-        <form onSubmit={register}>
-          <input className="trap" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" />
-          <label className="field"><span className="field-name">姓名<span className="required" aria-hidden="true">＊</span></span><input name="name" autoComplete="name" required maxLength={100} placeholder="請輸入姓名" /></label>
-          <label className="field"><span className="field-name">Email<span className="required" aria-hidden="true">＊</span></span><input type="email" name="email" autoComplete="email" required maxLength={200} placeholder="name@example.com" /></label>
-          <button className="premiere-submit" disabled={registerBusy}>{registerBusy ? '正在送出…' : copy.registerButton}</button>
-          <p role="status" aria-live="polite" className="premiere-status">{registerStatus}</p>
-        </form>
-        <ul className="premiere-meta">
-          <li><span>開始</span>{formatTaipei(state.startAt)}</li>
-          <li><span>長度</span>{formatDuration(state.durationSeconds)}</li>
-          <li><span>報名開放</span>{formatTaipei(state.offerAt)}</li>
-        </ul>
-      </div>
-      {phase === 'countdown' && <figure className="premiere-spread-photo">
-        <img src="/images/revision/japan.webp" alt="林嘉宏在講台上對學員講課" />
-        <figcaption>講台現場</figcaption>
-      </figure>}
-    </section>}
-    {phase === 'ended' && <section className="premiere-close reveal">
-      <div>
-        <p className="premiere-index">01</p>
-        <h2 id="premiere-register-title">{copy.registerEndedTitle}</h2>
-        <p className="premiere-copy">{copy.registerEndedBody}</p>
-      </div>
-    </section>}
-    <section className={`premiere-offer${dockOffer ? ' premiere-dock' : ''}`} aria-labelledby="premiere-purchase-title">
-      <div className="premiere-offer-copy">
-        <p className="premiere-index">02</p>
-        <h2 id="premiere-purchase-title">{copy.purchaseTitle}</h2>
-        <p className="premiere-price">{formatTwd(state.priceTwd)}</p>
-        {!dockOffer && <p className="premiere-copy">{copy.purchaseLead}</p>}
-        {!dockOffer && <p className="premiere-terms">{copy.terms}</p>}
-      </div>
-      <div className="premiere-offer-action">
-        {purchaseOpen ? <form onSubmit={pay}>
-          <input className="trap" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" />
-          <label className="field"><span className="field-name">姓名<span className="required" aria-hidden="true">＊</span></span><input name="name" autoComplete="name" required maxLength={100} /></label>
-          <label className="field"><span className="field-name">手機<span className="required" aria-hidden="true">＊</span></span><input name="phone" type="tel" autoComplete="tel" required maxLength={100} placeholder="例：0912 345 678" /></label>
-          <label className="field"><span className="field-name">Email<span className="required" aria-hidden="true">＊</span></span><input type="email" name="email" autoComplete="email" required maxLength={200} /></label>
-          <label className="field"><span className="field-name">LINE 顯示名稱</span><input name="lineName" autoComplete="off" maxLength={100} placeholder="選填" /></label>
-          <label className="consent"><input type="checkbox" name="consent" required /><span>{copy.consent}</span></label>
-          <p className="premiere-warning">下一頁顯示的金額必須是 {formatTwd(state.priceTwd)}。若看到 NT$399，請不要付款。</p>
-          <button className="premiere-submit gold" disabled={payBusy}>{payBusy ? '正在送出…' : copy.purchaseButton}</button>
-          <p role="status" aria-live="polite" className="premiere-status">{payStatus}</p>
-        </form> : <p className="premiere-closed">{phase === 'ended' ? copy.checkoutEnded : offerOpen ? copy.checkoutClosed : copy.offerLocked}</p>}
-      </div>
-    </section>
+        <div className="host">
+          <img src="/images/revision/japan.webp" alt="" />
+          <div>
+            <p className="host-kicker">{copy.eyebrow}</p>
+            <h1>{splitTitle(copy.title)}</h1>
+            <p className="host-name">{PREMIERE.hostName}</p>
+            <p className="host-when">{hostWhen(state.startAt)}</p>
+            <p className="host-note">{PREMIERE.hostNote}</p>
+          </div>
+        </div>
+      </section>
+      <section className="stage-panel" aria-label="說明會內容">
+        <div className="tabs" role="tablist">
+          <button type="button" role="tab" aria-selected={tab === 'chat'} onClick={() => setTab('chat')}>{copy.chatTab}</button>
+          <button type="button" role="tab" aria-selected={tab === 'product'} onClick={() => setTab('product')}>
+            {copy.productTab}
+            {offerOpen && phase !== 'ended' && <i className="offer-badge">{copy.offerBadge}</i>}
+          </button>
+        </div>
+        {tab === 'chat' ? <div className="feed" role="tabpanel" ref={feedRef}>
+          {shown.length === 0 ? <p className="feed-empty">{phase === 'countdown' ? copy.chatWaiting : copy.chatEmpty}</p> : <ol>
+            {shown.map(message => <li key={message.id} className={`msg msg--${message.kind}`}>
+              <span className="avatar" aria-hidden="true">{message.avatarUrl ? <img src={message.avatarUrl} alt="" /> : message.displayName.slice(0, 1)}</span>
+              <span>
+                <strong>{message.displayName}</strong>
+                <em>{kindLabel(message.kind)}</em>
+                <p>{message.body}</p>
+              </span>
+              <time dateTime={formatTimestamp(message.appearSeconds)}>{formatTimestamp(message.appearSeconds)}</time>
+            </li>)}
+          </ol>}
+        </div> : <div className="product" role="tabpanel">
+          {!offerOpen || phase === 'countdown' ? <p className="product-locked">{copy.offerLocked}</p> : <>
+            <article className="product-card">
+              <img src={PREMIERE.productImage} alt="" />
+              <div>
+                {offerOpen && phase !== 'ended' && <p className="offer-badge">{copy.offerBadge}</p>}
+                <h2>{copy.purchaseTitle}</h2>
+                <p className="product-was">{PREMIERE.originalPriceLabel}</p>
+                <p className="product-now">{formatTwd(state.priceTwd)}</p>
+                <p className="product-lead">{copy.purchaseLead}</p>
+                <p className="product-terms">{copy.terms}</p>
+                {phase === 'ended' ? <p className="product-locked">{copy.checkoutEnded}</p> : state.checkoutEnabled ? <button type="button" className="order-button" onClick={() => setSheet(true)}>{copy.orderButton}</button> : <p className="product-locked">{copy.checkoutClosed}</p>}
+              </div>
+            </article>
+          </>}
+        </div>}
+      </section>
+    </div>
+    {sheet && <div className="sheet-back" onClick={() => setSheet(false)}>
+      <form className="sheet" data-sheet="open" onClick={event => event.stopPropagation()} onSubmit={pay}>
+        <p className="host-kicker">02</p>
+        <h2>{copy.purchaseTitle}</h2>
+        <p className="product-now">{formatTwd(state.priceTwd)}</p>
+        <input className="trap" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" />
+        <label className="field"><span className="field-name">姓名<span className="required" aria-hidden="true">＊</span></span><input name="name" autoComplete="name" required maxLength={100} /></label>
+        <label className="field"><span className="field-name">手機<span className="required" aria-hidden="true">＊</span></span><input name="phone" type="tel" autoComplete="tel" required maxLength={100} placeholder="例：0912 345 678" /></label>
+        <label className="field"><span className="field-name">Email<span className="required" aria-hidden="true">＊</span></span><input type="email" name="email" autoComplete="email" required maxLength={200} /></label>
+        <label className="consent"><input type="checkbox" name="consent" required /><span>{copy.consent}</span></label>
+        <p className="sheet-warning">下一頁顯示的金額必須是 {formatTwd(state.priceTwd)}。若看到 NT$399，請不要付款。</p>
+        <button className="order-button" disabled={payBusy}>{payBusy ? '正在送出…' : copy.checkoutSubmit}</button>
+        <p role="status" className="sheet-status">{payStatus}</p>
+        <button type="button" className="sheet-close" onClick={() => setSheet(false)}>關閉</button>
+      </form>
+    </div>}
   </main>;
 }
 
-function titleLines(text: string) {
-  const cut = text.indexOf('】');
-  if (cut < 0 || cut >= text.length - 1) return text;
-  return <>{text.slice(0, cut + 1)}<br />{text.slice(cut + 1)}</>;
+function splitTitle(title: string) {
+  const cut = title.indexOf('】');
+  if (cut < 0 || cut >= title.length - 1) return title;
+  return <>{title.slice(0, cut + 1)}<br />{title.slice(cut + 1)}</>;
+}
+
+function hostWhen(iso: string) {
+  const parts = new Intl.DateTimeFormat('zh-Hant-TW', { timeZone: 'Asia/Taipei', month: 'numeric', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date(iso));
+  const read = (type: string) => parts.find(part => part.type === type)?.value || '';
+  return `${read('month')}/${read('day')}（${read('weekday').replace('週', '')}）${read('hour')}:${read('minute')}`;
 }
 
 function clockParts(milliseconds: number) {
@@ -352,8 +332,4 @@ function clockParts(milliseconds: number) {
     ['分', String(minutes).padStart(2, '0')],
     ['秒', String(seconds).padStart(2, '0')],
   ] as const;
-}
-
-function attend(token: string) {
-  return fetch('/api/premiere/attend', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token }) }).catch(() => undefined);
 }

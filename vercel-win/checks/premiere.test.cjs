@@ -22,6 +22,7 @@ const video = load('lib/premiere/video.ts');
 const state = load('lib/premiere/state.ts');
 const config = load('lib/premiere/config.ts');
 const copy = load('lib/premiere/payment-copy.ts');
+const messages = load('lib/premiere/messages.ts');
 
 const start = Date.parse('2026-11-03T19:30:00+08:00');
 const session = { startAt: '2026-11-03T19:30:00+08:00', durationSeconds: 90 * 60, offerAt: '2026-11-03T20:30:00+08:00' };
@@ -126,14 +127,38 @@ for (const root of roots) {
     for (const word of banned) assert.equal(text.includes(word), false, `${full} contains ${word}`);
   }
 }
+assert.equal(messages.parseTimestamp('00:35:40'), 2140);
+assert.equal(messages.parseTimestamp('00:60:00'), null);
+assert.equal(messages.formatTimestamp(2140), '00:35:40');
+const sample = [
+  { id: 'b', displayName: '乙', avatarUrl: '', body: '後', appearSeconds: 80, kind: 'note' },
+  { id: 'a', displayName: '甲', avatarUrl: '', body: '先', appearSeconds: 10, kind: 'announcement' },
+];
+assert.deepEqual(messages.visibleMessages(sample, 10).map(item => item.id), ['a']);
+assert.deepEqual(messages.visibleMessages(sample, -1), []);
+assert.equal(messages.messagesFromCsv(messages.messagesToCsv(sample)).length, 2);
+assert.equal(JSON.stringify(config.PREMIERE).includes('詩琦'), false);
+assert.equal(fs.readFileSync('lib/premiere/messages.ts', 'utf8').includes('詩琦'), false);
+
 const player = fs.readFileSync('app/premiere/player.tsx', 'utf8');
 assert.equal(player.includes('amount:'), false);
 assert.match(player, /product: state\.productCode/);
-assert.match(player, /premiere\/register/);
-assert.match(player, /registerEndedTitle/);
+assert.equal(player.includes('premiere/register'), false);
+assert.equal(player.includes('registerEndedTitle'), false);
+assert.equal(config.PREMIERE.copy.chatTab, '即時訊息');
+assert.equal(config.PREMIERE.copy.productTab, '產品列表');
+assert.equal(config.PREMIERE.copy.orderButton, '我要下單');
+assert.match(player, /copy\.chatTab/);
+assert.match(player, /copy\.productTab/);
+assert.match(player, /copy\.orderButton/);
+assert.match(player, /\/api\/premiere\/messages/);
 assert.match(player, /checkoutEnded/);
 assert.match(player, /phase === 'ended'/);
 assert.equal(player.includes("searchParams.get('product')"), false);
+const editor = fs.readFileSync('app/premiere/messages/editor.tsx', 'utf8');
+assert.match(editor, /premiere\/messages/);
+assert.equal(editor.includes('詩琦'), false);
+assert.equal(editor.includes('amount:'), false);
 
 const pageCode = ts.transpileModule(fs.readFileSync('app/premiere/page.tsx', 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX },
@@ -143,7 +168,7 @@ new Function('require', 'module', 'exports', pageCode)(name => {
   if (name === 'react/jsx-runtime') return require('react/jsx-runtime');
   if (name === 'next/navigation') return { notFound() { const error = new Error('NEXT_NOT_FOUND'); throw error; } };
   if (name.endsWith('.css')) return {};
-  if (name === './player') return { __esModule: true, default() { return null; } };
+  if (name === './player' || name === './editor') return { __esModule: true, default() { return null; } };
   if (name.startsWith('@/')) return load(name.slice(2) + (name.endsWith('.ts') ? '' : '.ts'));
   throw new Error('unexpected import ' + name);
 }, pageModule, pageModule.exports);
@@ -157,6 +182,22 @@ try {
   assert.throws(() => pageModule.exports.default(), /NEXT_NOT_FOUND/);
   process.env.PREMIERE_PAGE_ENABLED = '1';
   assert.ok(pageModule.exports.default());
+  const editorPage = ts.transpileModule(fs.readFileSync('app/premiere/messages/page.tsx', 'utf8'), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX },
+  }).outputText;
+  const editorModule = { exports: {} };
+  new Function('require', 'module', 'exports', editorPage)(name => {
+    if (name === 'react/jsx-runtime') return require('react/jsx-runtime');
+    if (name === 'next/navigation') return { notFound() { throw new Error('NEXT_NOT_FOUND'); } };
+    if (name.endsWith('.css')) return {};
+    if (name === './editor') return { __esModule: true, default() { return null; } };
+    if (name.startsWith('@/')) return load(name.slice(2) + (name.endsWith('.ts') ? '' : '.ts'));
+    throw new Error('unexpected import ' + name);
+  }, editorModule, editorModule.exports);
+  delete process.env.PREMIERE_PAGE_ENABLED;
+  assert.throws(() => editorModule.exports.default(), /NEXT_NOT_FOUND/);
+  process.env.PREMIERE_PAGE_ENABLED = '1';
+  assert.ok(editorModule.exports.default());
 } finally {
   if (savedFlag === undefined) delete process.env.PREMIERE_PAGE_ENABLED;
   else process.env.PREMIERE_PAGE_ENABLED = savedFlag;

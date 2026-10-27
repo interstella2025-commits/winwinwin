@@ -1,4 +1,4 @@
-diff -ruN sites-v25-base/app/api/payuni/checkout/route.ts sites-v25-new/app/api/payuni/checkout/route.ts
+diff -ruN '--exclude=node_modules' '--exclude=.next' '--exclude=.git' sites-v25-base/app/api/payuni/checkout/route.ts sites-v25-new/app/api/payuni/checkout/route.ts
 --- sites-v25-base/app/api/payuni/checkout/route.ts	2026-10-27 13:15:30.201368923 +0000
 +++ sites-v25-new/app/api/payuni/checkout/route.ts	2026-10-27 13:16:22.797283586 +0000
 @@ -1,4 +1,4 @@
@@ -17,9 +17,9 @@ diff -ruN sites-v25-base/app/api/payuni/checkout/route.ts sites-v25-new/app/api/
 - return new Response(`<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>前往安全付款｜WIN 前導課</title><body><p>${order.source==='win-test-1'?'WIN 金流驗收測試':'WIN 90分鐘線上前導課'}｜NT$${order.amount}</p><p>即將前往付款頁面…</p><form id="pay" method="POST" action="${c.endpoint}">${Object.entries(fields).map(([k,v])=>`<input type="hidden" name="${k}" value="${escape(v)}">`).join('')}<button>前往安全付款 NT$${order.amount}</button></form><script>document.getElementById('pay').submit()</script></body></html>`,{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','Referrer-Policy':'no-referrer','Content-Security-Policy':`default-src 'none'; script-src 'unsafe-inline'; form-action ${c.endpoint}; frame-ancestors 'none'`}});
 + return new Response(`<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>前往安全付款｜${escape(charge.shortName)}</title><body><p>${escape(charge.shortName)}｜NT$${order.amount}</p><p>即將前往付款頁面…</p><form id="pay" method="POST" action="${c.endpoint}">${Object.entries(fields).map(([k,v])=>`<input type="hidden" name="${k}" value="${escape(v)}">`).join('')}<button>前往安全付款 NT$${order.amount}</button></form><script>document.getElementById('pay').submit()</script></body></html>`,{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','Referrer-Policy':'no-referrer','Content-Security-Policy':`default-src 'none'; script-src 'unsafe-inline'; form-action ${c.endpoint}; frame-ancestors 'none'`}});
   }catch{return json({error:'付款服務暫時無法使用，請稍後再試。'},503)}}
-diff -ruN sites-v25-base/app/api/payuni/create/route.ts sites-v25-new/app/api/payuni/create/route.ts
+diff -ruN '--exclude=node_modules' '--exclude=.next' '--exclude=.git' sites-v25-base/app/api/payuni/create/route.ts sites-v25-new/app/api/payuni/create/route.ts
 --- sites-v25-base/app/api/payuni/create/route.ts	2026-10-27 13:15:30.201368923 +0000
-+++ sites-v25-new/app/api/payuni/create/route.ts	2026-10-27 13:41:22.943004769 +0000
++++ sites-v25-new/app/api/payuni/create/route.ts	2026-10-27 16:10:55.781674288 +0000
 @@ -1,4 +1,4 @@
 -import { AMOUNT,digest,validate } from '../../../../lib/payuni/core';
 +import { digest,validate } from '../../../../lib/payuni/core';
@@ -34,19 +34,16 @@ diff -ruN sites-v25-base/app/api/payuni/create/route.ts sites-v25-new/app/api/pa
   if(old.status!=='paid'&&(old.status!=='pending'||Date.now()-Date.parse(old.created_at)>20*60000))return json({error:'原付款連結已失效，請再次點選付款建立新訂單。',resetRequest:true},409);
   const existing=await db().prepare('SELECT name,email,phone,profession,stage,topic,session_code AS sessionCode,line_name AS lineName FROM applications WHERE id=?').bind(old.application_id).first<Record<string,string>>();
   if(!existing||(['name','email','phone','profession','stage','topic','sessionCode','lineName'] as const).some(k=>existing[k]!==data[k]))return json({error:'報名資料已變更，請再次點選付款建立新訂單。',resetRequest:true},409);
-@@ -19,7 +20,10 @@
+@@ -19,7 +20,7 @@
   const id=crypto.randomUUID(),token=crypto.randomUUID(),application=crypto.randomUUID(),now=new Date().toISOString();const orderNo='WIN'+Date.now().toString(36).toUpperCase()+crypto.randomUUID().replaceAll('-','').slice(0,10).toUpperCase();
   await db().batch([
   db().prepare('INSERT INTO applications (id,name,email,phone,profession,stage,topic,session_code,line_name,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)').bind(application,data.name,data.email,data.phone,data.profession,data.stage,data.topic,data.sessionCode,data.lineName,now),
 - db().prepare('INSERT INTO payment_orders (id,application_id,order_no,merchant,amount,token,request_id,status,created_at,consent_at,source) VALUES (?,?,?,?,?,?,?,\'pending\',?,?,?)').bind(id,application,orderNo,c.merchant,AMOUNT,token,requestKey,now,now,(request.headers.get('x-win-public-origin')===VERCEL_ORIGIN?VERCEL_ORIGIN:c.origin)+'/#apply')]);
 + db().prepare('INSERT INTO payment_orders (id,application_id,order_no,merchant,amount,token,request_id,status,created_at,consent_at,source,plan) VALUES (?,?,?,?,?,?,?,\'pending\',?,?,?,?)').bind(id,application,orderNo,c.merchant,data.product.amount,token,requestKey,now,now,(request.headers.get('x-win-public-origin')===VERCEL_ORIGIN?VERCEL_ORIGIN:c.origin)+'/#apply',data.product.code)]);
-+ if(data.product.code==='fullcourse'){
-+  try{await db().prepare('INSERT INTO premiere_registrants (id,name,email,session_code,token,created_at) VALUES (?,?,?,?,?,?) ON CONFLICT(email, session_code) DO NOTHING').bind(crypto.randomUUID(),data.name,data.email.trim().toLowerCase(),data.sessionCode,crypto.randomUUID(),now).run()}catch{/* 已付款的訂單仍會從 payment_orders 併入名單 */}
-+ }
   return json({checkoutUrl:`/api/payuni/checkout?token=${token}`});
   }catch{return json({error:'暫時無法建立付款，請保留資料稍後再試。'},503)}
  }
-diff -ruN sites-v25-base/app/api/payuni/status/route.ts sites-v25-new/app/api/payuni/status/route.ts
+diff -ruN '--exclude=node_modules' '--exclude=.next' '--exclude=.git' sites-v25-base/app/api/payuni/status/route.ts sites-v25-new/app/api/payuni/status/route.ts
 --- sites-v25-base/app/api/payuni/status/route.ts	2026-10-27 13:02:23.185790104 +0000
 +++ sites-v25-new/app/api/payuni/status/route.ts	2026-10-27 13:41:03.282668070 +0000
 @@ -1,3 +1,24 @@
@@ -76,7 +73,7 @@ diff -ruN sites-v25-base/app/api/payuni/status/route.ts sites-v25-new/app/api/pa
 +  });
 + } catch { return json({ error: '暫時無法取得付款結果，請稍後重試。' }, 503); }
 +}
-diff -ruN sites-v25-base/app/api/payuni/test/create/route.ts sites-v25-new/app/api/payuni/test/create/route.ts
+diff -ruN '--exclude=node_modules' '--exclude=.next' '--exclude=.git' sites-v25-base/app/api/payuni/test/create/route.ts sites-v25-new/app/api/payuni/test/create/route.ts
 --- sites-v25-base/app/api/payuni/test/create/route.ts	2026-10-27 13:02:23.185790104 +0000
 +++ sites-v25-new/app/api/payuni/test/create/route.ts	2026-10-27 13:41:22.554998220 +0000
 @@ -9,7 +9,7 @@
@@ -88,7 +85,7 @@ diff -ruN sites-v25-base/app/api/payuni/test/create/route.ts sites-v25-new/app/a
   return json({checkoutUrl:c.origin+'/api/payuni/checkout?token='+token,orderNo});
   }catch{return json({error:'測試建單失敗'},503)}
  }
-diff -ruN sites-v25-base/app/api/premiere/attend/route.ts sites-v25-new/app/api/premiere/attend/route.ts
+diff -ruN '--exclude=node_modules' '--exclude=.next' '--exclude=.git' sites-v25-base/app/api/premiere/attend/route.ts sites-v25-new/app/api/premiere/attend/route.ts
 --- sites-v25-base/app/api/premiere/attend/route.ts	1970-01-01 00:00:00.000000000 +0000
 +++ sites-v25-new/app/api/premiere/attend/route.ts	2026-10-27 13:16:43.429238614 +0000
 @@ -0,0 +1,18 @@
@@ -110,7 +107,7 @@ diff -ruN sites-v25-base/app/api/premiere/attend/route.ts sites-v25-new/app/api/
 +  return json({ ok: true });
 + } catch { return json({ error: '暫時無法記錄進入時間，請稍後再試。' }, 503); }
 +}
-diff -ruN sites-v25-base/app/api/premiere/export/route.ts sites-v25-new/app/api/premiere/export/route.ts
+diff -ruN '--exclude=node_modules' '--exclude=.next' '--exclude=.git' sites-v25-base/app/api/premiere/export/route.ts sites-v25-new/app/api/premiere/export/route.ts
 --- sites-v25-base/app/api/premiere/export/route.ts	1970-01-01 00:00:00.000000000 +0000
 +++ sites-v25-new/app/api/premiere/export/route.ts	2026-10-27 13:16:43.469238520 +0000
 @@ -0,0 +1,9 @@
@@ -123,7 +120,28 @@ diff -ruN sites-v25-base/app/api/premiere/export/route.ts sites-v25-new/app/api/
 +  return new Response(await rosterCsv(), { headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="premiere-roster.csv"', 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer' } });
 + } catch { return json({ error: '暫時無法匯出。' }, 503); }
 +}
-diff -ruN sites-v25-base/app/api/premiere/register/route.ts sites-v25-new/app/api/premiere/register/route.ts
+diff -ruN '--exclude=node_modules' '--exclude=.next' '--exclude=.git' sites-v25-base/app/api/premiere/messages/route.ts sites-v25-new/app/api/premiere/messages/route.ts
+--- sites-v25-base/app/api/premiere/messages/route.ts	1970-01-01 00:00:00.000000000 +0000
++++ sites-v25-new/app/api/premiere/messages/route.ts	2026-10-27 16:11:20.681656950 +0000
+@@ -0,0 +1,17 @@
++import { exportAuthorized, sameOrigin } from '../../../../lib/premiere/roster';
++import { listMessages, saveMessages } from '../../../../lib/premiere/script';
++import { json } from '../../../../lib/payuni/server';
++
++export async function GET() {
++  return json({ messages: await listMessages() });
++}
++
++export async function POST(request: Request) {
++  if (!exportAuthorized(request)) return new Response('Not found', { status: 404 });
++  if (!sameOrigin(request)) return json({ error: '請從本頁送出。' }, 403);
++  try {
++    return await saveMessages(request);
++  } catch (error) {
++    return json({ error: error instanceof Error ? error.message : '無法儲存訊息。' }, 400);
++  }
++}
+diff -ruN '--exclude=node_modules' '--exclude=.next' '--exclude=.git' sites-v25-base/app/api/premiere/register/route.ts sites-v25-new/app/api/premiere/register/route.ts
 --- sites-v25-base/app/api/premiere/register/route.ts	1970-01-01 00:00:00.000000000 +0000
 +++ sites-v25-new/app/api/premiere/register/route.ts	2026-10-27 13:16:43.429238614 +0000
 @@ -0,0 +1,18 @@
@@ -145,7 +163,7 @@ diff -ruN sites-v25-base/app/api/premiere/register/route.ts sites-v25-new/app/ap
 +  return await dbInsertRegistrant(person);
 + } catch { return json({ error: '暫時無法登記，請稍後再試。' }, 503); }
 +}
-diff -ruN sites-v25-base/app/payment/page.tsx sites-v25-new/app/payment/page.tsx
+diff -ruN '--exclude=node_modules' '--exclude=.next' '--exclude=.git' sites-v25-base/app/payment/page.tsx sites-v25-new/app/payment/page.tsx
 --- sites-v25-base/app/payment/page.tsx	2026-10-27 13:02:23.189789545 +0000
 +++ sites-v25-new/app/payment/page.tsx	2026-10-27 13:41:03.302668418 +0000
 @@ -1,11 +1,48 @@
@@ -206,10 +224,10 @@ diff -ruN sites-v25-base/app/payment/page.tsx sites-v25-new/app/payment/page.tsx
 +  {view.note && <p className="note">{view.note}</p>}
 + </main>;
  }
-diff -ruN sites-v25-base/checks/premiere-roster.test.cjs sites-v25-new/checks/premiere-roster.test.cjs
+diff -ruN '--exclude=node_modules' '--exclude=.next' '--exclude=.git' sites-v25-base/checks/premiere-roster.test.cjs sites-v25-new/checks/premiere-roster.test.cjs
 --- sites-v25-base/checks/premiere-roster.test.cjs	1970-01-01 00:00:00.000000000 +0000
-+++ sites-v25-new/checks/premiere-roster.test.cjs	2026-10-27 13:45:20.698408445 +0000
-@@ -0,0 +1,221 @@
++++ sites-v25-new/checks/premiere-roster.test.cjs	2026-10-27 16:11:30.930237387 +0000
+@@ -0,0 +1,239 @@
 +const fs = require('node:fs'), path = require('node:path'), assert = require('node:assert/strict'), ts = require('typescript');
 +const { DatabaseSync } = require('node:sqlite');
 +const sqlite = new DatabaseSync(':memory:');
@@ -281,7 +299,7 @@ diff -ruN sites-v25-base/checks/premiere-roster.test.cjs sites-v25-new/checks/pr
 + const full = sqlite.prepare("SELECT * FROM payment_orders WHERE amount=39800").get();
 + assert.equal(full.amount, 39800);
 + assert.equal(full.plan, 'fullcourse');
-+ assert.equal(sqlite.prepare("SELECT email FROM premiere_registrants WHERE email='buyer@example.test'").get().email, 'buyer@example.test');
++ assert.equal(sqlite.prepare("SELECT count(*) n FROM premiere_registrants WHERE email='buyer@example.test'").get().n, 0);
 + const switched = await create.POST(orderRequest({ ...base, name: '正式課程', email: 'Buyer@Example.Test', requestId: fullId }));
 + assert.equal(switched.status, 409);
 + assert.equal((await switched.json()).resetRequest, true);
@@ -355,10 +373,12 @@ diff -ruN sites-v25-base/checks/premiere-roster.test.cjs sites-v25-new/checks/pr
 + assert.equal((await register.POST(signup({ name: '', email: 'Buyer@Example.Test', sessionCode: 'premiere-2026-11-03' }))).status, 400);
 + assert.equal((await register.POST(signup({ name: '買家', email: 'Buyer@Example.Test', sessionCode: '2026-11-03' }))).status, 400);
 + const ordersBeforeSignup = sqlite.prepare('SELECT count(*) n FROM payment_orders').get().n;
++ const opened = await (await register.POST(signup({ name: '買家', email: 'buyer@example.test', sessionCode: 'premiere-2026-11-03' }))).json();
++ assert.match(opened.token, /^[0-9a-f-]{36}$/i);
 + const duplicate = await (await register.POST(signup({ name: '另一個名字', email: 'buyer@example.test', sessionCode: 'premiere-2026-11-03' }))).json();
 + assert.equal(duplicate.already, true);
 + assert.equal(duplicate.token, undefined);
-+ assert.equal(JSON.stringify(duplicate).includes(sqlite.prepare("SELECT token FROM premiere_registrants WHERE email='buyer@example.test'").get().token), false);
++ assert.equal(JSON.stringify(duplicate).includes(opened.token), false);
 + const first = await register.POST(signup({ name: '新來賓', email: 'guest@example.test', sessionCode: 'premiere-2026-11-03', website: '' }));
 + assert.equal(first.status, 200);
 + const registered = await first.json();
@@ -372,6 +392,8 @@ diff -ruN sites-v25-base/checks/premiere-roster.test.cjs sites-v25-new/checks/pr
 + await register.POST(signup({ name: '前導', email: 'intro@example.test', sessionCode: 'premiere-2026-11-03' }));
 + await register.POST(signup({ name: '=1+1', email: 'formula@example.test', sessionCode: 'premiere-2026-11-03' }));
 + await register.POST(signup({ name: '信箱不同', email: 'mismatch@example.test', sessionCode: 'premiere-2026-11-03' }));
++ sqlite.prepare('INSERT INTO applications (id,name,email,phone,profession,stage,topic,session_code,created_at) VALUES (?,?,?,?,?,?,?,?,?)').run(crypto.randomUUID(), '=1+1', 'formula@example.test', 'QA', 'QA', 'QA', 'QA', 'premiere-2026-11-03', new Date().toISOString());
++ sqlite.prepare('INSERT INTO applications (id,name,email,phone,profession,stage,topic,session_code,created_at) VALUES (?,?,?,?,?,?,?,?,?)').run(crypto.randomUUID(), '信箱不同', 'mismatch@example.test', 'QA', 'QA', 'QA', 'QA', 'premiere-2026-11-03', new Date().toISOString());
 +
 + const marked = await attend.POST(new Request(origin + '/api/premiere/attend', { method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json' }, body: JSON.stringify({ token: registered.token }) }));
 + assert.equal(marked.status, 200);
@@ -426,12 +448,26 @@ diff -ruN sites-v25-base/checks/premiere-roster.test.cjs sites-v25-new/checks/pr
 + const listedCsv = await listed.text();
 + assert.match(listedCsv, /direct@example\.test/);
 + assert.match(listedCsv.split('\n').find(line => line.includes('direct@example.test')), /有買/);
-+ assert.match(listedCsv, /登記與付款若不是同一個 Email/);
++ assert.match(listedCsv, /不是同一個 Email/);
++ assert.equal(listedCsv.includes('premiere_registrants'), true);
++ const messages = load('app/api/premiere/messages/route.ts');
++ const emptyScript = await (await messages.GET()).json();
++ assert.deepEqual(emptyScript.messages, []);
++ assert.equal((await messages.POST(new Request(origin + '/api/premiere/messages', { method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json', Authorization: 'Bearer wrong' }, body: '{"messages":[]}' }))).status, 404);
++ const saved = await messages.POST(new Request(origin + '/api/premiere/messages', { method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json', Authorization: 'Bearer export-test-token' }, body: JSON.stringify({ messages: [{ displayName: '林老師', body: '我們開始了', appear: '00:35:40', kind: 'announcement' }] }) }));
++ assert.equal(saved.status, 200);
++ const listedScript = await (await messages.GET()).json();
++ assert.equal(listedScript.messages.length, 1);
++ assert.equal(listedScript.messages[0].appearSeconds, 35 * 60 + 40);
++ assert.equal(listedScript.messages[0].kind, 'announcement');
++ const rejected = await messages.POST(new Request(origin + '/api/premiere/messages', { method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json', Authorization: 'Bearer export-test-token' }, body: JSON.stringify({ messages: [{ displayName: '林老師', body: '壞的時間', appear: '99:99:99', kind: 'note' }] }) }));
++ assert.equal(rejected.status, 400);
++ assert.equal((await (await messages.GET()).json()).messages.length, 1);
 + const mismatch = listedCsv.split('\n').find(line => line.includes('mismatch@example.test'));
 + assert.match(mismatch, /沒買/);
 + console.log('PASS premiere product allowlist, signup without an order, attendance, protected CSV');
 +})().catch(error => { console.error(error); process.exitCode = 1; });
-diff -ruN sites-v25-base/cloudflare-env.d.ts sites-v25-new/cloudflare-env.d.ts
+diff -ruN '--exclude=node_modules' '--exclude=.next' '--exclude=.git' sites-v25-base/cloudflare-env.d.ts sites-v25-new/cloudflare-env.d.ts
 --- sites-v25-base/cloudflare-env.d.ts	2026-10-27 13:02:23.189789545 +0000
 +++ sites-v25-new/cloudflare-env.d.ts	2026-10-27 13:16:43.501238446 +0000
 @@ -8,6 +8,7 @@
@@ -442,10 +478,10 @@ diff -ruN sites-v25-base/cloudflare-env.d.ts sites-v25-new/cloudflare-env.d.ts
      BUCKET?: R2Bucket;
    }
  }
-diff -ruN sites-v25-base/db/schema.ts sites-v25-new/db/schema.ts
+diff -ruN '--exclude=node_modules' '--exclude=.next' '--exclude=.git' sites-v25-base/db/schema.ts sites-v25-new/db/schema.ts
 --- sites-v25-base/db/schema.ts	2026-10-27 13:02:23.189789545 +0000
-+++ sites-v25-new/db/schema.ts	2026-10-27 13:40:36.354190504 +0000
-@@ -2,6 +2,7 @@
++++ sites-v25-new/db/schema.ts	2026-10-27 16:11:20.653655218 +0000
+@@ -2,6 +2,8 @@
  export const applications = sqliteTable('applications', {id:text('id').primaryKey(),name:text('name').notNull(),email:text('email').notNull(),phone:text('phone').notNull(),profession:text('profession').notNull(),stage:text('stage').notNull(),topic:text('topic').notNull(),sessionCode:text('session_code'),lineName:text('line_name'),createdAt:text('created_at').notNull()});
  
  export const paymentOrders=sqliteTable('payment_orders',{
@@ -454,7 +490,8 @@ diff -ruN sites-v25-base/db/schema.ts sites-v25-new/db/schema.ts
  },t=>[uniqueIndex('payment_order_no_unique').on(t.orderNo),uniqueIndex('payment_token_unique').on(t.token),uniqueIndex('payment_request_unique').on(t.requestId),uniqueIndex('payment_provider_trade_unique').on(t.providerTradeNo)]);
  export const paymentRateLimits=sqliteTable('payment_rate_limits',{bucket:text('bucket').primaryKey(),attempts:integer('attempts').notNull()});
 +export const premiereRegistrants=sqliteTable('premiere_registrants',{id:text('id').primaryKey(),name:text('name').notNull(),email:text('email').notNull(),sessionCode:text('session_code').notNull(),token:text('token').notNull(),createdAt:text('created_at').notNull(),joinedAt:text('joined_at')},t=>[uniqueIndex('premiere_registrant_email_session').on(t.email,t.sessionCode),uniqueIndex('premiere_registrant_token').on(t.token)]);
-diff -ruN sites-v25-base/drizzle/0003_premiere_registrants.sql sites-v25-new/drizzle/0003_premiere_registrants.sql
++export const premiereMessages=sqliteTable('premiere_messages',{id:text('id').primaryKey(),displayName:text('display_name').notNull(),avatarUrl:text('avatar_url'),body:text('body').notNull(),appearSeconds:integer('appear_seconds').notNull(),kind:text('kind').notNull()});
+diff -ruN '--exclude=node_modules' '--exclude=.next' '--exclude=.git' sites-v25-base/drizzle/0003_premiere_registrants.sql sites-v25-new/drizzle/0003_premiere_registrants.sql
 --- sites-v25-base/drizzle/0003_premiere_registrants.sql	1970-01-01 00:00:00.000000000 +0000
 +++ sites-v25-new/drizzle/0003_premiere_registrants.sql	2026-10-27 13:16:43.469238520 +0000
 @@ -0,0 +1,11 @@
@@ -469,14 +506,27 @@ diff -ruN sites-v25-base/drizzle/0003_premiere_registrants.sql sites-v25-new/dri
 +);
 +CREATE UNIQUE INDEX IF NOT EXISTS `premiere_registrant_email_session` ON `premiere_registrants` (`email`, `session_code`);
 +CREATE UNIQUE INDEX IF NOT EXISTS `premiere_registrant_token` ON `premiere_registrants` (`token`);
-diff -ruN sites-v25-base/drizzle/0004_payment_plan.sql sites-v25-new/drizzle/0004_payment_plan.sql
+diff -ruN '--exclude=node_modules' '--exclude=.next' '--exclude=.git' sites-v25-base/drizzle/0004_payment_plan.sql sites-v25-new/drizzle/0004_payment_plan.sql
 --- sites-v25-base/drizzle/0004_payment_plan.sql	1970-01-01 00:00:00.000000000 +0000
 +++ sites-v25-new/drizzle/0004_payment_plan.sql	2026-10-27 13:40:36.378190939 +0000
 @@ -0,0 +1,3 @@
 +ALTER TABLE `payment_orders` ADD `plan` text NOT NULL DEFAULT 'precourse';
 +--> statement-breakpoint
 +UPDATE `payment_orders` SET `plan`='test' WHERE `source`='win-test-1';
-diff -ruN sites-v25-base/lib/payuni/core.ts sites-v25-new/lib/payuni/core.ts
+diff -ruN '--exclude=node_modules' '--exclude=.next' '--exclude=.git' sites-v25-base/drizzle/0005_premiere_messages.sql sites-v25-new/drizzle/0005_premiere_messages.sql
+--- sites-v25-base/drizzle/0005_premiere_messages.sql	1970-01-01 00:00:00.000000000 +0000
++++ sites-v25-new/drizzle/0005_premiere_messages.sql	2026-10-27 16:11:20.653655218 +0000
+@@ -0,0 +1,9 @@
++CREATE TABLE IF NOT EXISTS `premiere_messages` (
++  `id` text PRIMARY KEY NOT NULL,
++  `display_name` text NOT NULL,
++  `avatar_url` text,
++  `body` text NOT NULL,
++  `appear_seconds` integer NOT NULL,
++  `kind` text NOT NULL
++);
++CREATE INDEX IF NOT EXISTS `premiere_messages_appear` ON `premiere_messages` (`appear_seconds`);
+diff -ruN '--exclude=node_modules' '--exclude=.next' '--exclude=.git' sites-v25-base/lib/payuni/core.ts sites-v25-new/lib/payuni/core.ts
 --- sites-v25-base/lib/payuni/core.ts	2026-10-27 13:02:23.189789545 +0000
 +++ sites-v25-new/lib/payuni/core.ts	2026-10-27 13:40:38.346226503 +0000
 @@ -1,8 +1,35 @@
@@ -538,7 +588,7 @@ diff -ruN sites-v25-base/lib/payuni/core.ts sites-v25-new/lib/payuni/core.ts
  }
  export function digest(value:string){return createHash('sha256').update(value).digest('hex')}
  export function escape(value:string){return value.replace(/[&<>"']/g,v=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[v]!))}
-diff -ruN sites-v25-base/lib/payuni/receipt.ts sites-v25-new/lib/payuni/receipt.ts
+diff -ruN '--exclude=node_modules' '--exclude=.next' '--exclude=.git' sites-v25-base/lib/payuni/receipt.ts sites-v25-new/lib/payuni/receipt.ts
 --- sites-v25-base/lib/payuni/receipt.ts	1970-01-01 00:00:00.000000000 +0000
 +++ sites-v25-new/lib/payuni/receipt.ts	2026-10-27 13:41:03.290668209 +0000
 @@ -0,0 +1,83 @@
@@ -625,7 +675,7 @@ diff -ruN sites-v25-base/lib/payuni/receipt.ts sites-v25-new/lib/payuni/receipt.
 +    showSession: plan === 'precourse' && !result.isTest,
 +  };
 +}
-diff -ruN sites-v25-base/lib/payuni/server.ts sites-v25-new/lib/payuni/server.ts
+diff -ruN '--exclude=node_modules' '--exclude=.next' '--exclude=.git' sites-v25-base/lib/payuni/server.ts sites-v25-new/lib/payuni/server.ts
 --- sites-v25-base/lib/payuni/server.ts	2026-10-27 13:15:30.201368923 +0000
 +++ sites-v25-new/lib/payuni/server.ts	2026-10-27 13:41:04.578690571 +0000
 @@ -1,7 +1,7 @@
@@ -673,10 +723,10 @@ diff -ruN sites-v25-base/lib/payuni/server.ts sites-v25-new/lib/payuni/server.ts
   if(!response.ok)throw new Error('Email rejected');const result=await response.json() as {id?:string};
   await db().prepare("UPDATE payment_orders SET email_status='sent',email_id=?,email_lease=0 WHERE id=?").bind(result.id||null,order.id).run();return true;
   }catch{await db().prepare("UPDATE payment_orders SET email_status='failed',email_lease=0 WHERE id=? AND email_status='sending'").bind(order.id).run();return false}
-diff -ruN sites-v25-base/lib/premiere/roster.ts sites-v25-new/lib/premiere/roster.ts
+diff -ruN '--exclude=node_modules' '--exclude=.next' '--exclude=.git' sites-v25-base/lib/premiere/roster.ts sites-v25-new/lib/premiere/roster.ts
 --- sites-v25-base/lib/premiere/roster.ts	1970-01-01 00:00:00.000000000 +0000
-+++ sites-v25-new/lib/premiere/roster.ts	2026-10-27 13:41:23.295010711 +0000
-@@ -0,0 +1,74 @@
++++ sites-v25-new/lib/premiere/roster.ts	2026-10-27 16:11:07.949532898 +0000
+@@ -0,0 +1,71 @@
 +import { env } from 'cloudflare:workers';
 +import { timingSafeEqual } from 'node:crypto';
 +import { digest, PREMIERE_SESSION, PRODUCTS } from '../payuni/core';
@@ -729,25 +779,99 @@ diff -ruN sites-v25-base/lib/premiere/roster.ts sites-v25-new/lib/premiere/roste
 + const safe = /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
 + return `"${safe.replaceAll('"', '""')}"`;
 +}
-+const CSV_NOTE = '以 Email 對應訂單。登記與付款若不是同一個 Email，登記那一列會顯示沒買；有付款的那個 Email 會另外列成一筆。';
++const CSV_NOTE = '這份名單以既有報名表為主，不使用 premiere_registrants。登記與付款若不是同一個 Email，報名那一列會顯示沒買；有付款的那個 Email 若沒有報名紀錄，會另外列成一筆。';
++type RosterRow = { name: string; email: string; phone: string; session_code: string | null; created_at: string; order_no: string | null; paid_amount: number | null; intro_paid: number | null; source: string };
 +export async function rosterCsv() {
 + const full = PRODUCTS.fullcourse.amount;
 + const intro = PRODUCTS.precourse.amount;
 + const bought = `o.status='paid' AND (o.plan='fullcourse' OR o.amount=?)`;
-+ const rows = await db().prepare(`SELECT r.name,r.email,r.session_code,r.created_at,r.joined_at,
-+  (SELECT o.order_no FROM applications a JOIN payment_orders o ON o.application_id=a.id WHERE lower(trim(a.email))=r.email AND ${bought} ORDER BY o.paid_at DESC LIMIT 1) AS order_no,
-+  (SELECT o.amount FROM applications a JOIN payment_orders o ON o.application_id=a.id WHERE lower(trim(a.email))=r.email AND ${bought} ORDER BY o.paid_at DESC LIMIT 1) AS paid_amount,
-+  (SELECT 1 FROM applications a JOIN payment_orders o ON o.application_id=a.id WHERE lower(trim(a.email))=r.email AND o.status='paid' AND o.amount=? LIMIT 1) AS intro_paid
-+  FROM premiere_registrants r ORDER BY r.created_at ASC`).bind(full, full, intro).all<{ name: string; email: string; session_code: string; created_at: string; joined_at: string | null; order_no: string | null; paid_amount: number | null; intro_paid: number | null }>();
-+ const direct = await db().prepare(`SELECT a.name AS name, lower(trim(a.email)) AS email, a.session_code AS session_code, COALESCE(o.paid_at,o.created_at) AS created_at, NULL AS joined_at, o.order_no AS order_no, o.amount AS paid_amount,
-+  (SELECT 1 FROM applications a2 JOIN payment_orders o2 ON o2.application_id=a2.id WHERE lower(trim(a2.email))=lower(trim(a.email)) AND o2.status='paid' AND o2.amount=? LIMIT 1) AS intro_paid
-+  FROM payment_orders o JOIN applications a ON a.id=o.application_id
-+  WHERE o.status='paid' AND (o.plan='fullcourse' OR o.amount=?)
-+  AND o.rowid=(SELECT o3.rowid FROM payment_orders o3 JOIN applications a3 ON a3.id=o3.application_id WHERE lower(trim(a3.email))=lower(trim(a.email)) AND o3.status='paid' AND (o3.plan='fullcourse' OR o3.amount=?) ORDER BY o3.paid_at DESC LIMIT 1)
-+  AND lower(trim(a.email)) NOT IN (SELECT email FROM premiere_registrants)
-+  ORDER BY o.created_at ASC`).bind(intro, full, full).all<{ name: string; email: string; session_code: string; created_at: string; joined_at: string | null; order_no: string | null; paid_amount: number | null; intro_paid: number | null }>();
-+ const header = ['姓名', 'Email', '場次', '登記時間', '進入時間', '是否購買', '訂單編號', '付款金額', '前導課已付款'];
-+ const line = (row: { name: string; email: string; session_code: string; created_at: string; joined_at: string | null; order_no: string | null; paid_amount: number | null; intro_paid: number | null }) => [row.name, row.email, row.session_code, row.created_at, row.joined_at ?? '', row.paid_amount == null ? '沒買' : '有買', row.order_no ?? '', row.paid_amount ?? '', row.intro_paid ? '是' : '否'].map(cell).join(',');
-+ const lines = [header.map(cell).join(','), ...(rows.results || []).map(line), ...(direct.results || []).map(line), ['注意', CSV_NOTE, '', '', '', '', '', '', ''].map(cell).join(',')];
++ const rows = await db().prepare(`SELECT a.name AS name, lower(trim(a.email)) AS email, a.phone AS phone, a.session_code AS session_code, a.created_at AS created_at,
++  (SELECT o.order_no FROM applications a4 JOIN payment_orders o ON o.application_id=a4.id WHERE lower(trim(a4.email))=lower(trim(a.email)) AND ${bought} ORDER BY o.paid_at DESC LIMIT 1) AS order_no,
++  (SELECT o.amount FROM applications a4 JOIN payment_orders o ON o.application_id=a4.id WHERE lower(trim(a4.email))=lower(trim(a.email)) AND ${bought} ORDER BY o.paid_at DESC LIMIT 1) AS paid_amount,
++  (SELECT 1 FROM applications a4 JOIN payment_orders o ON o.application_id=a4.id WHERE lower(trim(a4.email))=lower(trim(a.email)) AND o.status='paid' AND o.amount=? LIMIT 1) AS intro_paid,
++  '報名表' AS source
++  FROM applications a
++  WHERE a.rowid=(SELECT a2.rowid FROM applications a2 WHERE lower(trim(a2.email))=lower(trim(a.email)) ORDER BY a2.created_at DESC LIMIT 1)
++  ORDER BY a.created_at ASC`).bind(full, full, intro).all<RosterRow>();
++ const header = ['姓名', 'Email', '電話', '場次', '報名時間', '是否購買', '訂單編號', '付款金額', '前導課已付款', '來源'];
++ const line = (row: RosterRow) => [row.name, row.email, row.phone, row.session_code ?? '', row.created_at, row.paid_amount == null ? '沒買' : '有買', row.order_no ?? '', row.paid_amount ?? '', row.intro_paid ? '是' : '否', row.source].map(cell).join(',');
++ const lines = [header.map(cell).join(','), ...(rows.results || []).map(line), ['注意', CSV_NOTE, '', '', '', '', '', '', '', ''].map(cell).join(',')];
 + return '\uFEFF' + lines.join('\r\n');
++}
+diff -ruN '--exclude=node_modules' '--exclude=.next' '--exclude=.git' sites-v25-base/lib/premiere/script.ts sites-v25-new/lib/premiere/script.ts
+--- sites-v25-base/lib/premiere/script.ts	1970-01-01 00:00:00.000000000 +0000
++++ sites-v25-new/lib/premiere/script.ts	2026-10-27 16:11:20.653655218 +0000
+@@ -0,0 +1,73 @@
++import { db, json } from '../payuni/server';
++import { readJson } from './roster';
++
++export const MESSAGE_KINDS = ['announcement', 'feedback', 'note'] as const;
++export type MessageKind = (typeof MESSAGE_KINDS)[number];
++export type PremiereMessage = { id: string; displayName: string; avatarUrl: string; body: string; appearSeconds: number; kind: MessageKind };
++
++const MAX_MESSAGES = 300;
++
++export function parseTimestamp(value: string) {
++  const match = /^(\d{1,2}):([0-5]\d):([0-5]\d)$/.exec(value.trim());
++  if (!match) return null;
++  const seconds = Number(match[1]) * 3600 + Number(match[2]) * 60 + Number(match[3]);
++  if (seconds > 24 * 3600) return null;
++  return seconds;
++}
++
++function cleanAvatar(value: unknown) {
++  if (typeof value !== 'string') return '';
++  const text = value.trim();
++  if (!text) return '';
++  if (text.length > 300) throw new Error('頭像網址太長。');
++  if (text.startsWith('/') && !text.startsWith('//')) return text;
++  try {
++    const url = new URL(text);
++    if (url.protocol !== 'https:') throw new Error('頭像只接受 https 網址。');
++    return url.toString();
++  } catch (error) {
++    if (error instanceof Error && error.message.includes('頭像')) throw error;
++    throw new Error('頭像網址無法使用。');
++  }
++}
++
++export function parseMessageList(value: unknown): PremiereMessage[] {
++  if (!Array.isArray(value)) throw new Error('請提供訊息清單。');
++  if (value.length > MAX_MESSAGES) throw new Error('訊息太多。');
++  return value.map((item, index) => {
++    if (!item || typeof item !== 'object' || Array.isArray(item)) throw new Error(`第 ${index + 1} 則訊息無法讀取。`);
++    const row = item as Record<string, unknown>;
++    const displayName = typeof row.displayName === 'string' ? row.displayName.trim() : '';
++    const body = typeof row.body === 'string' ? row.body.trim() : '';
++    const kind = row.kind;
++    const appear = typeof row.appearSeconds === 'number' ? row.appearSeconds : typeof row.appear === 'string' ? parseTimestamp(row.appear) : null;
++    if (!displayName || displayName.length > 40 || !body || body.length > 400) throw new Error(`第 ${index + 1} 則訊息的名字或內容不符合長度。`);
++    if (appear == null || !Number.isInteger(appear) || appear < 0) throw new Error(`第 ${index + 1} 則訊息的時間請用 00:00:00。`);
++    if (typeof kind !== 'string' || !MESSAGE_KINDS.includes(kind as MessageKind)) throw new Error(`第 ${index + 1} 則訊息的類型不正確。`);
++    const id = typeof row.id === 'string' && /^[0-9a-f-]{36}$/i.test(row.id) ? row.id : crypto.randomUUID();
++    return { id, displayName, avatarUrl: cleanAvatar(row.avatarUrl), body, appearSeconds: appear, kind: kind as MessageKind };
++  });
++}
++
++export async function listMessages() {
++  try {
++    const rows = await db().prepare('SELECT id, display_name AS displayName, avatar_url AS avatarUrl, body, appear_seconds AS appearSeconds, kind FROM premiere_messages ORDER BY appear_seconds ASC, rowid ASC').all<PremiereMessage>();
++    return rows.results || [];
++  } catch {
++    return [];
++  }
++}
++
++export async function replaceMessages(messages: PremiereMessage[]) {
++  await db().prepare('DELETE FROM premiere_messages').run();
++  for (const message of messages) {
++    await db().prepare('INSERT INTO premiere_messages (id, display_name, avatar_url, body, appear_seconds, kind) VALUES (?,?,?,?,?,?)').bind(message.id, message.displayName, message.avatarUrl, message.body, message.appearSeconds, message.kind).run();
++  }
++}
++
++export async function saveMessages(request: Request) {
++  const body = await readJson(request, 200000);
++  const messages = parseMessageList(body.messages);
++  await replaceMessages(messages);
++  return json({ ok: true, count: messages.length });
 +}
