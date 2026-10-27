@@ -72,13 +72,13 @@ export default function Player({ initial }: { initial: PremiereState }) {
 
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.add('premiere-motion');
     const nodes = [...document.querySelectorAll('.reveal')];
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduce || nodes.length === 0) {
       nodes.forEach(node => node.classList.add('is-in'));
-      return () => root.classList.remove('premiere-motion');
+      return undefined;
     }
+    root.classList.add('premiere-motion');
     const io = new IntersectionObserver(entries => {
       for (const entry of entries) {
         if (!entry.isIntersecting) continue;
@@ -246,7 +246,7 @@ export default function Player({ initial }: { initial: PremiereState }) {
       <div className="premiere-hero-shade" />
       <div className="premiere-hero-copy">
         <p className="premiere-kicker">{copy.eyebrow}</p>
-        <h1>{copy.title}</h1>
+        <h1>{titleLines(copy.title)}</h1>
         <p className="premiere-lead">{copy.lead}</p>
         <div className="premiere-clock" aria-hidden="true">
           <p className="premiere-clock-label">{copy.countdown}</p>
@@ -265,7 +265,7 @@ export default function Player({ initial }: { initial: PremiereState }) {
       </div>
       <div className="premiere-cinema-copy">
         <p className="premiere-kicker">{copy.eyebrow}</p>
-        <h1>{copy.title}</h1>
+        <h1>{titleLines(copy.title)}</h1>
         <p className="premiere-onair">{copy.playing}</p>
         {!state.hlsUrl && <p className="premiere-video-note">{copy.videoMissing}</p>}
       </div>
@@ -275,11 +275,11 @@ export default function Player({ initial }: { initial: PremiereState }) {
       <div className="premiere-hero-shade" />
       <div className="premiere-hero-copy">
         <p className="premiere-kicker">{copy.eyebrow}</p>
-        <h1>{copy.endedTitle}</h1>
+        <h1>{titleLines(copy.endedTitle)}</h1>
         <p className="premiere-lead">{copy.endedBody}</p>
       </div>
     </section>}
-    {phase !== 'ended' && <section className="premiere-spread reveal" aria-labelledby="premiere-register-title">
+    {phase !== 'ended' && <section className={`premiere-spread${phase === 'playing' ? ' premiere-spread--plain' : ''} reveal`} aria-labelledby="premiere-register-title">
       <div className="premiere-spread-copy">
         <p className="premiere-index">01</p>
         <h2 id="premiere-register-title">{copy.registerTitle}</h2>
@@ -332,6 +332,12 @@ export default function Player({ initial }: { initial: PremiereState }) {
       </div>
     </section>
   </main>;
+}
+
+function titleLines(text: string) {
+  const cut = text.indexOf('】');
+  if (cut < 0 || cut >= text.length - 1) return text;
+  return <>{text.slice(0, cut + 1)}<br />{text.slice(cut + 1)}</>;
 }
 
 function clockParts(milliseconds: number) {
