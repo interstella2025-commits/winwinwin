@@ -65,3 +65,7 @@
 .spk img.spk-ph{object-fit:cover;object-position:50% 18%;aspect-ratio:1}
 .hero .sch .sch-2{margin-left:16px}
 @media (max-width:760px){.qx-src a{display:inline-flex;align-items:center;min-height:44px}.hero .sch .sch-2{margin-left:0;white-space:normal}}
+.mod-ai b{display:block;font-size:10.5px;letter-spacing:.14em;color:#C9A45C;font-weight:600;margin-bottom:2px}
+.mod-ai{margin-top:10px!important;line-height:1.55}
+.visit-stats.v3s{grid-template-columns:repeat(3,1fr)!important}
+.mod-ai{display:block!important;align-self:stretch}
