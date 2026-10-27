@@ -53,3 +53,53 @@ body.preview .tbc{display:inline-block!important;background:#FFE58A;color:#3A2E0
 @media(max-width:600px){.fac.fac8{grid-template-columns:1fr!important}.fac .prof .avatar{width:56px;height:56px}.fac .prof{grid-template-columns:56px 1fr}}
 dd.opts>span{padding-left:0!important;text-indent:0!important}
 dd.opts .cjp{display:inline}
+/* ===== v8 audit (marketing + UI/UX) ===== */
+.hero .hero-pos{font-size:16px;color:#AEB8CC;margin-top:4px;line-height:1.7}
+.hero .hero-pos strong{color:#E8C77A}
+.pain{background:#F6F3EC;padding:96px 0}
+.pain .quote-big{font-size:40px}
+.pain .quote-big span{color:var(--red)}
+.pain .card h3{font-size:18px}
+.pain .card p{line-height:1.75}
+.pain-ans{margin-top:28px;display:flex;align-items:center;justify-content:space-between;gap:24px;padding:22px 26px;background:#fff;border-left:3px solid var(--red);border-radius:6px}
+.pain-ans p{margin:0;font-size:16px;color:#2A3346;line-height:1.75;max-width:46em}
+.pain-ans b{color:var(--red)}
+.pain-ans .btn{flex:none}
+@media(max-width:760px){.pain{padding:64px 0}.pain .quote-big{font-size:28px}.pain .cards2{grid-template-columns:1fr!important;gap:12px}.pain .card{padding:20px 20px 18px;display:grid;grid-template-columns:34px 1fr;column-gap:14px}.pain .card svg{grid-row:1/span 2;margin:2px 0 0;width:30px;height:30px}.pain-ans{flex-direction:column;align-items:stretch;padding:20px}.pain-ans .btn{justify-content:center}}
+/* tap targets */
+.nav .logo{min-height:44px;display:flex;align-items:center}
+summary{min-height:48px;align-items:center;padding:6px 0}
+details{padding:14px 0}
+details p{line-height:1.8;max-width:42em}
+#consult-form .consent{font-size:13.5px;line-height:1.6;gap:10px;cursor:pointer;padding:6px 0}
+#consult-form .consent input{width:20px;height:20px;min-width:20px;margin:1px 0 0;accent-color:#C8102E}
+#consult-form input,#consult-form select{min-height:48px}
+#consult-form .f-opt{margin:6px 0 -2px;font-size:12.5px;letter-spacing:.04em;color:#8E9AB2}
+/* form left column: next steps */
+.final .nx-k{margin-top:26px;font-size:14px;color:#E8C77A;letter-spacing:.04em}
+.final .nx{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:10px}
+.final .nx li{display:flex;align-items:center;gap:12px;color:#D6DCE8;font-size:15px}
+.final .nx b{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;border:1px solid rgba(232,199,122,.6);color:#E8C77A;font-family:var(--serif);font-size:14px}
+.final{align-items:start}
+/* faculty: larger headshots */
+.fac .prof .avatar{width:88px;height:88px;box-shadow:0 0 0 3px #fff,0 0 0 4px #E2DED3,0 10px 22px -12px rgba(15,23,42,.45)}
+.fac .prof{grid-template-columns:88px 1fr;column-gap:18px}
+@media(min-width:769px){.fac.fac8 .prof{display:flex;flex-direction:column}.fac.fac8 .prof .avatar{margin-bottom:16px}.fac.fac8 .prof .dir{margin-top:auto;padding-top:10px}}
+@media(max-width:600px){.fac .prof .avatar{width:72px!important;height:72px!important}.fac .prof{grid-template-columns:72px 1fr!important}}
+/* mobile hero: shorter photo so headline + CTA come sooner */
+@media(max-width:760px){.hero-photo.hp-group{aspect-ratio:16/10}.hero .hero-pos{font-size:14.5px}}
+@media(max-width:760px){.hero .hero-photo.hp-group{aspect-ratio:16/10!important}}
+.pain .quote-big{color:#0E1A31}
+.pain .quote-big span{color:inherit}.pain .quote-big .qr{color:var(--red)}
+@media(min-width:761px){#consult-form{display:grid!important;grid-template-columns:1fr 1fr;gap:12px}#consult-form>*{grid-column:1/-1;margin:0!important}#consult-form>[name=line_id],#consult-form>[name=company_title],#consult-form>[name=education],#consult-form>[name=contact_time]{grid-column:auto}#consult-form input,#consult-form select{width:100%}}
+/* WCAG AA: muted text */
+section:not(.dark):not(.deep):not(.hero) :is(.note,.en,.q small,.tcard small,.cmp small),section:not(.dark):not(.deep) .note *{color:#5E6A80!important}
+.hero .stats span,.hero .stats .cjw,.dark .visit-st span,.sv-cr,.sv-cr *{color:#A9B4C9!important}
+.sv-cr{font-size:11px!important}
+.dark .vs-f,.dark .vs-f *{color:#AEB8CC!important}
+.tcard small,.press-fig figcaption,table.q th{color:#5E6A80!important}
+.value-s .vs-f,.value-s .vs-f *{color:#AEB8CC!important}
+.dark .visit-st *,.atm .visit-st *{color:#A9B4C9}
+.visit-stats strong,.visit-stats strong *{color:#A9B4C9!important}
+table.cmp td:first-child,table.cmp td:first-child *{color:#5E6A80!important}
+#consult-form .consent input{min-height:0!important;height:20px!important;margin-top:2px!important}
