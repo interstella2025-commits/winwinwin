@@ -224,3 +224,6 @@ section.generated-artwork{padding-top:20px}
  .registration .field-grid{padding:24px 20px 4px;border-radius:18px}
  .registration .submit-button{min-height:60px;font-size:17px;padding:16px 18px}
 }
+/* registration heading: two-part red line, break after the comma */
+.registration .form-heading h2>span{display:inline;padding:0;background:none;white-space:normal}
+.registration .form-heading h2>span>span{display:inline-block;white-space:nowrap}
