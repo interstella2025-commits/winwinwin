@@ -296,7 +296,7 @@ h2{font-size:28px}.lead{font-size:16px}
 @media(max-width:860px){.vstack{grid-template-columns:1fr 1fr}.net-grid{grid-template-columns:1fr}.proof-grid{grid-template-columns:1fr 1fr;grid-template-rows:200px 150px 150px}.pf.big{grid-column:span 2;grid-row:auto}.u-in{flex-direction:column;align-items:flex-start}.u-in h2{font-size:24px}.atm-tx b{font-size:18px}}
 /* v5 atmosphere images */
 .atm{height:340px}
-.atm-bg{background:linear-gradient(180deg,rgba(11,20,38,.05) 30%,rgba(11,20,38,.9)),url(../img/atm-valley.jpg) center 60%/cover!important}
+.atm-bg{background:linear-gradient(180deg,rgba(11,20,38,.05) 30%,rgba(11,20,38,.9)),url(../img/atm-valley-1600.webp) center 60%/cover!important}
 .atm-bg:after{display:none}
 .sy{position:absolute;top:12px;right:14px;z-index:3;font-style:normal;font-size:11px;letter-spacing:.1em;color:rgba(255,255,255,.85);background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.25);padding:2px 8px;border-radius:3px}
 .sy-s{top:18px;right:20px}
