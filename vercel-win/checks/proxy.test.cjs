@@ -1,7 +1,7 @@
 const assert=require('node:assert/strict');const vm=require('node:vm');const ts=require('typescript');const fs=require('node:fs');
 const code=ts.transpileModule(fs.readFileSync('app/api/[...path]/route.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
 const origin='https://2027course.win-lin.com';let calls=[];
-const ctx={exports:{},Request,Response,Headers,URL,AbortSignal,process,fetch:async(url,options)=>{calls.push({url,options});return new Response('OK',{headers:{'content-type':'text/plain'}})}};vm.runInNewContext(code,ctx);
+const ctx={exports:{},Request,Response,Headers,URL,AbortSignal,TextDecoder,process,fetch:async(url,options)=>{calls.push({url,options});return new Response('OK',{headers:{'content-type':'text/plain'}})}};vm.runInNewContext(code,ctx);
 const params=path=>({params:Promise.resolve({path:path.split('/')})});
 (async()=>{
 assert.equal((await ctx.exports.POST(new Request(origin+'/api/payuni/create',{method:'POST',headers:{origin:'https://evil.example'}}),params('payuni/create'))).status,403);assert.equal(calls.length,0);
@@ -23,5 +23,27 @@ process.env.PREMIERE_ALLOWED_ORIGINS='https://preview.example';
 assert.equal((await ctx.exports.POST(new Request(origin+'/api/premiere/register',{method:'POST',headers:{origin:'https://preview.example'},body:'{}'}),params('premiere/register'))).status,200);
 assert.equal((await ctx.exports.POST(new Request(origin+'/api/payuni/create',{method:'POST',headers:{origin:'https://preview.example'},body:'{}'}),params('payuni/create'))).status,403);
 delete process.env.PREMIERE_ALLOWED_ORIGINS;
+const token = '11111111-1111-1111-1111-111111111111';
+function createFetch(amount) {
+  return async (url, options) => {
+    calls.push({ url, options });
+    if (String(url).includes('/api/payuni/status')) return new Response(JSON.stringify({ amount, status: 'pending', plan: amount === 39800 ? 'fullcourse' : 'precourse' }), { headers: { 'content-type': 'application/json' } });
+    return new Response(JSON.stringify({ checkoutUrl: '/api/payuni/checkout?token=' + token }), { headers: { 'content-type': 'application/json' } });
+  };
+}
+ctx.fetch = createFetch(399);
+let blocked = await ctx.exports.POST(new Request(origin + '/api/payuni/create', { method: 'POST', headers: { origin, 'content-type': 'application/json' }, body: JSON.stringify({ product: 'fullcourse', name: 'A' }) }), params('payuni/create'));
+assert.equal(blocked.status, 503);
+assert.match(await blocked.text(), /正式課程付款尚未開放/);
+assert.ok(calls.some(call => String(call.url).includes('/api/payuni/status')));
+const beforeStatus = calls.length;
+ctx.fetch = async (url, options) => { calls.push({ url, options }); return new Response(JSON.stringify({ checkoutUrl: '/api/payuni/checkout?token=' + token }), { headers: { 'content-type': 'application/json' } }); };
+const plain = await ctx.exports.POST(new Request(origin + '/api/payuni/create', { method: 'POST', headers: { origin, 'content-type': 'application/json' }, body: JSON.stringify({ name: 'A' }) }), params('payuni/create'));
+assert.equal(plain.status, 200);
+assert.equal(calls.length, beforeStatus + 1);
+ctx.fetch = createFetch(39800);
+const opened = await ctx.exports.POST(new Request(origin + '/api/payuni/create', { method: 'POST', headers: { origin, 'content-type': 'application/json' }, body: JSON.stringify({ product: 'fullcourse' }) }), params('payuni/create'));
+assert.equal(opened.status, 200);
+assert.match(await opened.text(), /checkout\?token=/);
 console.log('PASS origin rejection, fixed route allowlist, signed callback body preservation, uncached status, return URL, network failure, premiere register proxy');
 })().catch(e=>{console.error(e);process.exitCode=1});

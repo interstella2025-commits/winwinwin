@@ -7,8 +7,8 @@
  */
 export const PREMIERE = {
   id: '2026-11-03',
-  /** 必須是 lib/course-sessions.ts 已有的場次代碼，否則舊結帳會拒絕。 */
-  sessionCode: '2026-11-03',
+  /** 首播自己的場次代碼，不是前導課那四個場次。舊後端只在 fullcourse 接受這個代碼。 */
+  sessionCode: 'premiere-2026-11-03',
   /** 首播開始：2026-11-03 19:30（台北時間）。 */
   startAt: '2026-11-03T19:30:00+08:00',
   /** 【待 Elsa 確認】影片長度（秒）。預設 90 分鐘。 */
@@ -18,6 +18,8 @@ export const PREMIERE = {
   /** 顯示用價格（新台幣元）。實際扣款以後端 fullcourse 允許清單為準。 */
   priceTwd: 39800,
   productCode: 'fullcourse' as const,
+  /** 跟舊後端 fullcourse 的刷卡頁名稱同一句。還有「待 Elsa 確認」時，付款按鈕不會打開。 */
+  gatewayName: '【待 Elsa 確認】WIN 講師班正式課程',
   copy: {
     eyebrow: '定時播映',
     title: '【待 Elsa 確認】首播說明會',
@@ -35,12 +37,16 @@ export const PREMIERE = {
     registerLead: '【待 Elsa 確認】留下姓名與 Email，方便課後聯繫。這一步不會付款，也不會建立訂單。',
     registerButton: '登記這場首播',
     registerDone: '已登記。這一步還沒有付款。',
+    registerEndedTitle: '【待 Elsa 確認】登記已結束',
+    registerEndedBody: '【待 Elsa 確認】本場首播已結束，這一頁不再接受新的登記。',
     registerUnavailable: '報名服務尚未開放，仍可先觀看首播。',
     registerError: '暫時無法登記，請稍後再試。',
     purchaseTitle: '【待 Elsa 確認】正式課程',
     purchaseLead: '【待 Elsa 確認】以下課程說明、價格呈現與退費條款都尚未定稿。',
     purchaseButton: '【待 Elsa 確認】前往付款',
     checkoutClosed: '【待 Elsa 確認】正式課程報名即將開放',
+    checkoutEnded: '【待 Elsa 確認】本場首播已結束。',
+    offerLocked: '【待 Elsa 確認】正式課程的報名按鈕會在首播進行到指定時間後出現。',
     terms: '【待 Elsa 確認】退費辦法、課程內容與合約條款尚未定稿。正式開放付款前，請負責人改寫這段文字。',
     consent: '【待 Elsa 確認】我已閱讀上方尚未定稿的說明，並同意提供姓名、手機與 Email，供這次報名及付款使用。',
     backHome: '回到課程頁',

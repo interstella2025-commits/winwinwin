@@ -21,6 +21,17 @@ function enabled(env: Record<string, string | undefined>, name: string) {
   return env[name] === '1';
 }
 
+export function premierePageEnabled(env: Record<string, string | undefined> = process.env) {
+  return enabled(env, 'PREMIERE_PAGE_ENABLED');
+}
+
+/** Checkout stays off while public copy or the gateway name is still a placeholder. */
+export function premiereCheckoutEnabled(env: Record<string, string | undefined>, copyText = JSON.stringify(PREMIERE), productText = PREMIERE.gatewayName) {
+  if (!enabled(env, 'PREMIERE_CHECKOUT_ENABLED')) return false;
+  if (copyText.includes('待 Elsa 確認') || productText.includes('待 Elsa 確認')) return false;
+  return true;
+}
+
 export function getPremiereState(now: Date, env: Record<string, string | undefined> = process.env): PremiereState {
   const clock = premiereClock(now, PREMIERE);
   return {
@@ -34,7 +45,7 @@ export function getPremiereState(now: Date, env: Record<string, string | undefin
     offerOpen: clock.offerOpen,
     priceTwd: PREMIERE.priceTwd,
     productCode: PREMIERE.productCode,
-    checkoutEnabled: enabled(env, 'PREMIERE_CHECKOUT_ENABLED'),
+    checkoutEnabled: premiereCheckoutEnabled(env),
     hlsUrl: premiereHlsUrl(env),
   };
 }

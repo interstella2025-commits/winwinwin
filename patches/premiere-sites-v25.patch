@@ -19,7 +19,7 @@ diff -ruN sites-v25-base/app/api/payuni/checkout/route.ts sites-v25-new/app/api/
   }catch{return json({error:'付款服務暫時無法使用，請稍後再試。'},503)}}
 diff -ruN sites-v25-base/app/api/payuni/create/route.ts sites-v25-new/app/api/payuni/create/route.ts
 --- sites-v25-base/app/api/payuni/create/route.ts	2026-10-27 13:15:30.201368923 +0000
-+++ sites-v25-new/app/api/payuni/create/route.ts	2026-10-27 13:16:22.797283586 +0000
++++ sites-v25-new/app/api/payuni/create/route.ts	2026-10-27 13:41:22.943004769 +0000
 @@ -1,4 +1,4 @@
 -import { AMOUNT,digest,validate } from '../../../../lib/payuni/core';
 +import { digest,validate } from '../../../../lib/payuni/core';
@@ -30,18 +30,63 @@ diff -ruN sites-v25-base/app/api/payuni/create/route.ts sites-v25-new/app/api/pa
   try{
   const requestKey=digest(data.requestId+c.key);const old=await orderBy('request_id',requestKey);
   if(old){
-+ if(old.amount!==data.product.amount)return json({error:'課程方案已變更，請再次點選付款建立新訂單。',resetRequest:true},409);
++ if(old.amount!==data.product.amount||old.plan!==data.product.code)return json({error:'課程方案已變更，請再次點選付款建立新訂單。',resetRequest:true},409);
   if(old.status!=='paid'&&(old.status!=='pending'||Date.now()-Date.parse(old.created_at)>20*60000))return json({error:'原付款連結已失效，請再次點選付款建立新訂單。',resetRequest:true},409);
   const existing=await db().prepare('SELECT name,email,phone,profession,stage,topic,session_code AS sessionCode,line_name AS lineName FROM applications WHERE id=?').bind(old.application_id).first<Record<string,string>>();
   if(!existing||(['name','email','phone','profession','stage','topic','sessionCode','lineName'] as const).some(k=>existing[k]!==data[k]))return json({error:'報名資料已變更，請再次點選付款建立新訂單。',resetRequest:true},409);
-@@ -19,7 +20,7 @@
+@@ -19,7 +20,10 @@
   const id=crypto.randomUUID(),token=crypto.randomUUID(),application=crypto.randomUUID(),now=new Date().toISOString();const orderNo='WIN'+Date.now().toString(36).toUpperCase()+crypto.randomUUID().replaceAll('-','').slice(0,10).toUpperCase();
   await db().batch([
   db().prepare('INSERT INTO applications (id,name,email,phone,profession,stage,topic,session_code,line_name,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)').bind(application,data.name,data.email,data.phone,data.profession,data.stage,data.topic,data.sessionCode,data.lineName,now),
 - db().prepare('INSERT INTO payment_orders (id,application_id,order_no,merchant,amount,token,request_id,status,created_at,consent_at,source) VALUES (?,?,?,?,?,?,?,\'pending\',?,?,?)').bind(id,application,orderNo,c.merchant,AMOUNT,token,requestKey,now,now,(request.headers.get('x-win-public-origin')===VERCEL_ORIGIN?VERCEL_ORIGIN:c.origin)+'/#apply')]);
-+ db().prepare('INSERT INTO payment_orders (id,application_id,order_no,merchant,amount,token,request_id,status,created_at,consent_at,source) VALUES (?,?,?,?,?,?,?,\'pending\',?,?,?)').bind(id,application,orderNo,c.merchant,data.product.amount,token,requestKey,now,now,(request.headers.get('x-win-public-origin')===VERCEL_ORIGIN?VERCEL_ORIGIN:c.origin)+'/#apply')]);
++ db().prepare('INSERT INTO payment_orders (id,application_id,order_no,merchant,amount,token,request_id,status,created_at,consent_at,source,plan) VALUES (?,?,?,?,?,?,?,\'pending\',?,?,?,?)').bind(id,application,orderNo,c.merchant,data.product.amount,token,requestKey,now,now,(request.headers.get('x-win-public-origin')===VERCEL_ORIGIN?VERCEL_ORIGIN:c.origin)+'/#apply',data.product.code)]);
++ if(data.product.code==='fullcourse'){
++  try{await db().prepare('INSERT INTO premiere_registrants (id,name,email,session_code,token,created_at) VALUES (?,?,?,?,?,?) ON CONFLICT(email, session_code) DO NOTHING').bind(crypto.randomUUID(),data.name,data.email.trim().toLowerCase(),data.sessionCode,crypto.randomUUID(),now).run()}catch{/* 已付款的訂單仍會從 payment_orders 併入名單 */}
++ }
   return json({checkoutUrl:`/api/payuni/checkout?token=${token}`});
   }catch{return json({error:'暫時無法建立付款，請保留資料稍後再試。'},503)}
+ }
+diff -ruN sites-v25-base/app/api/payuni/status/route.ts sites-v25-new/app/api/payuni/status/route.ts
+--- sites-v25-base/app/api/payuni/status/route.ts	2026-10-27 13:02:23.185790104 +0000
++++ sites-v25-new/app/api/payuni/status/route.ts	2026-10-27 13:41:03.282668070 +0000
+@@ -1,3 +1,24 @@
+ import { sessionLabel } from '../../../../lib/course-sessions';
+-import { json,orderBy,db } from '../../../../lib/payuni/server';
+-export async function GET(request:Request){try{const token=new URL(request.url).searchParams.get('token');if(!token||! /^[0-9a-f-]{36}$/i.test(token))return json({error:'付款連結無效。'},400);const order=await orderBy('token',token);if(!order)return json({error:'找不到訂單。'},404);const application=await db().prepare('SELECT session_code FROM applications WHERE id=?').bind(order.application_id).first<{session_code:string|null}>();return json({session:sessionLabel(application?.session_code),status:order.status==='pending'&&Date.now()-Date.parse(order.created_at)>20*60000?'expired':order.status,amount:order.amount,orderNo:order.order_no,isTest:order.source==='win-test-1',emailSent:order.email_status==='sent'});}catch{return json({error:'暫時無法取得付款結果，請稍後重試。'},503)}}
++import { productNameForPlan } from '../../../../lib/payuni/receipt';
++import { json, orderBy, db } from '../../../../lib/payuni/server';
++export async function GET(request: Request) {
++ try {
++  const url = new URL(request.url);
++  const token = url.searchParams.get('token');
++  if (!token || !/^[0-9a-f-]{36}$/i.test(token)) return json({ error: '付款連結無效。' }, 400);
++  const order = await orderBy('token', token);
++  if (!order) return json({ error: '找不到訂單。' }, 404);
++  const application = await db().prepare('SELECT session_code FROM applications WHERE id=?').bind(order.application_id).first<{ session_code: string | null }>();
++  const plan = order.source === 'win-test-1' ? 'test' : order.plan === 'precourse' || order.plan === 'fullcourse' ? order.plan : 'unknown';
++  return json({
++   session: sessionLabel(application?.session_code),
++   status: order.status === 'pending' && Date.now() - Date.parse(order.created_at) > 20 * 60000 ? 'expired' : order.status,
++   amount: order.amount,
++   orderNo: order.order_no,
++   isTest: plan === 'test',
++   emailSent: order.email_status === 'sent',
++   plan,
++   productName: productNameForPlan(plan),
++  });
++ } catch { return json({ error: '暫時無法取得付款結果，請稍後重試。' }, 503); }
++}
+diff -ruN sites-v25-base/app/api/payuni/test/create/route.ts sites-v25-new/app/api/payuni/test/create/route.ts
+--- sites-v25-base/app/api/payuni/test/create/route.ts	2026-10-27 13:02:23.185790104 +0000
++++ sites-v25-new/app/api/payuni/test/create/route.ts	2026-10-27 13:41:22.554998220 +0000
+@@ -9,7 +9,7 @@
+  const id=crypto.randomUUID(),application=crypto.randomUUID(),token=crypto.randomUUID(),now=new Date().toISOString(),orderNo='WINT'+Date.now().toString(36).toUpperCase()+crypto.randomUUID().replaceAll('-','').slice(0,8).toUpperCase();
+  await db().batch([
+  db().prepare('INSERT INTO applications (id,name,email,phone,profession,stage,topic,created_at) VALUES (?,?,?,?,?,?,?,?)').bind(application,'WIN 一元金流測試','floraloasis0211@gmail.com','TEST-NO-CONTACT','金流驗收測試','測試','NT$1 正式區測試，不包含課程報名',now),
+- db().prepare("INSERT INTO payment_orders (id,application_id,order_no,merchant,amount,token,request_id,status,created_at,consent_at,source) VALUES (?,?,?,?,1,?,?,'pending',?,?,'win-test-1')").bind(id,application,orderNo,c.merchant,token,requestId,now,now)]);
++ db().prepare("INSERT INTO payment_orders (id,application_id,order_no,merchant,amount,token,request_id,status,created_at,consent_at,source,plan) VALUES (?,?,?,?,1,?,?,'pending',?,?,'win-test-1','test')").bind(id,application,orderNo,c.merchant,token,requestId,now,now)]);
+  return json({checkoutUrl:c.origin+'/api/payuni/checkout?token='+token,orderNo});
+  }catch{return json({error:'測試建單失敗'},503)}
  }
 diff -ruN sites-v25-base/app/api/premiere/attend/route.ts sites-v25-new/app/api/premiere/attend/route.ts
 --- sites-v25-base/app/api/premiere/attend/route.ts	1970-01-01 00:00:00.000000000 +0000
@@ -100,10 +145,71 @@ diff -ruN sites-v25-base/app/api/premiere/register/route.ts sites-v25-new/app/ap
 +  return await dbInsertRegistrant(person);
 + } catch { return json({ error: '暫時無法登記，請稍後再試。' }, 503); }
 +}
+diff -ruN sites-v25-base/app/payment/page.tsx sites-v25-new/app/payment/page.tsx
+--- sites-v25-base/app/payment/page.tsx	2026-10-27 13:02:23.189789545 +0000
++++ sites-v25-new/app/payment/page.tsx	2026-10-27 13:41:03.302668418 +0000
+@@ -1,11 +1,48 @@
+ 'use client';
+-import { useEffect,useState } from 'react';
+-type Result={status:string;amount:number;orderNo:string;emailSent:boolean;isTest?:boolean;session?:string|null;error?:string};
+-export default function Payment(){
+- const [result,setResult]=useState<Result|null>(null),[error,setError]=useState(''),[token,setToken]=useState('');
+- useEffect(()=>{const value=new URLSearchParams(location.search).get('token');if(!value){setError('付款連結無效，請回到報名頁。');return}setToken(value);let cancelled=false,count=0;let timer:ReturnType<typeof setTimeout>;
+- async function read(){try{const r=await fetch('/api/payuni/status?token='+encodeURIComponent(value!),{cache:'no-store'});const body=await r.json() as Result;if(!r.ok)throw new Error(body.error||'無法取得付款結果。');if(cancelled)return;setResult(body);setError('');if(body.status==='pending'&&++count<30)timer=setTimeout(read,3000)}catch(e){if(!cancelled)setError(e instanceof Error?e.message:'無法取得付款結果。')}}
+- void read();return()=>{cancelled=true;clearTimeout(timer)}},[]);
+- const test=result?.isTest,paid=result?.status==='paid',pending=result?.status==='pending';
+- return <main style={{maxWidth:640,margin:'80px auto',padding:24,lineHeight:1.8}}><h1>{paid?(test?'測試付款成功':'前導課付款成功'):pending?'正在確認付款結果':'WIN 前導課付款結果'}</h1><p>{test?'WIN 金流驗收測試':'WIN 講師班｜90分鐘線上前導課'} · NT${result?.amount??399}</p>{result&&<><p>訂單編號：{result.orderNo}</p>{!test&&result.session&&<p>暫定線上場次：{result.session}<br/>實際安排與上課連結以主辦方通知為準。</p>}<p>{paid?(test?'NT$1 測試付款已完成。此為金流驗收，不包含課程報名或席位。':'已收到你的 NT$399 前導課款項。線上課程的實際安排與上課連結將另行通知。'):pending?'正在確認付款結果，請稍候；若已付款，請勿重複付款。':result.status==='expired'?'這筆付款連結已逾時。若已完成付款，請稍後重新整理查詢。':'目前尚未確認付款成功。若已扣款，請勿重複付款，請保留訂單編號。'}</p>{paid&&<p>{result.emailSent?'付款確認信已交由郵件服務寄送，請留意收件匣與垃圾郵件。':'付款已完成；確認信尚在處理中，請保留此訂單編號。'}</p>}{pending&&<a href={'/api/payuni/checkout?token='+encodeURIComponent(token)}>尚未付款，繼續付款 NT${result.amount} →</a>}</>}{error&&<p role="alert">{error}</p>}<p><a href="/#apply">返回課程報名頁</a></p><p className="note">{test?'此為 NT$1 測試付款，不包含課程報名。':'此款項僅為線上前導課，不代表正式講師班錄取或費用。'}</p></main>
++import { useEffect, useState } from 'react';
++import { paymentView, type PaymentSnapshot } from '../../lib/payuni/receipt';
++
++type Result = PaymentSnapshot & { status: string; amount: number; orderNo: string; emailSent: boolean; error?: string };
++
++export default function Payment() {
++ const [result, setResult] = useState<Result | null>(null), [error, setError] = useState(''), [failed, setFailed] = useState(false), [token, setToken] = useState('');
++ useEffect(() => {
++  const value = new URLSearchParams(location.search).get('token');
++  if (!value) { setFailed(true); setError('付款連結無效，請回到報名頁。'); return; }
++  setToken(value);
++  let cancelled = false, count = 0;
++  let timer: ReturnType<typeof setTimeout>;
++  async function read() {
++   try {
++    const response = await fetch('/api/payuni/status?token=' + encodeURIComponent(value!), { cache: 'no-store' });
++    const body = await response.json() as Result;
++    if (!response.ok) throw new Error(body.error || '無法取得付款結果。');
++    if (cancelled) return;
++    setResult(body);
++    setFailed(false);
++    setError('');
++    if (body.status === 'pending' && ++count < 30) timer = setTimeout(read, 3000);
++   } catch (reason) {
++    if (!cancelled) { setFailed(true); setError(reason instanceof Error ? reason.message : '無法取得付款結果。'); }
++   }
++  }
++  void read();
++  return () => { cancelled = true; clearTimeout(timer); };
++ }, []);
++ const view = paymentView(result, failed);
++ const paid = result?.status === 'paid', pending = result?.status === 'pending';
++ return <main style={{ maxWidth: 640, margin: '80px auto', padding: 24, lineHeight: 1.8 }}>
++  <h1>{view.title}</h1>
++  {view.productLine && <p>{view.productLine}</p>}
++  {result && <>
++   <p>訂單編號：{result.orderNo}</p>
++   {view.showSession && result.session && <p>暫定線上場次：{result.session}<br />實際安排與上課連結以主辦方通知為準。</p>}
++   {view.body && <p>{view.body}</p>}
++   {paid && <p>{result.emailSent ? '付款確認信已交由郵件服務寄送，請留意收件匣與垃圾郵件。' : '付款已完成；確認信尚在處理中，請保留此訂單編號。'}</p>}
++   {pending && <a href={'/api/payuni/checkout?token=' + encodeURIComponent(token)}>尚未付款，繼續付款 NT${result.amount} →</a>}
++  </>}
++  {error && <p role="alert">{error}</p>}
++  <p><a href="/#apply">返回課程報名頁</a></p>
++  {view.note && <p className="note">{view.note}</p>}
++ </main>;
+ }
 diff -ruN sites-v25-base/checks/premiere-roster.test.cjs sites-v25-new/checks/premiere-roster.test.cjs
 --- sites-v25-base/checks/premiere-roster.test.cjs	1970-01-01 00:00:00.000000000 +0000
-+++ sites-v25-new/checks/premiere-roster.test.cjs	2026-10-27 13:18:32.852931809 +0000
-@@ -0,0 +1,130 @@
++++ sites-v25-new/checks/premiere-roster.test.cjs	2026-10-27 13:45:20.698408445 +0000
+@@ -0,0 +1,221 @@
 +const fs = require('node:fs'), path = require('node:path'), assert = require('node:assert/strict'), ts = require('typescript');
 +const { DatabaseSync } = require('node:sqlite');
 +const sqlite = new DatabaseSync(':memory:');
@@ -136,8 +242,16 @@ diff -ruN sites-v25-base/checks/premiere-roster.test.cjs sites-v25-new/checks/pr
 +const register = load('app/api/premiere/register/route.ts');
 +const attend = load('app/api/premiere/attend/route.ts');
 +const roster = load('app/api/premiere/export/route.ts');
++const status = load('app/api/payuni/status/route.ts');
++const receipt = load('lib/payuni/receipt.ts');
++const server = load('lib/payuni/server.ts');
 +const cfg = core.config(env), origin = cfg.origin;
-+global.fetch = async () => new Response(JSON.stringify({ id: 'mock-email' }), { status: 200 });
++const emails = [];
++global.fetch = async (_url, options = {}) => {
++ const headers = options.headers || {};
++ emails.push({ body: JSON.parse(options.body), key: headers['Idempotency-Key'] });
++ return new Response(JSON.stringify({ id: 'mock-email' }), { status: 200 });
++};
 +const base = { phone: 'QA', profession: 'QA', stage: 'QA', topic: 'QA', sessionCode: '2026-11-03', lineName: '', consent: true };
 +function orderRequest(body, ip = '192.0.2.20') { return new Request(origin + '/api/payuni/create', { method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json', 'cf-connecting-ip': ip }, body: JSON.stringify(body) }); }
 +function callback(values) { const EncryptInfo = core.encrypt(values, cfg); return new Request(origin + '/api/payuni/notify', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ MerID: cfg.merchant, Version: core.VERSION, EncryptInfo, HashInfo: core.hash(EncryptInfo, cfg) }) }); }
@@ -153,16 +267,21 @@ diff -ruN sites-v25-base/checks/premiere-roster.test.cjs sites-v25-new/checks/pr
 + const ignored = await create.POST(orderRequest({ ...base, name: '金額不可信', email: 'ignored@example.test', amount: 39800, requestId: crypto.randomUUID() }));
 + assert.equal(ignored.status, 200);
 + assert.equal(sqlite.prepare('SELECT amount FROM payment_orders ORDER BY created_at DESC LIMIT 1').get().amount, 399);
++ assert.equal(sqlite.prepare('SELECT plan FROM payment_orders ORDER BY created_at DESC LIMIT 1').get().plan, 'precourse');
++ assert.equal((await create.POST(orderRequest({ ...base, name: '方案場次', email: 'session-plan@example.test', product: 'fullcourse', sessionCode: '2026-11-03', requestId: crypto.randomUUID() }))).status, 400);
++ assert.equal((await create.POST(orderRequest({ ...base, name: '前導場次', email: 'precourse-session@example.test', sessionCode: 'premiere-2026-11-03', requestId: crypto.randomUUID() }))).status, 400);
 +
 + const unknown = await create.POST(orderRequest({ ...base, name: '錯誤方案', email: 'unknown@example.test', product: 'vip', amount: 1, requestId: crypto.randomUUID() }));
 + assert.equal(unknown.status, 400);
 + assert.equal(sqlite.prepare("SELECT count(*) n FROM applications WHERE email='unknown@example.test'").get().n, 0);
 +
 + const fullId = crypto.randomUUID();
-+ const created = await create.POST(orderRequest({ ...base, name: '正式課程', email: 'Buyer@Example.Test', product: 'fullcourse', amount: 1, requestId: fullId }));
++ const created = await create.POST(orderRequest({ ...base, name: '正式課程', email: 'Buyer@Example.Test', product: 'fullcourse', sessionCode: 'premiere-2026-11-03', amount: 1, requestId: fullId }));
 + assert.equal(created.status, 200);
 + const full = sqlite.prepare("SELECT * FROM payment_orders WHERE amount=39800").get();
 + assert.equal(full.amount, 39800);
++ assert.equal(full.plan, 'fullcourse');
++ assert.equal(sqlite.prepare("SELECT email FROM premiere_registrants WHERE email='buyer@example.test'").get().email, 'buyer@example.test');
 + const switched = await create.POST(orderRequest({ ...base, name: '正式課程', email: 'Buyer@Example.Test', requestId: fullId }));
 + assert.equal(switched.status, 409);
 + assert.equal((await switched.json()).resetRequest, true);
@@ -176,29 +295,83 @@ diff -ruN sites-v25-base/checks/premiere-roster.test.cjs sites-v25-new/checks/pr
 + assert.equal(sqlite.prepare('SELECT status FROM payment_orders WHERE id=?').get(full.id).status, 'pending');
 + assert.equal((await notify.POST(callback({ MerID: cfg.merchant, MerTradeNo: full.order_no, TradeAmt: 39800, TradeStatus: '1', TradeNo: 'FULL39800' }))).status, 200);
 + assert.equal(sqlite.prepare('SELECT status FROM payment_orders WHERE id=?').get(full.id).status, 'paid');
++ const fullMail = emails.find(item => item.key === 'win-paid/' + full.id);
++ const fullBlob = fullMail.body.subject + fullMail.body.text + fullMail.body.html;
++ assert.match(fullBlob, /待 Elsa 確認/);
++ assert.equal(fullBlob.includes('399'), false);
++ assert.equal(fullBlob.includes('前導課'), false);
++ assert.equal((await notify.POST(callback({ MerID: cfg.merchant, MerTradeNo: full.order_no, TradeAmt: 39800, TradeStatus: '1', TradeNo: 'FULL39800' }))).status, 200);
++ assert.equal(emails.filter(item => item.key === 'win-paid/' + full.id).length, 1);
 +
 + const intro = await create.POST(orderRequest({ ...base, name: '前導課', email: 'intro@example.test', requestId: crypto.randomUUID() }, '192.0.2.21'));
 + assert.equal(intro.status, 200);
 + const introOrder = sqlite.prepare("SELECT payment_orders.* FROM payment_orders JOIN applications ON applications.id=payment_orders.application_id WHERE applications.email='intro@example.test'").get();
 + assert.equal(introOrder.amount, 399);
 + assert.equal((await notify.POST(callback({ MerID: cfg.merchant, MerTradeNo: introOrder.order_no, TradeAmt: 399, TradeStatus: '1', TradeNo: 'INTRO399' }))).status, 200);
++ assert.equal(introOrder.plan, 'precourse');
++ const introMail = emails.find(item => item.key === 'win-paid/' + introOrder.id);
++ const introSession = '2026 年 11 月 3 日（二） 19:30–21:00（暫定，台灣時間）';
++ const introSchedule = `暫定場次：${introSession}，線上課程；實際安排與上課連結以主辦方通知為準。`;
++ const introMessage = '已收到你的 NT$399 前導課款項。課程所有場次均為線上課程，上課連結將另行通知。此付款僅為線上前導課，不代表正式講師班錄取或費用。';
++ assert.equal(introMail.body.subject, '付款成功｜WIN 90分鐘線上前導課');
++ assert.equal(introMail.body.text, `前導課，你好：\n\n${introMessage}\n\n${introSchedule}\n\n項目：WIN 講師班｜90分鐘線上前導課\n訂單：${introOrder.order_no}\n\nWIN 課程團隊`);
++ assert.equal(introMail.body.html, `<div lang="zh-Hant" style="font-family:Arial,sans-serif;line-height:1.8;max-width:600px;margin:auto;padding:28px;color:#17243a"><p>前導課，你好：</p><h2>前導課付款成功</h2><p>${introMessage}</p><p>${introSchedule}</p><p>項目：WIN 講師班｜90分鐘線上前導課<br>金額：NT$399<br>訂單：${introOrder.order_no}</p><p>WIN 課程團隊</p></div>`);
++ assert.equal(introMail.body.from, env.RESEND_FROM);
++ assert.deepEqual(introMail.body.to, ['intro@example.test']);
++
++ const introStatus = await (await status.GET(new Request(origin + '/api/payuni/status?token=' + introOrder.token + '&product=fullcourse'))).json();
++ assert.equal(introStatus.plan, 'precourse');
++ assert.equal(introStatus.amount, 399);
++ assert.equal(introStatus.productName, 'WIN 講師班｜90分鐘線上前導課');
++ const fullStatus = await (await status.GET(new Request(origin + '/api/payuni/status?token=' + full.token + '&product=precourse'))).json();
++ assert.equal(fullStatus.plan, 'fullcourse');
++ assert.equal(fullStatus.amount, 39800);
++ assert.equal(fullStatus.productName, core.PRODUCTS.fullcourse.shortName);
++ assert.equal(String(fullStatus.productName).includes('前導課'), false);
++ const precoursePending = receipt.paymentView({ status: 'pending', amount: 399, plan: 'precourse', productName: introStatus.productName });
++ assert.equal(precoursePending.title, '正在確認付款結果');
++ assert.equal(precoursePending.productLine, 'WIN 講師班｜90分鐘線上前導課 · NT$399');
++ const precourseFailed = receipt.paymentView({ status: 'failed', amount: 399, plan: 'precourse' });
++ assert.equal(precourseFailed.title, 'WIN 前導課付款結果');
++ assert.match(precourseFailed.productLine, /NT\$399/);
++ for (const state of ['pending', 'failed', 'expired']) {
++  const view = receipt.paymentView({ status: state, amount: 39800, plan: 'fullcourse', productName: fullStatus.productName });
++  const blob = view.title + view.productLine + view.body + view.note;
++  assert.match(view.productLine, /NT\$39800/);
++  assert.match(blob, /待 Elsa 確認/);
++  assert.equal(blob.includes('399'), false);
++  assert.equal(blob.includes('前導課'), false);
++ }
++ const unavailable = JSON.stringify(receipt.paymentView(null, true));
++ assert.match(unavailable, /無法確認付款結果/);
++ assert.equal(unavailable.includes('399'), false);
++ assert.equal(unavailable.includes('前導課'), false);
++ assert.equal(unavailable.includes('39800'), false);
++ const unknownView = receipt.paymentView({ status: 'failed', amount: 50, plan: 'unknown' });
++ assert.equal(unknownView.productLine, '【待確認】款項 · NT$50');
++ assert.equal((unknownView.title + unknownView.body + unknownView.note).includes('前導課'), false);
 +
 + assert.equal((await register.POST(signup({ name: '買家', email: 'Buyer@Example.Test' }, 'https://evil.example'))).status, 403);
-+ assert.equal((await register.POST(signup({ name: '', email: 'Buyer@Example.Test', sessionCode: '2026-11-03' }))).status, 400);
-+ assert.equal((await register.POST(signup({ name: '買家', email: 'Buyer@Example.Test', sessionCode: '2099-01-01' }))).status, 400);
++ assert.equal((await register.POST(signup({ name: '', email: 'Buyer@Example.Test', sessionCode: 'premiere-2026-11-03' }))).status, 400);
++ assert.equal((await register.POST(signup({ name: '買家', email: 'Buyer@Example.Test', sessionCode: '2026-11-03' }))).status, 400);
 + const ordersBeforeSignup = sqlite.prepare('SELECT count(*) n FROM payment_orders').get().n;
-+ const first = await register.POST(signup({ name: '買家', email: 'Buyer@Example.Test', sessionCode: '2026-11-03', website: '' }));
++ const duplicate = await (await register.POST(signup({ name: '另一個名字', email: 'buyer@example.test', sessionCode: 'premiere-2026-11-03' }))).json();
++ assert.equal(duplicate.already, true);
++ assert.equal(duplicate.token, undefined);
++ assert.equal(JSON.stringify(duplicate).includes(sqlite.prepare("SELECT token FROM premiere_registrants WHERE email='buyer@example.test'").get().token), false);
++ const first = await register.POST(signup({ name: '新來賓', email: 'guest@example.test', sessionCode: 'premiere-2026-11-03', website: '' }));
 + assert.equal(first.status, 200);
 + const registered = await first.json();
 + assert.match(registered.token, /^[0-9a-f-]{36}$/i);
-+ const again = await (await register.POST(signup({ name: '另一個名字', email: 'buyer@example.test', sessionCode: '2026-11-03' }))).json();
++ const again = await (await register.POST(signup({ name: '另一個名字', email: 'guest@example.test', sessionCode: 'premiere-2026-11-03' }))).json();
 + assert.equal(again.already, true);
-+ assert.equal(again.token, registered.token);
-+ assert.equal(sqlite.prepare('SELECT count(*) n FROM premiere_registrants').get().n, 1);
++ assert.equal(again.token, undefined);
++ assert.equal(JSON.stringify(again).includes(registered.token), false);
++ assert.equal(sqlite.prepare('SELECT count(*) n FROM premiere_registrants').get().n, 2);
 + assert.equal(sqlite.prepare('SELECT count(*) n FROM payment_orders').get().n, ordersBeforeSignup);
-+ assert.equal(sqlite.prepare("SELECT count(*) n FROM payment_orders WHERE application_id IN (SELECT id FROM premiere_registrants)").get().n, 0);
-+ await register.POST(signup({ name: '前導', email: 'intro@example.test', sessionCode: '2026-11-03' }));
-+ await register.POST(signup({ name: '=1+1', email: 'formula@example.test', sessionCode: '2026-11-03' }));
++ await register.POST(signup({ name: '前導', email: 'intro@example.test', sessionCode: 'premiere-2026-11-03' }));
++ await register.POST(signup({ name: '=1+1', email: 'formula@example.test', sessionCode: 'premiere-2026-11-03' }));
++ await register.POST(signup({ name: '信箱不同', email: 'mismatch@example.test', sessionCode: 'premiere-2026-11-03' }));
 +
 + const marked = await attend.POST(new Request(origin + '/api/premiere/attend', { method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json' }, body: JSON.stringify({ token: registered.token }) }));
 + assert.equal(marked.status, 200);
@@ -232,6 +405,30 @@ diff -ruN sites-v25-base/checks/premiere-roster.test.cjs sites-v25-new/checks/pr
 + assert.match(introLine, /沒買/);
 + assert.match(introLine, /是/);
 + assert.match(formula, /'=1\+1/);
++ const directApplication = crypto.randomUUID();
++ const directOrder = crypto.randomUUID();
++ sqlite.prepare('INSERT INTO applications (id,name,email,phone,profession,stage,topic,session_code,created_at) VALUES (?,?,?,?,?,?,?,?,?)').run(directApplication, '直接購買', 'direct@example.test', 'QA', 'QA', 'QA', 'QA', 'premiere-2026-11-03', new Date().toISOString());
++ sqlite.prepare("INSERT INTO payment_orders (id,application_id,order_no,merchant,amount,token,request_id,status,created_at,consent_at,source,plan,paid_at) VALUES (?,?,?,?,39800,?,?,'paid',?,?,?,?,?)").run(directOrder, directApplication, 'WINDIRECT1', cfg.merchant, crypto.randomUUID(), crypto.randomUUID(), new Date().toISOString(), new Date().toISOString(), origin + '/#apply', 'fullcourse', new Date().toISOString());
++ const unknownApplication = crypto.randomUUID();
++ const unknownOrderId = crypto.randomUUID();
++ sqlite.prepare('INSERT INTO applications (id,name,email,phone,profession,stage,topic,created_at) VALUES (?,?,?,?,?,?,?,?)').run(unknownApplication, '未知方案', 'unknown-plan@example.test', 'QA', 'QA', 'QA', 'QA', new Date().toISOString());
++ sqlite.prepare("INSERT INTO payment_orders (id,application_id,order_no,merchant,amount,token,request_id,status,created_at,consent_at,source,plan) VALUES (?,?,?,?,50,?,?,'paid',?,?,?,?)").run(unknownOrderId, unknownApplication, 'WINUNKNOWN1', cfg.merchant, crypto.randomUUID(), crypto.randomUUID(), new Date().toISOString(), new Date().toISOString(), origin + '/#apply', 'legacy');
++ const unknownOrder = sqlite.prepare('SELECT * FROM payment_orders WHERE id=?').get(unknownOrderId);
++ assert.equal(await server.sendPaidEmail(unknownOrder), true);
++ assert.equal(await server.sendPaidEmail(unknownOrder), true);
++ const unknownMail = emails.filter(item => item.key === 'win-paid/' + unknownOrderId);
++ assert.equal(unknownMail.length, 1);
++ const unknownBlob = unknownMail[0].body.subject + unknownMail[0].body.text + unknownMail[0].body.html;
++ assert.equal(unknownBlob.includes('399'), false);
++ assert.equal(unknownBlob.includes('前導課'), false);
++ assert.match(unknownBlob, /待確認/);
++ const listed = await roster.GET(new Request(origin + '/api/premiere/export', { headers: { Authorization: 'Bearer export-test-token' } }));
++ const listedCsv = await listed.text();
++ assert.match(listedCsv, /direct@example\.test/);
++ assert.match(listedCsv.split('\n').find(line => line.includes('direct@example.test')), /有買/);
++ assert.match(listedCsv, /登記與付款若不是同一個 Email/);
++ const mismatch = listedCsv.split('\n').find(line => line.includes('mismatch@example.test'));
++ assert.match(mismatch, /沒買/);
 + console.log('PASS premiere product allowlist, signup without an order, attendance, protected CSV');
 +})().catch(error => { console.error(error); process.exitCode = 1; });
 diff -ruN sites-v25-base/cloudflare-env.d.ts sites-v25-new/cloudflare-env.d.ts
@@ -247,9 +444,13 @@ diff -ruN sites-v25-base/cloudflare-env.d.ts sites-v25-new/cloudflare-env.d.ts
  }
 diff -ruN sites-v25-base/db/schema.ts sites-v25-new/db/schema.ts
 --- sites-v25-base/db/schema.ts	2026-10-27 13:02:23.189789545 +0000
-+++ sites-v25-new/db/schema.ts	2026-10-27 13:16:43.469238520 +0000
-@@ -5,3 +5,4 @@
-  id:text('id').primaryKey(),applicationId:text('application_id').notNull(),orderNo:text('order_no').notNull(),merchant:text('merchant').notNull(),amount:integer('amount').notNull(),token:text('token').notNull(),requestId:text('request_id').notNull(),status:text('status').notNull().default('pending'),createdAt:text('created_at').notNull(),consentAt:text('consent_at').notNull(),source:text('source').notNull(),paidAt:text('paid_at'),providerTradeNo:text('provider_trade_no'),notifyCount:integer('notify_count').notNull().default(0),emailStatus:text('email_status').notNull().default('pending'),emailId:text('email_id'),emailLease:integer('email_lease').notNull().default(0)
++++ sites-v25-new/db/schema.ts	2026-10-27 13:40:36.354190504 +0000
+@@ -2,6 +2,7 @@
+ export const applications = sqliteTable('applications', {id:text('id').primaryKey(),name:text('name').notNull(),email:text('email').notNull(),phone:text('phone').notNull(),profession:text('profession').notNull(),stage:text('stage').notNull(),topic:text('topic').notNull(),sessionCode:text('session_code'),lineName:text('line_name'),createdAt:text('created_at').notNull()});
+ 
+ export const paymentOrders=sqliteTable('payment_orders',{
+- id:text('id').primaryKey(),applicationId:text('application_id').notNull(),orderNo:text('order_no').notNull(),merchant:text('merchant').notNull(),amount:integer('amount').notNull(),token:text('token').notNull(),requestId:text('request_id').notNull(),status:text('status').notNull().default('pending'),createdAt:text('created_at').notNull(),consentAt:text('consent_at').notNull(),source:text('source').notNull(),paidAt:text('paid_at'),providerTradeNo:text('provider_trade_no'),notifyCount:integer('notify_count').notNull().default(0),emailStatus:text('email_status').notNull().default('pending'),emailId:text('email_id'),emailLease:integer('email_lease').notNull().default(0)
++ id:text('id').primaryKey(),applicationId:text('application_id').notNull(),orderNo:text('order_no').notNull(),merchant:text('merchant').notNull(),amount:integer('amount').notNull(),token:text('token').notNull(),requestId:text('request_id').notNull(),status:text('status').notNull().default('pending'),createdAt:text('created_at').notNull(),consentAt:text('consent_at').notNull(),source:text('source').notNull(),plan:text('plan').notNull().default('precourse'),paidAt:text('paid_at'),providerTradeNo:text('provider_trade_no'),notifyCount:integer('notify_count').notNull().default(0),emailStatus:text('email_status').notNull().default('pending'),emailId:text('email_id'),emailLease:integer('email_lease').notNull().default(0)
  },t=>[uniqueIndex('payment_order_no_unique').on(t.orderNo),uniqueIndex('payment_token_unique').on(t.token),uniqueIndex('payment_request_unique').on(t.requestId),uniqueIndex('payment_provider_trade_unique').on(t.providerTradeNo)]);
  export const paymentRateLimits=sqliteTable('payment_rate_limits',{bucket:text('bucket').primaryKey(),attempts:integer('attempts').notNull()});
 +export const premiereRegistrants=sqliteTable('premiere_registrants',{id:text('id').primaryKey(),name:text('name').notNull(),email:text('email').notNull(),sessionCode:text('session_code').notNull(),token:text('token').notNull(),createdAt:text('created_at').notNull(),joinedAt:text('joined_at')},t=>[uniqueIndex('premiere_registrant_email_session').on(t.email,t.sessionCode),uniqueIndex('premiere_registrant_token').on(t.token)]);
@@ -268,10 +469,17 @@ diff -ruN sites-v25-base/drizzle/0003_premiere_registrants.sql sites-v25-new/dri
 +);
 +CREATE UNIQUE INDEX IF NOT EXISTS `premiere_registrant_email_session` ON `premiere_registrants` (`email`, `session_code`);
 +CREATE UNIQUE INDEX IF NOT EXISTS `premiere_registrant_token` ON `premiere_registrants` (`token`);
+diff -ruN sites-v25-base/drizzle/0004_payment_plan.sql sites-v25-new/drizzle/0004_payment_plan.sql
+--- sites-v25-base/drizzle/0004_payment_plan.sql	1970-01-01 00:00:00.000000000 +0000
++++ sites-v25-new/drizzle/0004_payment_plan.sql	2026-10-27 13:40:36.378190939 +0000
+@@ -0,0 +1,3 @@
++ALTER TABLE `payment_orders` ADD `plan` text NOT NULL DEFAULT 'precourse';
++--> statement-breakpoint
++UPDATE `payment_orders` SET `plan`='test' WHERE `source`='win-test-1';
 diff -ruN sites-v25-base/lib/payuni/core.ts sites-v25-new/lib/payuni/core.ts
 --- sites-v25-base/lib/payuni/core.ts	2026-10-27 13:02:23.189789545 +0000
-+++ sites-v25-new/lib/payuni/core.ts	2026-10-27 13:16:22.797283586 +0000
-@@ -1,8 +1,32 @@
++++ sites-v25-new/lib/payuni/core.ts	2026-10-27 13:40:38.346226503 +0000
+@@ -1,8 +1,35 @@
  import { COURSE_SESSIONS } from '../course-sessions';
  import { createCipheriv, createDecipheriv, createHash, timingSafeEqual } from 'node:crypto';
 -export const AMOUNT = 399;
@@ -282,6 +490,8 @@ diff -ruN sites-v25-base/lib/payuni/core.ts sites-v25-new/lib/payuni/core.ts
 +} as const;
 +export const AMOUNT = PRODUCTS.precourse.amount;
 +export const PRODUCT = PRODUCTS.precourse.gatewayName;
++/** 首播說明會專用場次，不在前導課的 COURSE_SESSIONS 裡。 */
++export const PREMIERE_SESSION = 'premiere-2026-11-03';
  export const VERSION = '2.0';
 +export function resolveProduct(input: unknown) {
 + if (typeof input === 'string') {
@@ -292,21 +502,22 @@ diff -ruN sites-v25-base/lib/payuni/core.ts sites-v25-new/lib/payuni/core.ts
 + if (input == null) return PRODUCTS.precourse;
 + throw new Error('不接受的課程方案。');
 +}
-+export function expectedAmount(order: { amount: number; source?: string }) {
-+ if (order.source === 'win-test-1') return 1;
-+ if (!Object.values(PRODUCTS).some(item => item.amount === order.amount)) throw new Error('Order mismatch');
-+ return order.amount;
++export function expectedAmount(order: { amount: number; source?: string; plan?: string | null }) {
++ if (order.source === 'win-test-1' || order.plan === 'test') return 1;
++ if (order.plan === 'fullcourse') return PRODUCTS.fullcourse.amount;
++ if (order.plan === 'precourse' || !order.plan) return PRODUCTS.precourse.amount;
++ throw new Error('Order mismatch');
 +}
-+export function describeCharge(order: { amount: number; source?: string }) {
-+ if (order.source === 'win-test-1') return { shortName: 'WIN 金流驗收測試', gatewayName: 'WIN NT$1 金流驗收測試' };
-+ const product = Object.values(PRODUCTS).find(item => item.amount === order.amount);
-+ if (!product) throw new Error('Order mismatch');
-+ return product;
++export function describeCharge(order: { amount: number; source?: string; plan?: string | null }) {
++ if (order.source === 'win-test-1' || order.plan === 'test') return { shortName: 'WIN 金流驗收測試', gatewayName: 'WIN NT$1 金流驗收測試' };
++ if (order.plan === 'fullcourse') return PRODUCTS.fullcourse;
++ if (order.plan === 'precourse' || !order.plan) return PRODUCTS.precourse;
++ throw new Error('Order mismatch');
 +}
  export type Config = { merchant: string; key: string; iv: string; origin: string; endpoint: string };
  export function config(env: { PAYUNI_MER_ID?: string; PAYUNI_HASH_KEY?: string; PAYUNI_HASH_IV?: string }): Config {
   const merchant=env.PAYUNI_MER_ID?.trim(),key=env.PAYUNI_HASH_KEY?.trim(),iv=env.PAYUNI_HASH_IV?.trim();
-@@ -25,14 +49,14 @@
+@@ -25,14 +52,17 @@
   if(values.MerID!==c.merchant)throw new Error('Invalid merchant');return values;
  }
  export function verifyOrder(data:Record<string,string>,order:{merchant:string;order_no:string;amount:number;source?:string},c:Config){
@@ -317,20 +528,158 @@ diff -ruN sites-v25-base/lib/payuni/core.ts sites-v25-new/lib/payuni/core.ts
  export function validate(body:Record<string,unknown>){
   const keys=['name','email','phone','profession','stage','topic','sessionCode','lineName'] as const;
   const values=Object.fromEntries(keys.map(k=>[k,typeof body[k]==='string'?body[k].trim():''])) as Record<typeof keys[number],string>;
-  if(body.website||body.consent!==true||keys.some(k=>values[k].length>1000)||['name','email','phone'].some(k=>!values[k as keyof typeof values])||!COURSE_SESSIONS.some(s=>s.code===values.sessionCode)||values.email.length>200||!/^\S+@\S+\.\S+$/.test(values.email)||typeof body.requestId!=='string'||! /^[0-9a-f-]{36}$/i.test(body.requestId))throw new Error('請完整填寫必填欄位、有效 Email 並勾選同意。');
+- if(body.website||body.consent!==true||keys.some(k=>values[k].length>1000)||['name','email','phone'].some(k=>!values[k as keyof typeof values])||!COURSE_SESSIONS.some(s=>s.code===values.sessionCode)||values.email.length>200||!/^\S+@\S+\.\S+$/.test(values.email)||typeof body.requestId!=='string'||! /^[0-9a-f-]{36}$/i.test(body.requestId))throw new Error('請完整填寫必填欄位、有效 Email 並勾選同意。');
 - return {...values,requestId:body.requestId};
-+ return {...values,requestId:body.requestId,product:resolveProduct(body.product)};
++ if(body.website||body.consent!==true||keys.some(k=>values[k].length>1000)||['name','email','phone'].some(k=>!values[k as keyof typeof values])||values.email.length>200||!/^\S+@\S+\.\S+$/.test(values.email)||typeof body.requestId!=='string'||! /^[0-9a-f-]{36}$/i.test(body.requestId))throw new Error('請完整填寫必填欄位、有效 Email 並勾選同意。');
++ const product=resolveProduct(body.product);
++ const sessionOk=product.code==='fullcourse'?values.sessionCode===PREMIERE_SESSION:COURSE_SESSIONS.some(s=>s.code===values.sessionCode);
++ if(!sessionOk)throw new Error('請完整填寫必填欄位、有效 Email 並勾選同意。');
++ return {...values,requestId:body.requestId,product};
  }
  export function digest(value:string){return createHash('sha256').update(value).digest('hex')}
  export function escape(value:string){return value.replace(/[&<>"']/g,v=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[v]!))}
+diff -ruN sites-v25-base/lib/payuni/receipt.ts sites-v25-new/lib/payuni/receipt.ts
+--- sites-v25-base/lib/payuni/receipt.ts	1970-01-01 00:00:00.000000000 +0000
++++ sites-v25-new/lib/payuni/receipt.ts	2026-10-27 13:41:03.290668209 +0000
+@@ -0,0 +1,83 @@
++export const PRECOURSE_PRODUCT = 'WIN 講師班｜90分鐘線上前導課';
++export const FULLCOURSE_PRODUCT = '【待 Elsa 確認】WIN 講師班正式課程';
++
++export type PaymentSnapshot = {
++  status?: string;
++  amount?: number;
++  plan?: string | null;
++  isTest?: boolean;
++  productName?: string | null;
++  session?: string | null;
++} | null;
++
++export type PaymentView = {
++  title: string;
++  productLine: string | null;
++  body: string;
++  note: string;
++  showSession: boolean;
++};
++
++export function productNameForPlan(plan: string | null | undefined) {
++  if (plan === 'test') return 'WIN 金流驗收測試';
++  if (plan === 'precourse') return PRECOURSE_PRODUCT;
++  if (plan === 'fullcourse') return FULLCOURSE_PRODUCT;
++  return '【待確認】款項';
++}
++
++export function paymentView(result: PaymentSnapshot, failed = false): PaymentView {
++  if (!result) {
++    return {
++      title: failed ? '無法確認付款結果' : '正在讀取付款結果',
++      productLine: null,
++      body: '',
++      note: '',
++      showSession: false,
++    };
++  }
++  const plan = result.plan === 'test' || result.plan === 'precourse' || result.plan === 'fullcourse' || result.plan === 'unknown'
++    ? result.plan
++    : result.isTest ? 'test' : result.amount === 399 ? 'precourse' : 'unknown';
++  const amount = typeof result.amount === 'number' ? `NT$${result.amount}` : '';
++  const paid = result.status === 'paid';
++  const pending = result.status === 'pending';
++  const product = plan === 'precourse'
++    ? PRECOURSE_PRODUCT
++    : plan === 'test'
++      ? 'WIN 金流驗收測試'
++      : plan === 'fullcourse'
++        ? (result.productName || FULLCOURSE_PRODUCT)
++        : (result.productName || '【待確認】款項');
++  const title = plan === 'fullcourse'
++    ? (paid ? '【待 Elsa 確認】正式課程付款成功' : pending ? '【待 Elsa 確認】正在確認正式課程付款' : '【待 Elsa 確認】正式課程付款結果')
++    : plan === 'unknown'
++      ? (paid ? '【待確認】付款已收到' : pending ? '【待確認】正在確認付款' : '【待確認】付款結果')
++      : (paid ? (plan === 'test' ? '測試付款成功' : '前導課付款成功') : pending ? '正在確認付款結果' : 'WIN 前導課付款結果');
++  const body = paid
++    ? (plan === 'test'
++      ? 'NT$1 測試付款已完成。此為金流驗收，不包含課程報名或席位。'
++      : plan === 'fullcourse'
++        ? '【待 Elsa 確認】已收到正式課程款項。後續通知方式尚未定稿。'
++        : plan === 'unknown'
++          ? '【待確認】已收到款項。請保留訂單編號，並等候主辦方核對課程方案。'
++          : '已收到你的 NT$399 前導課款項。線上課程的實際安排與上課連結將另行通知。')
++    : pending
++      ? '正在確認付款結果，請稍候；若已付款，請勿重複付款。'
++      : result.status === 'expired'
++        ? '這筆付款連結已逾時。若已完成付款，請稍後重新整理查詢。'
++        : '目前尚未確認付款成功。若已扣款，請勿重複付款，請保留訂單編號。';
++  const note = plan === 'test'
++    ? '此為 NT$1 測試付款，不包含課程報名。'
++    : plan === 'fullcourse'
++      ? '【待 Elsa 確認】此付款結果頁的正式課程說明尚未定稿。'
++      : plan === 'unknown'
++        ? '【待確認】這筆訂單的課程方案尚未核對完成。'
++        : '此款項僅為線上前導課，不代表正式講師班錄取或費用。';
++  return {
++    title,
++    productLine: amount ? `${product} · ${amount}` : product,
++    body,
++    note,
++    showSession: plan === 'precourse' && !result.isTest,
++  };
++}
+diff -ruN sites-v25-base/lib/payuni/server.ts sites-v25-new/lib/payuni/server.ts
+--- sites-v25-base/lib/payuni/server.ts	2026-10-27 13:15:30.201368923 +0000
++++ sites-v25-new/lib/payuni/server.ts	2026-10-27 13:41:04.578690571 +0000
+@@ -1,7 +1,7 @@
+ import { sessionLabel } from '../course-sessions';
+ import { env } from 'cloudflare:workers';
+ import { config, PRODUCT, escape } from './core';
+-export type Order={id:string;application_id:string;order_no:string;merchant:string;amount:number;token:string;status:string;created_at:string;email_status:string;provider_trade_no:string|null;source:string};
++export type Order={id:string;application_id:string;order_no:string;merchant:string;amount:number;token:string;status:string;created_at:string;email_status:string;provider_trade_no:string|null;source:string;plan?:string|null};
+ export function db(){if(!env.DB)throw new Error('Database unavailable');return env.DB}
+ export function settings(){return config(env)}
+ export function json(data:unknown,status=200){return Response.json(data,{status,headers:{'Cache-Control':'no-store, max-age=0','Referrer-Policy':'no-referrer'}})}
+@@ -10,6 +10,20 @@
+  if(Number(request.headers.get('Content-Length')||0)>150000)throw new Error('Payload too large');const text=await request.text();if(text.length>150000)throw new Error('Payload too large');
+  const params=new URLSearchParams(text);const result:Record<string,string>={};for(const [k,v]of params){if(k in result)throw new Error('Duplicate field');result[k]=v}return result;
+ }
++function courseEmail(order:Order,person:{name:string;email:string},subject:string,message:string,product:string,heading:string){
++ return {from:env.RESEND_FROM,to:[person.email],subject,text:`${person.name}，你好：\n\n${message}\n\n項目：${product}\n金額：NT$${order.amount}\n訂單：${order.order_no}\n\nWIN 課程團隊`,html:`<div lang="zh-Hant" style="font-family:Arial,sans-serif;line-height:1.8;max-width:600px;margin:auto;padding:28px;color:#17243a"><p>${escape(person.name)}，你好：</p><h2>${escape(heading)}</h2><p>${escape(message)}</p><p>項目：${escape(product)}<br>金額：NT$${order.amount}<br>訂單：${escape(order.order_no)}</p><p>WIN 課程團隊</p></div>`,...(env.RESEND_REPLY_TO?{reply_to:env.RESEND_REPLY_TO}:{})};
++}
++function paidEmailBody(order:Order,person:{name:string;email:string;session_code:string|null}){
++ if(order.plan==='fullcourse')return courseEmail(order,person,'【待 Elsa 確認】付款成功｜WIN 講師班正式課程','【待 Elsa 確認】已收到你的正式課程款項。上課方式、後續通知與退費說明都尚未定稿，請先保留訂單編號。','【待 Elsa 確認】WIN 講師班正式課程','【待 Elsa 確認】正式課程付款成功');
++ if(order.plan!=='precourse'&&order.plan!=='test'&&order.source!=='win-test-1')return courseEmail(order,person,'【待確認】付款已收到','【待確認】已收到款項。這筆訂單的課程方案尚未核對，請保留訂單編號，並等候主辦方確認。','【待確認】款項','【待確認】付款已收到');
++ const test=order.source==='win-test-1';
++ const subject=test?'測試付款成功｜WIN NT$1 金流驗收':'付款成功｜WIN 90分鐘線上前導課';
++ const message=test?'NT$1 金流測試款項已收到。此為系統驗收測試，不包含課程報名或席位。':'已收到你的 NT$399 前導課款項。課程所有場次均為線上課程，上課連結將另行通知。此付款僅為線上前導課，不代表正式講師班錄取或費用。';
++ const product=test?'WIN NT$1 金流驗收測試':PRODUCT;
++ const session=test?null:sessionLabel(person.session_code);
++ const schedule=session?`暫定場次：${session}，線上課程；實際安排與上課連結以主辦方通知為準。`:'課程日期與參加方式確定後將另行通知。';
++ return {from:env.RESEND_FROM,to:[person.email],subject,text:`${person.name}，你好：\n\n${message}\n\n${test?'':schedule}\n\n項目：${product}\n訂單：${order.order_no}\n\nWIN 課程團隊`,html:`<div lang="zh-Hant" style="font-family:Arial,sans-serif;line-height:1.8;max-width:600px;margin:auto;padding:28px;color:#17243a"><p>${escape(person.name)}，你好：</p><h2>${test?'測試付款成功':'前導課付款成功'}</h2><p>${message}</p>${test?'':`<p>${escape(schedule)}</p>`}<p>項目：${product}<br>金額：NT$${order.amount}<br>訂單：${order.order_no}</p><p>WIN 課程團隊</p></div>`,...(env.RESEND_REPLY_TO?{reply_to:env.RESEND_REPLY_TO}:{})};
++}
+ export async function sendPaidEmail(order:Order){
+  if(order.status!=='paid')return true;
+  const claimed=await db().prepare("UPDATE payment_orders SET email_status='sending',email_lease=? WHERE id=? AND status='paid' AND email_status!='sent' AND (email_status!='sending' OR email_lease<?) RETURNING id").bind(Date.now()+60000,order.id,Date.now()).first();
+@@ -17,13 +31,7 @@
+  const person=await db().prepare('SELECT name,email,session_code FROM applications WHERE id=?').bind(order.application_id).first<{name:string;email:string;session_code:string|null}>();
+  try{
+  if(!person||!env.RESEND_API_KEY||!env.RESEND_FROM)throw new Error('Email unavailable');
+- const test=order.source==='win-test-1';
+- const subject=test?'測試付款成功｜WIN NT$1 金流驗收':'付款成功｜WIN 90分鐘線上前導課';
+- const message=test?'NT$1 金流測試款項已收到。此為系統驗收測試，不包含課程報名或席位。':'已收到你的 NT$399 前導課款項。課程所有場次均為線上課程，上課連結將另行通知。此付款僅為線上前導課，不代表正式講師班錄取或費用。';
+- const product=test?'WIN NT$1 金流驗收測試':PRODUCT;
+- const session=test?null:sessionLabel(person.session_code);
+- const schedule=session?`暫定場次：${session}，線上課程；實際安排與上課連結以主辦方通知為準。`:'課程日期與參加方式確定後將另行通知。';
+- const response=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${env.RESEND_API_KEY}`,'Content-Type':'application/json','Idempotency-Key':`win-paid/${order.id}`},body:JSON.stringify({from:env.RESEND_FROM,to:[person.email],subject,text:`${person.name}，你好：\n\n${message}\n\n${test?'':schedule}\n\n項目：${product}\n訂單：${order.order_no}\n\nWIN 課程團隊`,html:`<div lang="zh-Hant" style="font-family:Arial,sans-serif;line-height:1.8;max-width:600px;margin:auto;padding:28px;color:#17243a"><p>${escape(person.name)}，你好：</p><h2>${test?'測試付款成功':'前導課付款成功'}</h2><p>${message}</p>${test?'':`<p>${escape(schedule)}</p>`}<p>項目：${product}<br>金額：NT$${order.amount}<br>訂單：${order.order_no}</p><p>WIN 課程團隊</p></div>`,...(env.RESEND_REPLY_TO?{reply_to:env.RESEND_REPLY_TO}:{})}),signal:AbortSignal.timeout(10000)});
++ const response=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${env.RESEND_API_KEY}`,'Content-Type':'application/json','Idempotency-Key':`win-paid/${order.id}`},body:JSON.stringify(paidEmailBody(order,person)),signal:AbortSignal.timeout(10000)});
+  if(!response.ok)throw new Error('Email rejected');const result=await response.json() as {id?:string};
+  await db().prepare("UPDATE payment_orders SET email_status='sent',email_id=?,email_lease=0 WHERE id=?").bind(result.id||null,order.id).run();return true;
+  }catch{await db().prepare("UPDATE payment_orders SET email_status='failed',email_lease=0 WHERE id=? AND email_status='sending'").bind(order.id).run();return false}
 diff -ruN sites-v25-base/lib/premiere/roster.ts sites-v25-new/lib/premiere/roster.ts
 --- sites-v25-base/lib/premiere/roster.ts	1970-01-01 00:00:00.000000000 +0000
-+++ sites-v25-new/lib/premiere/roster.ts	2026-10-27 13:16:48.113227676 +0000
-@@ -0,0 +1,65 @@
++++ sites-v25-new/lib/premiere/roster.ts	2026-10-27 13:41:23.295010711 +0000
+@@ -0,0 +1,74 @@
 +import { env } from 'cloudflare:workers';
 +import { timingSafeEqual } from 'node:crypto';
-+import { COURSE_SESSIONS } from '../course-sessions';
-+import { digest, PRODUCTS } from '../payuni/core';
++import { digest, PREMIERE_SESSION, PRODUCTS } from '../payuni/core';
 +import { db, json } from '../payuni/server';
 +
 +export async function readJson(request: Request, limit = 8000) {
@@ -354,7 +703,7 @@ diff -ruN sites-v25-base/lib/premiere/roster.ts sites-v25-new/lib/premiere/roste
 + const name = typeof body.name === 'string' ? body.name.trim() : '';
 + const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
 + const sessionCode = typeof body.sessionCode === 'string' ? body.sessionCode.trim() : '';
-+ if (!name || name.length > 100 || email.length > 200 || !/^\S+@\S+\.\S+$/.test(email) || !COURSE_SESSIONS.some(item => item.code === sessionCode)) throw new Error('請填寫姓名、有效 Email。');
++ if (!name || name.length > 100 || email.length > 200 || !/^\S+@\S+\.\S+$/.test(email) || sessionCode !== PREMIERE_SESSION) throw new Error('請填寫姓名、有效 Email。');
 + return { name, email, sessionCode };
 +}
 +export async function dbInsertRegistrant(person: { name: string; email: string; sessionCode: string }) {
@@ -366,7 +715,7 @@ diff -ruN sites-v25-base/lib/premiere/roster.ts sites-v25-new/lib/premiere/roste
 + } catch {
 +  const existing = await db().prepare('SELECT token FROM premiere_registrants WHERE email=? AND session_code=?').bind(person.email, person.sessionCode).first<{ token: string }>();
 +  if (!existing?.token) return json({ error: '暫時無法登記，請稍後再試。' }, 503);
-+  return json({ ok: true, token: existing.token, already: true });
++  return json({ ok: true, already: true });
 + }
 +}
 +export function exportAuthorized(request: Request) {
@@ -380,15 +729,25 @@ diff -ruN sites-v25-base/lib/premiere/roster.ts sites-v25-new/lib/premiere/roste
 + const safe = /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
 + return `"${safe.replaceAll('"', '""')}"`;
 +}
++const CSV_NOTE = '以 Email 對應訂單。登記與付款若不是同一個 Email，登記那一列會顯示沒買；有付款的那個 Email 會另外列成一筆。';
 +export async function rosterCsv() {
 + const full = PRODUCTS.fullcourse.amount;
 + const intro = PRODUCTS.precourse.amount;
++ const bought = `o.status='paid' AND (o.plan='fullcourse' OR o.amount=?)`;
 + const rows = await db().prepare(`SELECT r.name,r.email,r.session_code,r.created_at,r.joined_at,
-+  (SELECT o.order_no FROM applications a JOIN payment_orders o ON o.application_id=a.id WHERE lower(trim(a.email))=r.email AND o.status='paid' AND o.amount=? ORDER BY o.paid_at DESC LIMIT 1) AS order_no,
-+  (SELECT o.amount FROM applications a JOIN payment_orders o ON o.application_id=a.id WHERE lower(trim(a.email))=r.email AND o.status='paid' AND o.amount=? ORDER BY o.paid_at DESC LIMIT 1) AS paid_amount,
++  (SELECT o.order_no FROM applications a JOIN payment_orders o ON o.application_id=a.id WHERE lower(trim(a.email))=r.email AND ${bought} ORDER BY o.paid_at DESC LIMIT 1) AS order_no,
++  (SELECT o.amount FROM applications a JOIN payment_orders o ON o.application_id=a.id WHERE lower(trim(a.email))=r.email AND ${bought} ORDER BY o.paid_at DESC LIMIT 1) AS paid_amount,
 +  (SELECT 1 FROM applications a JOIN payment_orders o ON o.application_id=a.id WHERE lower(trim(a.email))=r.email AND o.status='paid' AND o.amount=? LIMIT 1) AS intro_paid
 +  FROM premiere_registrants r ORDER BY r.created_at ASC`).bind(full, full, intro).all<{ name: string; email: string; session_code: string; created_at: string; joined_at: string | null; order_no: string | null; paid_amount: number | null; intro_paid: number | null }>();
++ const direct = await db().prepare(`SELECT a.name AS name, lower(trim(a.email)) AS email, a.session_code AS session_code, COALESCE(o.paid_at,o.created_at) AS created_at, NULL AS joined_at, o.order_no AS order_no, o.amount AS paid_amount,
++  (SELECT 1 FROM applications a2 JOIN payment_orders o2 ON o2.application_id=a2.id WHERE lower(trim(a2.email))=lower(trim(a.email)) AND o2.status='paid' AND o2.amount=? LIMIT 1) AS intro_paid
++  FROM payment_orders o JOIN applications a ON a.id=o.application_id
++  WHERE o.status='paid' AND (o.plan='fullcourse' OR o.amount=?)
++  AND o.rowid=(SELECT o3.rowid FROM payment_orders o3 JOIN applications a3 ON a3.id=o3.application_id WHERE lower(trim(a3.email))=lower(trim(a.email)) AND o3.status='paid' AND (o3.plan='fullcourse' OR o3.amount=?) ORDER BY o3.paid_at DESC LIMIT 1)
++  AND lower(trim(a.email)) NOT IN (SELECT email FROM premiere_registrants)
++  ORDER BY o.created_at ASC`).bind(intro, full, full).all<{ name: string; email: string; session_code: string; created_at: string; joined_at: string | null; order_no: string | null; paid_amount: number | null; intro_paid: number | null }>();
 + const header = ['姓名', 'Email', '場次', '登記時間', '進入時間', '是否購買', '訂單編號', '付款金額', '前導課已付款'];
-+ const lines = [header.map(cell).join(','), ...(rows.results || []).map(row => [row.name, row.email, row.session_code, row.created_at, row.joined_at ?? '', row.paid_amount == null ? '沒買' : '有買', row.order_no ?? '', row.paid_amount ?? '', row.intro_paid ? '是' : '否'].map(cell).join(','))];
++ const line = (row: { name: string; email: string; session_code: string; created_at: string; joined_at: string | null; order_no: string | null; paid_amount: number | null; intro_paid: number | null }) => [row.name, row.email, row.session_code, row.created_at, row.joined_at ?? '', row.paid_amount == null ? '沒買' : '有買', row.order_no ?? '', row.paid_amount ?? '', row.intro_paid ? '是' : '否'].map(cell).join(',');
++ const lines = [header.map(cell).join(','), ...(rows.results || []).map(line), ...(direct.results || []).map(line), ['注意', CSV_NOTE, '', '', '', '', '', '', ''].map(cell).join(',')];
 + return '\uFEFF' + lines.join('\r\n');
 +}

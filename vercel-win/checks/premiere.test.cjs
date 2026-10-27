@@ -28,7 +28,10 @@ const session = { startAt: '2026-11-03T19:30:00+08:00', durationSeconds: 90 * 60
 
 assert.equal(config.PREMIERE.priceTwd, 39800);
 assert.equal(config.PREMIERE.productCode, 'fullcourse');
+assert.equal(config.PREMIERE.sessionCode, 'premiere-2026-11-03');
 assert.equal(config.PREMIERE.startAt, '2026-11-03T19:30:00+08:00');
+const sessions = load('lib/course-sessions.ts');
+assert.equal(sessions.COURSE_SESSIONS.some(item => item.code === config.PREMIERE.sessionCode), false);
 
 const before = schedule.premiereClock(new Date(start - 1000), session);
 assert.equal(before.phase, 'countdown');
@@ -73,17 +76,45 @@ assert.equal(hidden.priceTwd, 39800);
 const armed = state.getPremiereState(new Date(start), { PREMIERE_CHECKOUT_ENABLED: '1', BUNNY_STREAM_VIDEO_ID: '11111111-1111-1111-1111-111111111111', BUNNY_STREAM_CDN_HOSTNAME: 'vz-demo.b-cdn.net' });
 assert.equal(armed.phase, 'playing');
 assert.equal(armed.positionSeconds, 0);
-assert.equal(armed.checkoutEnabled, true);
+assert.equal(armed.checkoutEnabled, false);
 assert.match(armed.hlsUrl, /playlist\.m3u8$/);
+assert.equal(state.premiereCheckoutEnabled({ PREMIERE_CHECKOUT_ENABLED: '1' }, 'WIN 正式課程', 'WIN 正式課程'), true);
+assert.equal(state.premiereCheckoutEnabled({ PREMIERE_CHECKOUT_ENABLED: '1' }, '【待 Elsa 確認】課程', 'WIN 正式課程'), false);
+assert.equal(state.premiereCheckoutEnabled({}, 'WIN 正式課程', 'WIN 正式課程'), false);
+const patch = fs.readFileSync(path.join('..', 'patches', 'premiere-sites-v25.patch'), 'utf8');
+if (armed.checkoutEnabled) {
+  assert.equal(JSON.stringify(config.PREMIERE).includes('待 Elsa 確認'), false);
+  const names = [...patch.matchAll(/(?:gatewayName|shortName): '([^']*)'/g)].map(match => match[1]).join('\n');
+  assert.equal(names.includes('待 Elsa 確認'), false);
+}
+assert.equal(state.premierePageEnabled({}), false);
+assert.equal(state.premierePageEnabled({ PREMIERE_PAGE_ENABLED: '0' }), false);
+assert.equal(state.premierePageEnabled({ PREMIERE_PAGE_ENABLED: '1' }), true);
 
 assert.equal(copy.PRECOURSE_PAID_BODY, '已收到你的 NT$399 前導課款項。線上課程的實際安排與上課連結將另行通知。');
 assert.equal(copy.PRECOURSE_PRODUCT, 'WIN 講師班｜90分鐘線上前導課');
-assert.equal(copy.isFullCourse({ amount: 399 }), false);
-assert.equal(copy.isFullCourse({ amount: 39800 }), true);
-assert.equal(copy.isFullCourse({ amount: 39800, isTest: true }), false);
-assert.equal(copy.paymentPaidBody({ amount: 399, isTest: false }), copy.PRECOURSE_PAID_BODY);
-assert.equal(copy.paymentProductLine({ amount: 39800 }), config.PREMIERE.payment.productLine);
-assert.doesNotMatch(copy.paymentPaidBody({ amount: 39800 }), /NT\$399/);
+assert.equal(copy.resolvePlan({ amount: 399 }), 'precourse');
+assert.equal(copy.resolvePlan({ amount: 39800 }), 'unknown');
+assert.equal(copy.resolvePlan({ amount: 399, plan: 'fullcourse' }), 'fullcourse');
+assert.equal(copy.resolvePlan({ amount: 39800, isTest: true }), 'test');
+const precoursePaid = copy.paymentView({ status: 'paid', amount: 399, plan: 'precourse' });
+assert.equal(precoursePaid.body, copy.PRECOURSE_PAID_BODY);
+assert.equal(precoursePaid.productLine, 'WIN 講師班｜90分鐘線上前導課 · NT$399');
+for (const status of ['pending', 'failed', 'expired']) {
+  const full = copy.paymentView({ status, amount: 39800, plan: 'fullcourse', productName: config.PREMIERE.payment.productLine });
+  const blob = full.title + full.productLine + full.body + full.note;
+  assert.match(full.productLine, /NT\$39800/);
+  assert.match(blob, /待 Elsa 確認/);
+  assert.equal(blob.includes('399'), false, status);
+  assert.equal(blob.includes('前導課'), false, status);
+}
+const missing = JSON.stringify(copy.paymentView(null, true));
+assert.match(missing, /無法確認付款結果/);
+assert.equal(missing.includes('399'), false);
+assert.equal(missing.includes('前導課'), false);
+assert.equal(missing.includes('39800'), false);
+assert.equal(copy.paymentView({ status: 'pending', amount: 399, plan: 'precourse' }).title, '正在確認付款結果');
+assert.equal(copy.paymentView({ status: 'failed', amount: 399, plan: 'precourse' }).title, 'WIN 前導課付款結果');
 
 const roots = ['app/premiere', 'lib/premiere', 'app/api/premiere'];
 const banned = ['直播', '人正在看', '剛剛購買'];
@@ -99,5 +130,38 @@ const player = fs.readFileSync('app/premiere/player.tsx', 'utf8');
 assert.equal(player.includes('amount:'), false);
 assert.match(player, /product: state\.productCode/);
 assert.match(player, /premiere\/register/);
+assert.match(player, /registerEndedTitle/);
+assert.match(player, /checkoutEnded/);
+assert.match(player, /phase === 'ended'/);
+assert.equal(player.includes("searchParams.get('product')"), false);
+
+const pageCode = ts.transpileModule(fs.readFileSync('app/premiere/page.tsx', 'utf8'), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX },
+}).outputText;
+const pageModule = { exports: {} };
+new Function('require', 'module', 'exports', pageCode)(name => {
+  if (name === 'react/jsx-runtime') return require('react/jsx-runtime');
+  if (name === 'next/navigation') return { notFound() { const error = new Error('NEXT_NOT_FOUND'); throw error; } };
+  if (name.endsWith('.css')) return {};
+  if (name === './player') return { __esModule: true, default() { return null; } };
+  if (name.startsWith('@/')) return load(name.slice(2) + (name.endsWith('.ts') ? '' : '.ts'));
+  throw new Error('unexpected import ' + name);
+}, pageModule, pageModule.exports);
+const savedFlag = process.env.PREMIERE_PAGE_ENABLED;
+const savedCheckout = process.env.PREMIERE_CHECKOUT_ENABLED;
+try {
+  delete process.env.PREMIERE_PAGE_ENABLED;
+  process.env.PREMIERE_CHECKOUT_ENABLED = '1';
+  assert.throws(() => pageModule.exports.default(), /NEXT_NOT_FOUND/);
+  process.env.PREMIERE_PAGE_ENABLED = '0';
+  assert.throws(() => pageModule.exports.default(), /NEXT_NOT_FOUND/);
+  process.env.PREMIERE_PAGE_ENABLED = '1';
+  assert.ok(pageModule.exports.default());
+} finally {
+  if (savedFlag === undefined) delete process.env.PREMIERE_PAGE_ENABLED;
+  else process.env.PREMIERE_PAGE_ENABLED = savedFlag;
+  if (savedCheckout === undefined) delete process.env.PREMIERE_CHECKOUT_ENABLED;
+  else process.env.PREMIERE_CHECKOUT_ENABLED = savedCheckout;
+}
 
 console.log('PASS premiere clock, late join, offer gate, ended state, Bunny URL, 399 copy lock');

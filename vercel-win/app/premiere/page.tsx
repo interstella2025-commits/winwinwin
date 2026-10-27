@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { PREMIERE } from '@/lib/premiere/config';
-import { getPremiereState } from '@/lib/premiere/state';
+import { getPremiereState, premierePageEnabled } from '@/lib/premiere/state';
 import Player from './player';
 import './premiere.css';
 
@@ -13,5 +14,6 @@ export const metadata: Metadata = {
 };
 
 export default function PremierePage() {
+  if (!premierePageEnabled()) notFound();
   return <Player initial={getPremiereState(new Date())} />;
 }

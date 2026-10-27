@@ -164,8 +164,9 @@ export default function Player({ initial }: { initial: PremiereState }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...values, sessionCode: PREMIERE.sessionCode }),
       });
-      const body = await response.json().catch(() => ({})) as { error?: string; token?: string };
+      const body = await response.json().catch(() => ({})) as { error?: string; token?: string; already?: boolean };
       if (response.status === 404) { setRegisterStatus(copy.registerUnavailable); return; }
+      if (response.ok && body.already && !body.token) { setRegisterStatus(copy.registerDone); form.reset(); return; }
       if (!response.ok || !body.token) throw new Error(body.error || copy.registerError);
       sessionStorage.setItem('win-premiere-attendance', body.token);
       void attend(body.token);
@@ -208,57 +209,106 @@ export default function Player({ initial }: { initial: PremiereState }) {
   }
 
   const percent = state.durationSeconds ? Math.min(100, (position / state.durationSeconds) * 100) : 0;
-  return <main className="premiere">
-    <div className="premiere-bar"><a className="premiere-brand" href="/">EXPERT TO ENTERPRISE</a><a className="premiere-back" href="/">{copy.backHome}</a></div>
-    <p className="premiere-kicker">{copy.eyebrow}</p>
-    <h1>{copy.title}</h1>
-    <p className="premiere-lead">{copy.lead}</p>
-    <ul className="premiere-schedule">
+  const parts = clockParts(start - now);
+  const purchaseOpen = offerOpen && phase !== 'ended' && state.checkoutEnabled;
+  return <main className={`premiere premiere--${phase}`} data-phase={phase}>
+    <div className="premiere-nav" role="banner">
+      <a className="premiere-brand" href="/">EXPERT <em>TO</em> ENTERPRISE</a>
+      <a className="premiere-back" href="/">{copy.backHome}</a>
+    </div>
+    <p className="sr-only" aria-live="polite">{phase === 'countdown' ? `${copy.countdown} ${remain}` : phase === 'playing' ? copy.playing : copy.endedTitle}</p>
+    {phase === 'countdown' && <section className="premiere-hero" aria-label={copy.eyebrow}>
+      <div className="premiere-hero-copy">
+        <p className="premiere-kicker">{copy.eyebrow}</p>
+        <h1>{copy.title}</h1>
+        <p className="premiere-lead">{copy.lead}</p>
+        <p className="premiere-clock-label">{copy.countdown}</p>
+        <div className="premiere-clock" aria-hidden="true">{parts.map(([label, value]) => <div key={label}><b>{value}</b><span>{label}</span></div>)}</div>
+      </div>
+      <div className="premiere-portrait"><img src="/images/hero-face-clean.png" alt="林嘉宏 WIN 博士" /></div>
+    </section>}
+    {phase === 'playing' && <section className="premiere-stage-wrap" aria-label={copy.eyebrow}>
+      <div className="premiere-stage-head">
+        <p className="premiere-kicker">{copy.eyebrow}</p>
+        <h1>{copy.title}</h1>
+        <p className="premiere-onair">{copy.playing}</p>
+      </div>
+      <div className="premiere-screen">
+        {state.hlsUrl ? <>
+          <video ref={videoRef} playsInline muted autoPlay preload="auto" disablePictureInPicture />
+          <div className="premiere-progress" role="progressbar" aria-label={copy.progressLabel} aria-valuemin={0} aria-valuemax={state.durationSeconds} aria-valuenow={Math.floor(position)} aria-valuetext={copy.playing}><span style={{ width: `${percent}%` }} /></div>
+          {(muted || needsGesture) && <button type="button" className="premiere-engage" onClick={engage}>{needsGesture ? copy.startPlayback : copy.unmute}</button>}
+          {videoError && <div className="premiere-missing"><p>{copy.videoError}</p></div>}
+        </> : <div className="premiere-missing premiere-missing--poster"><img src="/images/revision/stage-singapore.webp" alt="" /><p>{copy.videoMissing}</p></div>}
+      </div>
+    </section>}
+    {phase === 'ended' && <section className="premiere-hero premiere-hero--ended" aria-label={copy.eyebrow}>
+      <div className="premiere-hero-copy">
+        <p className="premiere-kicker">{copy.eyebrow}</p>
+        <h1>{copy.endedTitle}</h1>
+        <p className="premiere-lead">{copy.endedBody}</p>
+      </div>
+      <div className="premiere-portrait"><img src="/images/hero-face-clean.png" alt="" /></div>
+    </section>}
+    <ul className="premiere-facts">
       <li><span>開始</span><b>{formatTaipei(state.startAt)}</b></li>
       <li><span>長度</span><b>{formatDuration(state.durationSeconds)}</b></li>
-      <li><span>報名按鈕出現</span><b>{formatTaipei(state.offerAt)}</b></li>
+      <li><span>報名開放</span><b>{formatTaipei(state.offerAt)}</b></li>
     </ul>
-    <p className="sr-only" aria-live="polite">{phase === 'countdown' ? copy.countdown : phase === 'playing' ? copy.playing : copy.endedTitle}</p>
-    <section className="premiere-stage" aria-label={copy.eyebrow}>
-      {phase === 'countdown' && <div className="premiere-countdown"><p>{copy.countdown}</p><p className="premiere-count" aria-hidden="true">{remain}</p></div>}
-      {phase === 'ended' && <div className="premiere-ended"><h2>{copy.endedTitle}</h2><p>{copy.endedBody}</p></div>}
-      {phase === 'playing' && !state.hlsUrl && <div className="premiere-missing"><p>{copy.videoMissing}</p></div>}
-      {phase === 'playing' && state.hlsUrl && <>
-        <video ref={videoRef} playsInline muted autoPlay preload="auto" disablePictureInPicture />
-        <div className="premiere-progress" role="progressbar" aria-label={copy.progressLabel} aria-valuemin={0} aria-valuemax={state.durationSeconds} aria-valuenow={Math.floor(position)} aria-valuetext={copy.playing}><span style={{ width: `${percent}%` }} /></div>
-        {(muted || needsGesture) && <button type="button" className="premiere-engage" onClick={engage}>{needsGesture ? copy.startPlayback : copy.unmute}</button>}
-        {videoError && <div className="premiere-missing"><p>{copy.videoError}</p></div>}
-      </>}
-    </section>
-    <section className="premiere-card" aria-labelledby="premiere-register-title">
-      <h2 id="premiere-register-title">{copy.registerTitle}</h2>
-      <p className="premiere-copy">{copy.registerLead}</p>
-      <form onSubmit={register}>
-        <input className="trap" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" />
-        <label>姓名 <span className="required">＊</span><input name="name" autoComplete="name" required maxLength={100} placeholder="請輸入姓名" /></label>
-        <label>Email <span className="required">＊</span><input type="email" name="email" autoComplete="email" required maxLength={200} placeholder="name@example.com" /></label>
-        <button className="premiere-submit" disabled={registerBusy}>{registerBusy ? '正在送出…' : copy.registerButton}</button>
-        <p role="status" aria-live="polite" className="premiere-status">{registerStatus}</p>
-      </form>
-    </section>
-    {offerOpen && <section className="premiere-card" aria-labelledby="premiere-purchase-title">
-      <h2 id="premiere-purchase-title">{copy.purchaseTitle}</h2>
-      <p className="premiere-copy">{copy.purchaseLead}</p>
-      <p className="premiere-price">{formatTwd(state.priceTwd)}</p>
-      <p className="premiere-terms">{copy.terms}</p>
-      {state.checkoutEnabled ? <form onSubmit={pay}>
-        <input className="trap" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" />
-        <label>姓名 <span className="required">＊</span><input name="name" autoComplete="name" required maxLength={100} /></label>
-        <label>手機 <span className="required">＊</span><input name="phone" type="tel" autoComplete="tel" required maxLength={100} placeholder="例：0912 345 678" /></label>
-        <label>Email <span className="required">＊</span><input type="email" name="email" autoComplete="email" required maxLength={200} /></label>
-        <label>LINE 顯示名稱（選填）<input name="lineName" autoComplete="off" maxLength={100} /></label>
-        <label className="consent"><input type="checkbox" name="consent" required /><span>{copy.consent}</span></label>
-        <p className="premiere-warning">下一頁顯示的金額必須是 {formatTwd(state.priceTwd)}。若看到 NT$399，請不要付款。</p>
-        <button className="premiere-submit gold" disabled={payBusy}>{payBusy ? '正在送出…' : `${copy.purchaseButton} ${formatTwd(state.priceTwd)}`}</button>
-        <p role="status" aria-live="polite" className="premiere-status">{payStatus}</p>
-      </form> : <p className="premiere-closed">{copy.checkoutClosed}</p>}
-    </section>}
+    {phase !== 'playing' && <ul className="premiere-gallery">
+      <li><img src="/images/revision/singapore.webp" alt="新加坡現場" /></li>
+      <li><img src="/images/revision/cambridge.webp" alt="劍橋現場" /></li>
+      <li><img src="/images/revision/beijing.webp" alt="北京現場" /></li>
+    </ul>}
+    <div className="premiere-panels">
+      <section className="premiere-card" aria-labelledby="premiere-register-title">
+        <p className="premiere-card-kicker">01</p>
+        <h2 id="premiere-register-title">{phase === 'ended' ? copy.registerEndedTitle : copy.registerTitle}</h2>
+        {phase === 'ended' ? <p className="premiere-copy">{copy.registerEndedBody}</p> : <>
+          <p className="premiere-copy">{copy.registerLead}</p>
+          <form onSubmit={register}>
+            <input className="trap" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" />
+            <label className="field"><span className="field-name">姓名<span className="required" aria-hidden="true">＊</span></span><input name="name" autoComplete="name" required maxLength={100} placeholder="請輸入姓名" /></label>
+            <label className="field"><span className="field-name">Email<span className="required" aria-hidden="true">＊</span></span><input type="email" name="email" autoComplete="email" required maxLength={200} placeholder="name@example.com" /></label>
+            <button className="premiere-submit" disabled={registerBusy}>{registerBusy ? '正在送出…' : copy.registerButton}</button>
+            <p role="status" aria-live="polite" className="premiere-status">{registerStatus}</p>
+          </form>
+        </>}
+      </section>
+      <section className="premiere-card premiere-card--offer" aria-labelledby="premiere-purchase-title">
+        <p className="premiere-card-kicker">02</p>
+        <h2 id="premiere-purchase-title">{copy.purchaseTitle}</h2>
+        <p className="premiere-price">{formatTwd(state.priceTwd)}</p>
+        <p className="premiere-copy">{copy.purchaseLead}</p>
+        <p className="premiere-terms">{copy.terms}</p>
+        {purchaseOpen ? <form onSubmit={pay}>
+          <input className="trap" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" />
+          <label className="field"><span className="field-name">姓名<span className="required" aria-hidden="true">＊</span></span><input name="name" autoComplete="name" required maxLength={100} /></label>
+          <label className="field"><span className="field-name">手機<span className="required" aria-hidden="true">＊</span></span><input name="phone" type="tel" autoComplete="tel" required maxLength={100} placeholder="例：0912 345 678" /></label>
+          <label className="field"><span className="field-name">Email<span className="required" aria-hidden="true">＊</span></span><input type="email" name="email" autoComplete="email" required maxLength={200} /></label>
+          <label className="field"><span className="field-name">LINE 顯示名稱</span><input name="lineName" autoComplete="off" maxLength={100} placeholder="選填" /></label>
+          <label className="consent"><input type="checkbox" name="consent" required /><span>{copy.consent}</span></label>
+          <p className="premiere-warning">下一頁顯示的金額必須是 {formatTwd(state.priceTwd)}。若看到 NT$399，請不要付款。</p>
+          <button className="premiere-submit gold" disabled={payBusy}>{payBusy ? '正在送出…' : copy.purchaseButton}</button>
+          <p role="status" aria-live="polite" className="premiere-status">{payStatus}</p>
+        </form> : <p className="premiere-closed">{phase === 'ended' ? copy.checkoutEnded : offerOpen ? copy.checkoutClosed : copy.offerLocked}</p>}
+      </section>
+    </div>
   </main>;
+}
+
+function clockParts(milliseconds: number) {
+  const total = Math.max(0, Math.ceil(milliseconds / 1000));
+  const days = Math.floor(total / 86400);
+  const hours = Math.floor((total % 86400) / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const seconds = total % 60;
+  return [
+    ['天', String(days)],
+    ['時', String(hours).padStart(2, '0')],
+    ['分', String(minutes).padStart(2, '0')],
+    ['秒', String(seconds).padStart(2, '0')],
+  ] as const;
 }
 
 function attend(token: string) {
