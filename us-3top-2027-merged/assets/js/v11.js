@@ -5,6 +5,8 @@
  if('IntersectionObserver' in window){
   var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){links.forEach(function(l){l.classList.remove('is-on')});var a=map[e.target.id];if(a)a.classList.add('is-on')}})},{rootMargin:'-45% 0px -50% 0px'});
   Object.keys(map).forEach(function(id){io.observe(document.getElementById(id))});
+  var first=links.length&&document.querySelector(links[0].getAttribute('href'));
+  var clr=function(){if(first&&first.getBoundingClientRect().top>innerHeight*.5)links.forEach(function(l){l.classList.remove('is-on')})};addEventListener('scroll',clr,{passive:true});clr();
  }
  // 手機橫滑提示＋進度點
  [].forEach.call(document.querySelectorAll('[data-swipe]'),function(el){

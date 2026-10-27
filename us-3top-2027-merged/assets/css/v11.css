@@ -28,3 +28,37 @@
 /* urgent 改為承接問句：縮成單行 CTA 條 */
 .urgent.u-q .u-in h2{font-size:clamp(20px,2.2vw,26px);margin:0}
 .cta-band .cb-in b{font-size:clamp(17px,1.8vw,21px)}
+/* v12：價值＋證書＋學位＋比較 合併節 */
+.cert-x{background:#EFECE4;padding:100px 0}
+.cert-x>.wrap{display:block}
+.cert-x h2{margin:6px 0 0}
+.vlist{list-style:none;margin:36px 0 64px;padding:0;display:grid;grid-template-columns:repeat(5,1fr);border-top:2px solid #0B1B3A}
+.vlist li{padding:20px 18px 6px 0;border-right:1px solid #D5D0C2;margin-right:18px}
+.vlist li:last-child{border-right:0;margin-right:0}
+.vlist i{display:block;font-style:normal;font-family:var(--serif);font-weight:900;font-size:28px;color:#B8323A;line-height:1}
+.vlist b{display:block;font-family:var(--serif);font-size:18px;color:#0B1B3A;margin:10px 0 6px}
+.vlist span{font-size:14px;line-height:1.65;color:#4A5568}
+.cx-cert{display:grid;grid-template-columns:7fr 5fr;gap:56px;align-items:center}
+.cx-h{font-family:var(--serif);font-size:clamp(22px,2.2vw,28px);color:#0B1B3A;margin:6px 0 14px;line-height:1.35}
+.cx-row{display:grid;grid-template-columns:7fr 5fr;gap:56px;margin-top:72px;padding-top:56px;border-top:1px solid #D5D0C2;align-items:start}
+.cx-row .cmp{margin-top:18px}
+.cx-row .lead{color:#2D3748}
+.cx-box{margin-top:18px;border:1px solid #C8A45C;border-radius:8px;padding:24px;background:#FBF8F1}
+.cx-box p{margin:0;color:#4A5568;font-size:15px}
+.cx-box .cx-bt{font-family:var(--serif);font-size:19px;color:#0B1B3A;margin-bottom:8px}
+.cx-cta{margin-top:64px;padding:28px 32px;border-radius:10px;background:#0B1B3A;display:flex;align-items:center;justify-content:space-between;gap:24px}
+.cx-cta p{margin:0;color:#fff;font-family:var(--serif);font-size:clamp(19px,2vw,24px);line-height:1.45}
+@media(max-width:1023px){.vlist{grid-template-columns:1fr 1fr}.vlist li{border-right:0;margin-right:0;border-bottom:1px solid #D5D0C2;padding:16px 12px 14px 0}.cx-cert,.cx-row{grid-template-columns:1fr;gap:32px}}
+@media(max-width:760px){.cert-x{padding:72px 0}
+.vlist{grid-template-columns:1fr;margin:26px 0 44px}
+.vlist li{display:grid;grid-template-columns:40px 1fr;column-gap:10px;padding:14px 0}
+.vlist i{grid-row:1/span 2;font-size:22px;padding-top:2px}.vlist b{margin:0 0 4px;font-size:17px}
+.cx-row{margin-top:48px;padding-top:40px}
+.cx-cta{flex-direction:column;align-items:stretch;padding:24px 20px;margin-top:44px}.cx-cta .btn{justify-content:center}}
+/* v12：Hero 計畫名稱 */
+.hero .hero-eb{font-size:15px;letter-spacing:.08em;color:#E8C77A;font-weight:700}
+@media(max-width:400px){.hero .hero-eb{font-size:13.5px;letter-spacing:.04em}}
+/* v12：桌機點擊區 ≥24px */
+@media(min-width:761px){.nav ul a{display:inline-block;padding:4px 0;min-height:24px;line-height:16px}
+.qx-src a{display:inline-block;padding:5px 0;min-height:24px}}
+.cert-x .lead{max-width:none}
