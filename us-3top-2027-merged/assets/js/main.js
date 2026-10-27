@@ -4,7 +4,12 @@ document.querySelectorAll('.rv').forEach(el=>io.observe(el));
 if(location.hash==='#static'){document.documentElement.classList.add('static');}if(location.hash==='#static')document.querySelectorAll('.rv').forEach(el=>el.classList.add('in'));
 // nav + mobile cta
 const nav=document.getElementById('nav'),m=document.getElementById('mcta');
-addEventListener('scroll',()=>{const y=scrollY;nav.classList.toggle('solid',y>40);m.classList.toggle('show',y>innerHeight*.7)},{passive:true});
+addEventListener('scroll',()=>{nav.classList.toggle('solid',scrollY>40)},{passive:true});
+// mobile sticky CTA: only after hero CTA leaves viewport, hide while the form is on screen
+{const hc=document.querySelector('.hero .cta-row'),fm=document.getElementById('apply');let heroOut=false,formIn=false;
+const up=()=>{const on=heroOut&&!formIn;m.classList.toggle('show',on);document.body.classList.toggle('mcta-on',on)};
+if(hc)new IntersectionObserver(([e])=>{heroOut=!e.isIntersecting&&e.boundingClientRect.top<0;up()}).observe(hc);
+if(fm)new IntersectionObserver(([e])=>{formIn=e.isIntersecting;up()}).observe(fm);}
 // node network canvases
 const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
 document.querySelectorAll('canvas.net').forEach(c=>{

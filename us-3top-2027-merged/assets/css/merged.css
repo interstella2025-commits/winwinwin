@@ -103,3 +103,7 @@ section:not(.dark):not(.deep):not(.hero) :is(.note,.en,.q small,.tcard small,.cm
 .visit-stats strong,.visit-stats strong *{color:#A9B4C9!important}
 table.cmp td:first-child,table.cmp td:first-child *{color:#5E6A80!important}
 #consult-form .consent input{min-height:0!important;height:20px!important;margin-top:2px!important}
+
+/* v9 */
+.stats.st2 .st>span{min-height:0!important;white-space:nowrap}
+@media(max-width:760px){body.mcta-on{padding-bottom:110px}}
