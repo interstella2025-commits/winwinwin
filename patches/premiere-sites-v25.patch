@@ -1,0 +1,394 @@
+diff -ruN sites-v25-base/app/api/payuni/checkout/route.ts sites-v25-new/app/api/payuni/checkout/route.ts
+--- sites-v25-base/app/api/payuni/checkout/route.ts	2026-10-27 13:15:30.201368923 +0000
++++ sites-v25-new/app/api/payuni/checkout/route.ts	2026-10-27 13:16:22.797283586 +0000
+@@ -1,4 +1,4 @@
+-import { AMOUNT,PRODUCT,VERSION,encrypt,hash,escape } from '../../../../lib/payuni/core';
++import { VERSION,encrypt,hash,escape,describeCharge } from '../../../../lib/payuni/core';
+ import { settings,orderBy,json,publicOrigin } from '../../../../lib/payuni/server';
+ export async function GET(request:Request){try{
+  const token=new URL(request.url).searchParams.get('token');if(!token||! /^[0-9a-f-]{36}$/i.test(token))return json({error:'付款連結無效。'},400);
+@@ -6,7 +6,7 @@
+  c.origin=publicOrigin(order.source);
+  if(order.status==='paid')return Response.redirect(c.origin+`/payment?token=${token}`,303);
+  if(order.status!=='pending'||Date.now()-Date.parse(order.created_at)>20*60000)return Response.redirect(c.origin+`/payment?token=${token}`,303);
+- const EncryptInfo=encrypt({MerID:c.merchant,Timestamp:Math.floor(Date.now()/1000),MerTradeNo:order.order_no,TradeAmt:order.amount,ProdDesc:order.source==='win-test-1'?'WIN NT$1 金流驗收測試':PRODUCT,ReturnURL:c.origin+'/api/payuni/return',NotifyURL:c.origin+'/api/payuni/notify',BackURL:c.origin+`/payment?token=${token}`,Credit:1,TradeLExpireSec:600,Lang:'zh-tw'},c);
++ const charge=describeCharge(order);const EncryptInfo=encrypt({MerID:c.merchant,Timestamp:Math.floor(Date.now()/1000),MerTradeNo:order.order_no,TradeAmt:order.amount,ProdDesc:charge.gatewayName,ReturnURL:c.origin+'/api/payuni/return',NotifyURL:c.origin+'/api/payuni/notify',BackURL:c.origin+`/payment?token=${token}`,Credit:1,TradeLExpireSec:600,Lang:'zh-tw'},c);
+  const fields={MerID:c.merchant,Version:VERSION,EncryptInfo,HashInfo:hash(EncryptInfo,c)};
+- return new Response(`<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>前往安全付款｜WIN 前導課</title><body><p>${order.source==='win-test-1'?'WIN 金流驗收測試':'WIN 90分鐘線上前導課'}｜NT$${order.amount}</p><p>即將前往付款頁面…</p><form id="pay" method="POST" action="${c.endpoint}">${Object.entries(fields).map(([k,v])=>`<input type="hidden" name="${k}" value="${escape(v)}">`).join('')}<button>前往安全付款 NT$${order.amount}</button></form><script>document.getElementById('pay').submit()</script></body></html>`,{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','Referrer-Policy':'no-referrer','Content-Security-Policy':`default-src 'none'; script-src 'unsafe-inline'; form-action ${c.endpoint}; frame-ancestors 'none'`}});
++ return new Response(`<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>前往安全付款｜${escape(charge.shortName)}</title><body><p>${escape(charge.shortName)}｜NT$${order.amount}</p><p>即將前往付款頁面…</p><form id="pay" method="POST" action="${c.endpoint}">${Object.entries(fields).map(([k,v])=>`<input type="hidden" name="${k}" value="${escape(v)}">`).join('')}<button>前往安全付款 NT$${order.amount}</button></form><script>document.getElementById('pay').submit()</script></body></html>`,{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','Referrer-Policy':'no-referrer','Content-Security-Policy':`default-src 'none'; script-src 'unsafe-inline'; form-action ${c.endpoint}; frame-ancestors 'none'`}});
+  }catch{return json({error:'付款服務暫時無法使用，請稍後再試。'},503)}}
+diff -ruN sites-v25-base/app/api/payuni/create/route.ts sites-v25-new/app/api/payuni/create/route.ts
+--- sites-v25-base/app/api/payuni/create/route.ts	2026-10-27 13:15:30.201368923 +0000
++++ sites-v25-new/app/api/payuni/create/route.ts	2026-10-27 13:16:22.797283586 +0000
+@@ -1,4 +1,4 @@
+-import { AMOUNT,digest,validate } from '../../../../lib/payuni/core';
++import { digest,validate } from '../../../../lib/payuni/core';
+ import { db,settings,json,orderBy,VERCEL_ORIGIN } from '../../../../lib/payuni/server';
+ export async function POST(request:Request){
+  const origin=request.headers.get('origin');if(!origin||origin!==new URL(request.url).origin)return json({error:'請從本頁送出報名。'},403);
+@@ -8,6 +8,7 @@
+  try{
+  const requestKey=digest(data.requestId+c.key);const old=await orderBy('request_id',requestKey);
+  if(old){
++ if(old.amount!==data.product.amount)return json({error:'課程方案已變更，請再次點選付款建立新訂單。',resetRequest:true},409);
+  if(old.status!=='paid'&&(old.status!=='pending'||Date.now()-Date.parse(old.created_at)>20*60000))return json({error:'原付款連結已失效，請再次點選付款建立新訂單。',resetRequest:true},409);
+  const existing=await db().prepare('SELECT name,email,phone,profession,stage,topic,session_code AS sessionCode,line_name AS lineName FROM applications WHERE id=?').bind(old.application_id).first<Record<string,string>>();
+  if(!existing||(['name','email','phone','profession','stage','topic','sessionCode','lineName'] as const).some(k=>existing[k]!==data[k]))return json({error:'報名資料已變更，請再次點選付款建立新訂單。',resetRequest:true},409);
+@@ -19,7 +20,7 @@
+  const id=crypto.randomUUID(),token=crypto.randomUUID(),application=crypto.randomUUID(),now=new Date().toISOString();const orderNo='WIN'+Date.now().toString(36).toUpperCase()+crypto.randomUUID().replaceAll('-','').slice(0,10).toUpperCase();
+  await db().batch([
+  db().prepare('INSERT INTO applications (id,name,email,phone,profession,stage,topic,session_code,line_name,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)').bind(application,data.name,data.email,data.phone,data.profession,data.stage,data.topic,data.sessionCode,data.lineName,now),
+- db().prepare('INSERT INTO payment_orders (id,application_id,order_no,merchant,amount,token,request_id,status,created_at,consent_at,source) VALUES (?,?,?,?,?,?,?,\'pending\',?,?,?)').bind(id,application,orderNo,c.merchant,AMOUNT,token,requestKey,now,now,(request.headers.get('x-win-public-origin')===VERCEL_ORIGIN?VERCEL_ORIGIN:c.origin)+'/#apply')]);
++ db().prepare('INSERT INTO payment_orders (id,application_id,order_no,merchant,amount,token,request_id,status,created_at,consent_at,source) VALUES (?,?,?,?,?,?,?,\'pending\',?,?,?)').bind(id,application,orderNo,c.merchant,data.product.amount,token,requestKey,now,now,(request.headers.get('x-win-public-origin')===VERCEL_ORIGIN?VERCEL_ORIGIN:c.origin)+'/#apply')]);
+  return json({checkoutUrl:`/api/payuni/checkout?token=${token}`});
+  }catch{return json({error:'暫時無法建立付款，請保留資料稍後再試。'},503)}
+ }
+diff -ruN sites-v25-base/app/api/premiere/attend/route.ts sites-v25-new/app/api/premiere/attend/route.ts
+--- sites-v25-base/app/api/premiere/attend/route.ts	1970-01-01 00:00:00.000000000 +0000
++++ sites-v25-new/app/api/premiere/attend/route.ts	2026-10-27 13:16:43.429238614 +0000
+@@ -0,0 +1,18 @@
++import { digest } from '../../../../lib/payuni/core';
++import { db, json } from '../../../../lib/payuni/server';
++import { bumpLimit, readJson, sameOrigin } from '../../../../lib/premiere/roster';
++
++export async function POST(request: Request) {
++ if (!sameOrigin(request)) return json({ error: '請從本頁送出報名。' }, 403);
++ let body: Record<string, unknown>;
++ try { body = await readJson(request); } catch { return json({ error: '請重新填寫。' }, 400); }
++ const token = typeof body.token === 'string' ? body.token.trim() : '';
++ if (!/^[0-9a-f-]{36}$/i.test(token)) return json({ error: '找不到登記資料。' }, 404);
++ try {
++  if (!await bumpLimit('premiere-attend:' + digest(token + ':' + Math.floor(Date.now() / 60000)), 10)) return json({ error: '送出次數較多，請稍候一分鐘再試。' }, 429);
++  const found = await db().prepare('SELECT id FROM premiere_registrants WHERE token=?').bind(token).first<{ id: string }>();
++  if (!found) return json({ error: '找不到登記資料。' }, 404);
++  await db().prepare('UPDATE premiere_registrants SET joined_at=? WHERE token=? AND joined_at IS NULL').bind(new Date().toISOString(), token).run();
++  return json({ ok: true });
++ } catch { return json({ error: '暫時無法記錄進入時間，請稍後再試。' }, 503); }
++}
+diff -ruN sites-v25-base/app/api/premiere/export/route.ts sites-v25-new/app/api/premiere/export/route.ts
+--- sites-v25-base/app/api/premiere/export/route.ts	1970-01-01 00:00:00.000000000 +0000
++++ sites-v25-new/app/api/premiere/export/route.ts	2026-10-27 13:16:43.469238520 +0000
+@@ -0,0 +1,9 @@
++import { json } from '../../../../lib/payuni/server';
++import { exportAuthorized, rosterCsv } from '../../../../lib/premiere/roster';
++
++export async function GET(request: Request) {
++ if (!exportAuthorized(request)) return json({ error: 'Not found' }, 404);
++ try {
++  return new Response(await rosterCsv(), { headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="premiere-roster.csv"', 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer' } });
++ } catch { return json({ error: '暫時無法匯出。' }, 503); }
++}
+diff -ruN sites-v25-base/app/api/premiere/register/route.ts sites-v25-new/app/api/premiere/register/route.ts
+--- sites-v25-base/app/api/premiere/register/route.ts	1970-01-01 00:00:00.000000000 +0000
++++ sites-v25-new/app/api/premiere/register/route.ts	2026-10-27 13:16:43.429238614 +0000
+@@ -0,0 +1,18 @@
++import { digest } from '../../../../lib/payuni/core';
++import { json } from '../../../../lib/payuni/server';
++import { bumpLimit, dbInsertRegistrant, readJson, registrantInput, sameOrigin } from '../../../../lib/premiere/roster';
++
++export async function POST(request: Request) {
++ if (!sameOrigin(request)) return json({ error: '請從本頁送出報名。' }, 403);
++ let body: Record<string, unknown>;
++ try { body = await readJson(request); } catch { return json({ error: '請重新填寫。' }, 400); }
++ let person: ReturnType<typeof registrantInput>;
++ try { person = registrantInput(body); } catch (error) { return json({ error: error instanceof Error ? error.message : '請重新填寫。' }, 400); }
++ try {
++  const minute = Math.floor(Date.now() / 60000);
++  const ip = request.headers.get('cf-connecting-ip') || 'unknown';
++  if (!await bumpLimit('premiere-ip:' + digest(ip + ':' + minute), 30)) return json({ error: '送出次數較多，請稍候一分鐘再試。' }, 429);
++  if (!await bumpLimit('premiere-email:' + digest(person.email + ':' + minute), 5)) return json({ error: '送出次數較多，請稍候一分鐘再試。' }, 429);
++  return await dbInsertRegistrant(person);
++ } catch { return json({ error: '暫時無法登記，請稍後再試。' }, 503); }
++}
+diff -ruN sites-v25-base/checks/premiere-roster.test.cjs sites-v25-new/checks/premiere-roster.test.cjs
+--- sites-v25-base/checks/premiere-roster.test.cjs	1970-01-01 00:00:00.000000000 +0000
++++ sites-v25-new/checks/premiere-roster.test.cjs	2026-10-27 13:18:32.852931809 +0000
+@@ -0,0 +1,130 @@
++const fs = require('node:fs'), path = require('node:path'), assert = require('node:assert/strict'), ts = require('typescript');
++const { DatabaseSync } = require('node:sqlite');
++const sqlite = new DatabaseSync(':memory:');
++for (const file of fs.readdirSync(path.join(__dirname, '../drizzle')).filter(name => name.endsWith('.sql')).sort()) sqlite.exec(fs.readFileSync(path.join(__dirname, '../drizzle', file), 'utf8'));
++function prepared(sql, args = []) {
++ const statement = sqlite.prepare(sql);
++ return {
++  bind: (...values) => prepared(sql, values),
++  first: async () => statement.get(...args) || null,
++  all: async () => ({ results: statement.all(...args) }),
++  run: async () => ({ success: true, meta: { changes: Number(statement.run(...args).changes) } }),
++ };
++}
++const db = { prepare: prepared, batch: async statements => { sqlite.exec('BEGIN'); try { for (const item of statements) await item.run(); sqlite.exec('COMMIT'); } catch (error) { sqlite.exec('ROLLBACK'); throw error; } } };
++const env = { DB: db, PAYUNI_MER_ID: 'WIN_TEST', PAYUNI_HASH_KEY: '12345678901234567890123456789012', PAYUNI_HASH_IV: '1234567890123456', RESEND_API_KEY: 'mock', RESEND_FROM: 'WIN <course@mail.example.test>', PREMIERE_EXPORT_TOKEN: 'export-test-token' };
++const cache = {};
++function load(file) {
++ file = path.resolve(__dirname, '..', file);
++ if (cache[file]) return cache[file].exports;
++ const module = { exports: {} };
++ cache[file] = module;
++ const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
++ new Function('require', 'module', 'exports', code)(name => name === 'cloudflare:workers' ? { env } : name.startsWith('.') ? load(path.relative(path.resolve(__dirname, '..'), path.resolve(path.dirname(file), name.endsWith('.ts') ? name : name + '.ts'))) : require(name), module, module.exports);
++ return module.exports;
++}
++const core = load('lib/payuni/core.ts');
++const create = load('app/api/payuni/create/route.ts');
++const notify = load('app/api/payuni/notify/route.ts');
++const checkout = load('app/api/payuni/checkout/route.ts');
++const register = load('app/api/premiere/register/route.ts');
++const attend = load('app/api/premiere/attend/route.ts');
++const roster = load('app/api/premiere/export/route.ts');
++const cfg = core.config(env), origin = cfg.origin;
++global.fetch = async () => new Response(JSON.stringify({ id: 'mock-email' }), { status: 200 });
++const base = { phone: 'QA', profession: 'QA', stage: 'QA', topic: 'QA', sessionCode: '2026-11-03', lineName: '', consent: true };
++function orderRequest(body, ip = '192.0.2.20') { return new Request(origin + '/api/payuni/create', { method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json', 'cf-connecting-ip': ip }, body: JSON.stringify(body) }); }
++function callback(values) { const EncryptInfo = core.encrypt(values, cfg); return new Request(origin + '/api/payuni/notify', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ MerID: cfg.merchant, Version: core.VERSION, EncryptInfo, HashInfo: core.hash(EncryptInfo, cfg) }) }); }
++function signup(body, requestOrigin = origin) { return new Request(origin + '/api/premiere/register', { method: 'POST', headers: { Origin: requestOrigin, 'Content-Type': 'application/json', 'cf-connecting-ip': '192.0.2.30' }, body: JSON.stringify(body) }); }
++(async () => {
++ assert.equal(core.AMOUNT, 399);
++ assert.equal(core.PRODUCTS.fullcourse.amount, 39800);
++ assert.equal(core.resolveProduct(undefined).amount, 399);
++ assert.equal(core.resolveProduct('fullcourse').amount, 39800);
++ assert.throws(() => core.resolveProduct(39800));
++ assert.throws(() => core.resolveProduct('vip'));
++
++ const ignored = await create.POST(orderRequest({ ...base, name: '金額不可信', email: 'ignored@example.test', amount: 39800, requestId: crypto.randomUUID() }));
++ assert.equal(ignored.status, 200);
++ assert.equal(sqlite.prepare('SELECT amount FROM payment_orders ORDER BY created_at DESC LIMIT 1').get().amount, 399);
++
++ const unknown = await create.POST(orderRequest({ ...base, name: '錯誤方案', email: 'unknown@example.test', product: 'vip', amount: 1, requestId: crypto.randomUUID() }));
++ assert.equal(unknown.status, 400);
++ assert.equal(sqlite.prepare("SELECT count(*) n FROM applications WHERE email='unknown@example.test'").get().n, 0);
++
++ const fullId = crypto.randomUUID();
++ const created = await create.POST(orderRequest({ ...base, name: '正式課程', email: 'Buyer@Example.Test', product: 'fullcourse', amount: 1, requestId: fullId }));
++ assert.equal(created.status, 200);
++ const full = sqlite.prepare("SELECT * FROM payment_orders WHERE amount=39800").get();
++ assert.equal(full.amount, 39800);
++ const switched = await create.POST(orderRequest({ ...base, name: '正式課程', email: 'Buyer@Example.Test', requestId: fullId }));
++ assert.equal(switched.status, 409);
++ assert.equal((await switched.json()).resetRequest, true);
++ assert.equal(sqlite.prepare('SELECT amount FROM payment_orders WHERE id=?').get(full.id).amount, 39800);
++ const page = await checkout.GET(new Request(origin + '/api/payuni/checkout?token=' + full.token));
++ const html = await page.text();
++ assert.match(html, /NT\$39800/);
++ assert.match(html, /待 Elsa 確認/);
++ assert.equal(html.includes(cfg.key), false);
++ assert.equal((await notify.POST(callback({ MerID: cfg.merchant, MerTradeNo: full.order_no, TradeAmt: 399, TradeStatus: '1', TradeNo: 'FULL399' }))).status, 400);
++ assert.equal(sqlite.prepare('SELECT status FROM payment_orders WHERE id=?').get(full.id).status, 'pending');
++ assert.equal((await notify.POST(callback({ MerID: cfg.merchant, MerTradeNo: full.order_no, TradeAmt: 39800, TradeStatus: '1', TradeNo: 'FULL39800' }))).status, 200);
++ assert.equal(sqlite.prepare('SELECT status FROM payment_orders WHERE id=?').get(full.id).status, 'paid');
++
++ const intro = await create.POST(orderRequest({ ...base, name: '前導課', email: 'intro@example.test', requestId: crypto.randomUUID() }, '192.0.2.21'));
++ assert.equal(intro.status, 200);
++ const introOrder = sqlite.prepare("SELECT payment_orders.* FROM payment_orders JOIN applications ON applications.id=payment_orders.application_id WHERE applications.email='intro@example.test'").get();
++ assert.equal(introOrder.amount, 399);
++ assert.equal((await notify.POST(callback({ MerID: cfg.merchant, MerTradeNo: introOrder.order_no, TradeAmt: 399, TradeStatus: '1', TradeNo: 'INTRO399' }))).status, 200);
++
++ assert.equal((await register.POST(signup({ name: '買家', email: 'Buyer@Example.Test' }, 'https://evil.example'))).status, 403);
++ assert.equal((await register.POST(signup({ name: '', email: 'Buyer@Example.Test', sessionCode: '2026-11-03' }))).status, 400);
++ assert.equal((await register.POST(signup({ name: '買家', email: 'Buyer@Example.Test', sessionCode: '2099-01-01' }))).status, 400);
++ const ordersBeforeSignup = sqlite.prepare('SELECT count(*) n FROM payment_orders').get().n;
++ const first = await register.POST(signup({ name: '買家', email: 'Buyer@Example.Test', sessionCode: '2026-11-03', website: '' }));
++ assert.equal(first.status, 200);
++ const registered = await first.json();
++ assert.match(registered.token, /^[0-9a-f-]{36}$/i);
++ const again = await (await register.POST(signup({ name: '另一個名字', email: 'buyer@example.test', sessionCode: '2026-11-03' }))).json();
++ assert.equal(again.already, true);
++ assert.equal(again.token, registered.token);
++ assert.equal(sqlite.prepare('SELECT count(*) n FROM premiere_registrants').get().n, 1);
++ assert.equal(sqlite.prepare('SELECT count(*) n FROM payment_orders').get().n, ordersBeforeSignup);
++ assert.equal(sqlite.prepare("SELECT count(*) n FROM payment_orders WHERE application_id IN (SELECT id FROM premiere_registrants)").get().n, 0);
++ await register.POST(signup({ name: '前導', email: 'intro@example.test', sessionCode: '2026-11-03' }));
++ await register.POST(signup({ name: '=1+1', email: 'formula@example.test', sessionCode: '2026-11-03' }));
++
++ const marked = await attend.POST(new Request(origin + '/api/premiere/attend', { method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json' }, body: JSON.stringify({ token: registered.token }) }));
++ assert.equal(marked.status, 200);
++ assert.ok(sqlite.prepare('SELECT joined_at FROM premiere_registrants WHERE token=?').get(registered.token).joined_at);
++ sqlite.prepare("UPDATE premiere_registrants SET joined_at='2000-01-01T00:00:00.000Z' WHERE token=?").run(registered.token);
++ assert.equal((await attend.POST(new Request(origin + '/api/premiere/attend', { method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json' }, body: JSON.stringify({ token: registered.token }) }))).status, 200);
++ assert.equal(sqlite.prepare('SELECT joined_at FROM premiere_registrants WHERE token=?').get(registered.token).joined_at, '2000-01-01T00:00:00.000Z');
++ assert.equal((await attend.POST(new Request(origin + '/api/premiere/attend', { method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json' }, body: JSON.stringify({ token: crypto.randomUUID() }) }))).status, 404);
++
++ assert.equal((await roster.GET(new Request(origin + '/api/premiere/export'))).status, 404);
++ assert.equal((await roster.GET(new Request(origin + '/api/premiere/export', { headers: { Authorization: 'Bearer wrong' } }))).status, 404);
++ const exported = await roster.GET(new Request(origin + '/api/premiere/export', { headers: { Authorization: 'Bearer export-test-token' } }));
++ assert.equal(exported.status, 200);
++ assert.match(exported.headers.get('content-type'), /text\/csv/);
++ assert.match(exported.headers.get('cache-control'), /no-store/);
++ const bytes = Buffer.from(await exported.clone().arrayBuffer());
++ assert.deepEqual([...bytes.subarray(0, 3)], [0xEF, 0xBB, 0xBF]);
++ const csv = await exported.text();
++ assert.equal(csv.includes(env.PREMIERE_EXPORT_TOKEN), false);
++ assert.equal(csv.includes(cfg.key), false);
++ const lines = csv.trim().split('\r\n');
++ assert.match(lines[0], /是否購買/);
++ const body = lines.slice(1).join('\n');
++ assert.match(body, /buyer@example\.test.*有買.*FULL|buyer@example\.test/);
++ const buyer = lines.find(line => line.includes('buyer@example.test'));
++ const introLine = lines.find(line => line.includes('intro@example.test'));
++ const formula = lines.find(line => line.includes('formula@example.test'));
++ assert.match(buyer, /有買/);
++ assert.match(buyer, new RegExp(full.order_no));
++ assert.match(buyer, /39800/);
++ assert.match(introLine, /沒買/);
++ assert.match(introLine, /是/);
++ assert.match(formula, /'=1\+1/);
++ console.log('PASS premiere product allowlist, signup without an order, attendance, protected CSV');
++})().catch(error => { console.error(error); process.exitCode = 1; });
+diff -ruN sites-v25-base/cloudflare-env.d.ts sites-v25-new/cloudflare-env.d.ts
+--- sites-v25-base/cloudflare-env.d.ts	2026-10-27 13:02:23.189789545 +0000
++++ sites-v25-new/cloudflare-env.d.ts	2026-10-27 13:16:43.501238446 +0000
+@@ -8,6 +8,7 @@
+     RESEND_API_KEY?: string;
+     RESEND_FROM?: string;
+     RESEND_REPLY_TO?: string;
++    PREMIERE_EXPORT_TOKEN?: string;
+     BUCKET?: R2Bucket;
+   }
+ }
+diff -ruN sites-v25-base/db/schema.ts sites-v25-new/db/schema.ts
+--- sites-v25-base/db/schema.ts	2026-10-27 13:02:23.189789545 +0000
++++ sites-v25-new/db/schema.ts	2026-10-27 13:16:43.469238520 +0000
+@@ -5,3 +5,4 @@
+  id:text('id').primaryKey(),applicationId:text('application_id').notNull(),orderNo:text('order_no').notNull(),merchant:text('merchant').notNull(),amount:integer('amount').notNull(),token:text('token').notNull(),requestId:text('request_id').notNull(),status:text('status').notNull().default('pending'),createdAt:text('created_at').notNull(),consentAt:text('consent_at').notNull(),source:text('source').notNull(),paidAt:text('paid_at'),providerTradeNo:text('provider_trade_no'),notifyCount:integer('notify_count').notNull().default(0),emailStatus:text('email_status').notNull().default('pending'),emailId:text('email_id'),emailLease:integer('email_lease').notNull().default(0)
+ },t=>[uniqueIndex('payment_order_no_unique').on(t.orderNo),uniqueIndex('payment_token_unique').on(t.token),uniqueIndex('payment_request_unique').on(t.requestId),uniqueIndex('payment_provider_trade_unique').on(t.providerTradeNo)]);
+ export const paymentRateLimits=sqliteTable('payment_rate_limits',{bucket:text('bucket').primaryKey(),attempts:integer('attempts').notNull()});
++export const premiereRegistrants=sqliteTable('premiere_registrants',{id:text('id').primaryKey(),name:text('name').notNull(),email:text('email').notNull(),sessionCode:text('session_code').notNull(),token:text('token').notNull(),createdAt:text('created_at').notNull(),joinedAt:text('joined_at')},t=>[uniqueIndex('premiere_registrant_email_session').on(t.email,t.sessionCode),uniqueIndex('premiere_registrant_token').on(t.token)]);
+diff -ruN sites-v25-base/drizzle/0003_premiere_registrants.sql sites-v25-new/drizzle/0003_premiere_registrants.sql
+--- sites-v25-base/drizzle/0003_premiere_registrants.sql	1970-01-01 00:00:00.000000000 +0000
++++ sites-v25-new/drizzle/0003_premiere_registrants.sql	2026-10-27 13:16:43.469238520 +0000
+@@ -0,0 +1,11 @@
++CREATE TABLE IF NOT EXISTS `premiere_registrants` (
++	`id` text PRIMARY KEY NOT NULL,
++	`name` text NOT NULL,
++	`email` text NOT NULL,
++	`session_code` text NOT NULL,
++	`token` text NOT NULL,
++	`created_at` text NOT NULL,
++	`joined_at` text
++);
++CREATE UNIQUE INDEX IF NOT EXISTS `premiere_registrant_email_session` ON `premiere_registrants` (`email`, `session_code`);
++CREATE UNIQUE INDEX IF NOT EXISTS `premiere_registrant_token` ON `premiere_registrants` (`token`);
+diff -ruN sites-v25-base/lib/payuni/core.ts sites-v25-new/lib/payuni/core.ts
+--- sites-v25-base/lib/payuni/core.ts	2026-10-27 13:02:23.189789545 +0000
++++ sites-v25-new/lib/payuni/core.ts	2026-10-27 13:16:22.797283586 +0000
+@@ -1,8 +1,32 @@
+ import { COURSE_SESSIONS } from '../course-sessions';
+ import { createCipheriv, createDecipheriv, createHash, timingSafeEqual } from 'node:crypto';
+-export const AMOUNT = 399;
+-export const PRODUCT = 'WIN 講師班｜90分鐘線上前導課';
++export const PRODUCTS = {
++ precourse: { code: 'precourse', amount: 399, shortName: 'WIN 90分鐘線上前導課', gatewayName: 'WIN 講師班｜90分鐘線上前導課' },
++ fullcourse: { code: 'fullcourse', amount: 39800, shortName: '【待 Elsa 確認】WIN 講師班正式課程', gatewayName: '【待 Elsa 確認】WIN 講師班正式課程' },
++} as const;
++export const AMOUNT = PRODUCTS.precourse.amount;
++export const PRODUCT = PRODUCTS.precourse.gatewayName;
+ export const VERSION = '2.0';
++export function resolveProduct(input: unknown) {
++ if (typeof input === 'string') {
++  const code = input.trim();
++  if (!code) return PRODUCTS.precourse;
++  if (Object.prototype.hasOwnProperty.call(PRODUCTS, code)) return PRODUCTS[code as keyof typeof PRODUCTS];
++ }
++ if (input == null) return PRODUCTS.precourse;
++ throw new Error('不接受的課程方案。');
++}
++export function expectedAmount(order: { amount: number; source?: string }) {
++ if (order.source === 'win-test-1') return 1;
++ if (!Object.values(PRODUCTS).some(item => item.amount === order.amount)) throw new Error('Order mismatch');
++ return order.amount;
++}
++export function describeCharge(order: { amount: number; source?: string }) {
++ if (order.source === 'win-test-1') return { shortName: 'WIN 金流驗收測試', gatewayName: 'WIN NT$1 金流驗收測試' };
++ const product = Object.values(PRODUCTS).find(item => item.amount === order.amount);
++ if (!product) throw new Error('Order mismatch');
++ return product;
++}
+ export type Config = { merchant: string; key: string; iv: string; origin: string; endpoint: string };
+ export function config(env: { PAYUNI_MER_ID?: string; PAYUNI_HASH_KEY?: string; PAYUNI_HASH_IV?: string }): Config {
+  const merchant=env.PAYUNI_MER_ID?.trim(),key=env.PAYUNI_HASH_KEY?.trim(),iv=env.PAYUNI_HASH_IV?.trim();
+@@ -25,14 +49,14 @@
+  if(values.MerID!==c.merchant)throw new Error('Invalid merchant');return values;
+ }
+ export function verifyOrder(data:Record<string,string>,order:{merchant:string;order_no:string;amount:number;source?:string},c:Config){
+- if(data.MerTradeNo!==order.order_no||data.MerID!==order.merchant||order.merchant!==c.merchant||!/^\d+$/.test(data.TradeAmt||'')||Number(data.TradeAmt)!==order.amount||order.amount!==(order.source==='win-test-1'?1:AMOUNT))throw new Error('Order mismatch');
++ if(data.MerTradeNo!==order.order_no||data.MerID!==order.merchant||order.merchant!==c.merchant||!/^\d+$/.test(data.TradeAmt||'')||Number(data.TradeAmt)!==order.amount||order.amount!==expectedAmount(order))throw new Error('Order mismatch');
+  return data.TradeStatus==='1'?'paid':data.TradeStatus==='0'?'pending':['2','3','4'].includes(data.TradeStatus)?'failed':'unknown';
+ }
+ export function validate(body:Record<string,unknown>){
+  const keys=['name','email','phone','profession','stage','topic','sessionCode','lineName'] as const;
+  const values=Object.fromEntries(keys.map(k=>[k,typeof body[k]==='string'?body[k].trim():''])) as Record<typeof keys[number],string>;
+  if(body.website||body.consent!==true||keys.some(k=>values[k].length>1000)||['name','email','phone'].some(k=>!values[k as keyof typeof values])||!COURSE_SESSIONS.some(s=>s.code===values.sessionCode)||values.email.length>200||!/^\S+@\S+\.\S+$/.test(values.email)||typeof body.requestId!=='string'||! /^[0-9a-f-]{36}$/i.test(body.requestId))throw new Error('請完整填寫必填欄位、有效 Email 並勾選同意。');
+- return {...values,requestId:body.requestId};
++ return {...values,requestId:body.requestId,product:resolveProduct(body.product)};
+ }
+ export function digest(value:string){return createHash('sha256').update(value).digest('hex')}
+ export function escape(value:string){return value.replace(/[&<>"']/g,v=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[v]!))}
+diff -ruN sites-v25-base/lib/premiere/roster.ts sites-v25-new/lib/premiere/roster.ts
+--- sites-v25-base/lib/premiere/roster.ts	1970-01-01 00:00:00.000000000 +0000
++++ sites-v25-new/lib/premiere/roster.ts	2026-10-27 13:16:48.113227676 +0000
+@@ -0,0 +1,65 @@
++import { env } from 'cloudflare:workers';
++import { timingSafeEqual } from 'node:crypto';
++import { COURSE_SESSIONS } from '../course-sessions';
++import { digest, PRODUCTS } from '../payuni/core';
++import { db, json } from '../payuni/server';
++
++export async function readJson(request: Request, limit = 8000) {
++ if (Number(request.headers.get('content-length') || 0) > limit) throw new Error('請重新填寫。');
++ const text = await request.text();
++ if (text.length > limit) throw new Error('請重新填寫。');
++ const body = JSON.parse(text);
++ if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error('請重新填寫。');
++ return body as Record<string, unknown>;
++}
++export function sameOrigin(request: Request) {
++ const origin = request.headers.get('origin');
++ return !!origin && origin === new URL(request.url).origin;
++}
++export async function bumpLimit(bucket: string, max: number) {
++ const rate = await db().prepare('INSERT INTO payment_rate_limits (bucket,attempts) VALUES (?,1) ON CONFLICT(bucket) DO UPDATE SET attempts=attempts+1 RETURNING attempts').bind(bucket).first<{ attempts: number }>();
++ return !!rate && rate.attempts <= max;
++}
++export function registrantInput(body: Record<string, unknown>) {
++ if (body.website) throw new Error('請重新填寫。');
++ const name = typeof body.name === 'string' ? body.name.trim() : '';
++ const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
++ const sessionCode = typeof body.sessionCode === 'string' ? body.sessionCode.trim() : '';
++ if (!name || name.length > 100 || email.length > 200 || !/^\S+@\S+\.\S+$/.test(email) || !COURSE_SESSIONS.some(item => item.code === sessionCode)) throw new Error('請填寫姓名、有效 Email。');
++ return { name, email, sessionCode };
++}
++export async function dbInsertRegistrant(person: { name: string; email: string; sessionCode: string }) {
++ const token = crypto.randomUUID();
++ const now = new Date().toISOString();
++ try {
++  await db().prepare('INSERT INTO premiere_registrants (id,name,email,session_code,token,created_at) VALUES (?,?,?,?,?,?)').bind(crypto.randomUUID(), person.name, person.email, person.sessionCode, token, now).run();
++  return json({ ok: true, token });
++ } catch {
++  const existing = await db().prepare('SELECT token FROM premiere_registrants WHERE email=? AND session_code=?').bind(person.email, person.sessionCode).first<{ token: string }>();
++  if (!existing?.token) return json({ error: '暫時無法登記，請稍後再試。' }, 503);
++  return json({ ok: true, token: existing.token, already: true });
++ }
++}
++export function exportAuthorized(request: Request) {
++ const secret = env.PREMIERE_EXPORT_TOKEN;
++ const header = request.headers.get('authorization') || '';
++ if (!secret || !header || header.length > 500 || secret.length > 500) return false;
++ return timingSafeEqual(Buffer.from(digest(header)), Buffer.from(digest('Bearer ' + secret)));
++}
++function cell(value: unknown) {
++ const text = value == null ? '' : String(value);
++ const safe = /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
++ return `"${safe.replaceAll('"', '""')}"`;
++}
++export async function rosterCsv() {
++ const full = PRODUCTS.fullcourse.amount;
++ const intro = PRODUCTS.precourse.amount;
++ const rows = await db().prepare(`SELECT r.name,r.email,r.session_code,r.created_at,r.joined_at,
++  (SELECT o.order_no FROM applications a JOIN payment_orders o ON o.application_id=a.id WHERE lower(trim(a.email))=r.email AND o.status='paid' AND o.amount=? ORDER BY o.paid_at DESC LIMIT 1) AS order_no,
++  (SELECT o.amount FROM applications a JOIN payment_orders o ON o.application_id=a.id WHERE lower(trim(a.email))=r.email AND o.status='paid' AND o.amount=? ORDER BY o.paid_at DESC LIMIT 1) AS paid_amount,
++  (SELECT 1 FROM applications a JOIN payment_orders o ON o.application_id=a.id WHERE lower(trim(a.email))=r.email AND o.status='paid' AND o.amount=? LIMIT 1) AS intro_paid
++  FROM premiere_registrants r ORDER BY r.created_at ASC`).bind(full, full, intro).all<{ name: string; email: string; session_code: string; created_at: string; joined_at: string | null; order_no: string | null; paid_amount: number | null; intro_paid: number | null }>();
++ const header = ['姓名', 'Email', '場次', '登記時間', '進入時間', '是否購買', '訂單編號', '付款金額', '前導課已付款'];
++ const lines = [header.map(cell).join(','), ...(rows.results || []).map(row => [row.name, row.email, row.session_code, row.created_at, row.joined_at ?? '', row.paid_amount == null ? '沒買' : '有買', row.order_no ?? '', row.paid_amount ?? '', row.intro_paid ? '是' : '否'].map(cell).join(','))];
++ return '\uFEFF' + lines.join('\r\n');
++}

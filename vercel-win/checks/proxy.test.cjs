@@ -1,7 +1,7 @@
 const assert=require('node:assert/strict');const vm=require('node:vm');const ts=require('typescript');const fs=require('node:fs');
 const code=ts.transpileModule(fs.readFileSync('app/api/[...path]/route.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
 const origin='https://2027course.win-lin.com';let calls=[];
-const ctx={exports:{},Request,Response,Headers,URL,AbortSignal,fetch:async(url,options)=>{calls.push({url,options});return new Response('OK',{headers:{'content-type':'text/plain'}})}};vm.runInNewContext(code,ctx);
+const ctx={exports:{},Request,Response,Headers,URL,AbortSignal,process,fetch:async(url,options)=>{calls.push({url,options});return new Response('OK',{headers:{'content-type':'text/plain'}})}};vm.runInNewContext(code,ctx);
 const params=path=>({params:Promise.resolve({path:path.split('/')})});
 (async()=>{
 assert.equal((await ctx.exports.POST(new Request(origin+'/api/payuni/create',{method:'POST',headers:{origin:'https://evil.example'}}),params('payuni/create'))).status,403);assert.equal(calls.length,0);
@@ -12,5 +12,16 @@ assert.equal(res.status,200);assert.equal(Buffer.from(calls[0].options.body).toS
 ctx.fetch=async()=>new Response(null,{status:303,headers:{location:'https://signature-speaker.elsaliao.chatgpt.site/payment?token=test'}});
 res=await ctx.exports.POST(new Request(origin+'/api/payuni/return',{method:'POST',body}),params('payuni/return'));assert.equal(res.headers.get('location'),origin+'/payment?token=test');
 ctx.fetch=async()=>{throw new Error('network')};res=await ctx.exports.GET(new Request(origin+'/api/payuni/status?token=test'),params('payuni/status'));assert.equal(res.status,503);
-console.log('PASS origin rejection, fixed route allowlist, signed callback body preservation, uncached status, return URL, network failure');
+const before=calls.length;
+assert.equal((await ctx.exports.POST(new Request(origin+'/api/premiere/register',{method:'POST',headers:{origin:'https://evil.example','content-type':'application/json'},body:'{}'}),params('premiere/register'))).status,403);
+assert.equal(calls.length,before);
+ctx.fetch=async(url,options)=>{calls.push({url,options});return new Response('{"ok":true}',{headers:{'content-type':'application/json'}})};
+res=await ctx.exports.POST(new Request(origin+'/api/premiere/register',{method:'POST',headers:{origin,'content-type':'application/json'},body:'{"name":"A"}'}),params('premiere/register'));
+assert.equal(res.status,200);assert.equal(calls.at(-1).url,'https://signature-speaker.elsaliao.chatgpt.site/api/premiere/register');assert.equal(Buffer.from(calls.at(-1).options.body).toString(),'{"name":"A"}');
+assert.equal((await ctx.exports.GET(new Request(origin+'/api/premiere/export'),params('premiere/export'))).status,404);
+process.env.PREMIERE_ALLOWED_ORIGINS='https://preview.example';
+assert.equal((await ctx.exports.POST(new Request(origin+'/api/premiere/register',{method:'POST',headers:{origin:'https://preview.example'},body:'{}'}),params('premiere/register'))).status,200);
+assert.equal((await ctx.exports.POST(new Request(origin+'/api/payuni/create',{method:'POST',headers:{origin:'https://preview.example'},body:'{}'}),params('payuni/create'))).status,403);
+delete process.env.PREMIERE_ALLOWED_ORIGINS;
+console.log('PASS origin rejection, fixed route allowlist, signed callback body preservation, uncached status, return URL, network failure, premiere register proxy');
 })().catch(e=>{console.error(e);process.exitCode=1});

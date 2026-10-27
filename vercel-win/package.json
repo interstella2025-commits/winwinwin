@@ -5,9 +5,11 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "check": "node checks/proxy.test.cjs && node checks/premiere.test.cjs"
   },
   "dependencies": {
+    "hls.js": "^1.6.15",
     "next": "16.4.2",
     "react": "19.2.6",
     "react-dom": "19.2.6"
