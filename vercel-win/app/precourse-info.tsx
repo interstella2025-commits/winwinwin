@@ -10,6 +10,7 @@ export default function PrecourseInfo() {
    <div><dt>授課講師</dt><dd>林嘉宏 WIN 博士</dd></div>
   </dl>
   <p className="precourse-price">前導課費用 <strong>NT$399</strong></p>
+  <p className="precourse-donation"><span>將全數捐予</span><span>「國際青少年希望教育計劃」。</span></p>
   <a className="precourse-cta" href="#apply">報名90分鐘線上前導課 <span aria-hidden="true">→</span></a>
  </section>;
 }
