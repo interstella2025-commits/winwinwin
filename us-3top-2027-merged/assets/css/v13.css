@@ -129,3 +129,25 @@
  .wv-host .wv-play{left:16px;width:96px}.wv-host .wv-play svg{width:26px;height:26px;padding:9px}
  .wv-host .spk-n{font-size:19px;margin:2px 0 8px}.wv-host .spk li{font-size:13px}
 }
+/* v13.2 主講人卡（非播放器）：影片尚未製作，不使用播放鍵、16:9、進度條樣式 */
+.wv-hc{position:relative;display:flex;flex-direction:column;justify-content:space-between;gap:24px;padding:30px 30px 26px;border-radius:14px;border:1px solid rgba(232,199,122,.35);
+ background:radial-gradient(110% 90% at 0% 0%,rgba(232,199,122,.10),transparent 55%),radial-gradient(90% 80% at 100% 100%,rgba(176,18,43,.18),transparent 60%),linear-gradient(160deg,#0E1C36,#0A1428);
+ box-shadow:0 40px 80px -40px rgba(0,0,0,.9)}
+.wv-hc .spk{margin:0;padding:0;border:0;background:none;backdrop-filter:none;grid-template-columns:168px 1fr;gap:28px;align-items:center}
+.wv-hc .spk img.spk-ph{width:168px;height:auto;aspect-ratio:4/5;border-radius:10px;border:1px solid rgba(232,199,122,.3)}
+.wv-hc .spk-n{font-size:26px;margin:6px 0 12px}
+.wv-hc .spk ul{gap:7px}.wv-hc .spk li{font-size:14.5px;line-height:1.5}
+.wv-hc,.wv-hc .spk-d{text-align:left}
+.wv-hc .spk-d{margin:14px 0 0;font-size:14px;color:#E8C77A;letter-spacing:.06em}
+.wv-pts{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.wv-pts li{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#DCE2EE;font-size:13.5px;line-height:1.4}
+.wv-pts b{flex:0 0 auto;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:12px;letter-spacing:0;color:#0A1428;background:#E8C77A;font-weight:700}
+@media(min-width:1025px){.wv-grid{align-items:stretch}}
+@media(max-width:1024px){.wv-pts{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:760px){
+ .wv-hc{padding:20px 16px 18px;gap:18px}
+ .wv-hc .spk{grid-template-columns:96px 1fr;gap:14px;align-items:start}
+ .wv-hc .spk img.spk-ph{width:96px}
+ .wv-hc .spk-n{font-size:20px;margin:2px 0 8px}.wv-hc .spk li{font-size:13px}
+ .wv-pts{grid-template-columns:1fr;gap:8px}.wv-pts li{padding:10px 12px}
+}
