@@ -59,3 +59,5 @@
 @media(max-width:760px){.mp14{grid-template-columns:1fr;gap:8px;margin-top:24px}.mp14 li{padding:12px 16px 12px 14px;gap:12px}.mp14 .mp-n{padding-right:12px}.mp14 b{font-size:15.5px}}
 @media(max-width:360px){.mp14 b{font-size:14px;letter-spacing:.01em}}
 @media(prefers-reduced-motion:reduce){.mp14 li{transition:none}.mp14 li:hover{transform:none}}
+/* 移除矽谷行程區底部註記後，合作資源卡成為最後元素：取消其下外距，讓區塊底部留白與其他區塊一致 */
+#valley .visit:last-child{margin-bottom:0}
