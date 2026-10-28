@@ -1,0 +1,64 @@
+/* v11 marketing + UI/UX round */
+/* 課程格：AI 方向固定貼底，格子對齊 */
+.mods .mod{display:flex;flex-direction:column}
+.mods .mod .mod-ai{margin-top:auto!important;padding-top:0}
+.mods .mod .dir{margin-bottom:14px}
+/* 表單旁信任列 */
+.f-trust{list-style:none;margin:26px 0 0;padding:18px 0 0;border-top:1px solid rgba(201,164,92,.35);display:grid;grid-template-columns:1fr 1fr;gap:14px 22px}
+.f-trust li{font-size:13px;line-height:1.5;color:#AEB8CC;padding-left:14px;position:relative}
+.f-trust li:before{content:"";position:absolute;left:0;top:.55em;width:6px;height:6px;border-radius:50%;background:#C9A45C}
+.f-trust b{display:block;color:#fff;font-size:14px;font-weight:600;letter-spacing:.02em}
+/* 導覽目前位置 */
+.nav a.is-on{color:#E8C77A!important}
+.nav a.is-on:after{transform:scaleX(1)!important;opacity:1!important}
+/* 手機橫滑 */
+.swipe-hint{display:none}
+@media (max-width:760px){
+ [data-swipe]{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;gap:14px!important;margin-left:-20px!important;margin-right:-20px!important;padding:4px 20px 14px!important;scroll-padding:0 20px;scrollbar-width:none;grid-template-columns:none!important}
+ [data-swipe]::-webkit-scrollbar{display:none}
+ [data-swipe]>*{flex:0 0 84%!important;max-width:84%!important;scroll-snap-align:start;margin:0!important}
+ [data-swipe="7 天行程"]>*{flex-basis:72%!important;max-width:72%!important}
+ .swipe-hint{display:flex;align-items:center;gap:10px;margin:10px 0 0;font-size:12.5px;color:#8a93a6;letter-spacing:.04em}
+ .swipe-hint i{display:flex;gap:5px}
+ .swipe-hint i b{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.35;transition:opacity .2s,width .2s}
+ .swipe-hint i b.on{opacity:1;width:16px;border-radius:3px;background:#C9A45C}
+ .f-trust{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){[data-swipe]{scroll-behavior:auto}}
+/* urgent 改為承接問句：縮成單行 CTA 條 */
+.urgent.u-q .u-in h2{font-size:clamp(20px,2.2vw,26px);margin:0}
+.cta-band .cb-in b{font-size:clamp(17px,1.8vw,21px)}
+/* v12：價值＋證書＋學位＋比較 合併節 */
+.cert-x{background:#EFECE4;padding:100px 0}
+.cert-x>.wrap{display:block}
+.cert-x h2{margin:6px 0 0}
+.vlist{list-style:none;margin:36px 0 64px;padding:0;display:grid;grid-template-columns:repeat(5,1fr);border-top:2px solid #0B1B3A}
+.vlist li{padding:20px 18px 6px 0;border-right:1px solid #D5D0C2;margin-right:18px}
+.vlist li:last-child{border-right:0;margin-right:0}
+.vlist i{display:block;font-style:normal;font-family:var(--serif);font-weight:900;font-size:28px;color:#B8323A;line-height:1}
+.vlist b{display:block;font-family:var(--serif);font-size:18px;color:#0B1B3A;margin:10px 0 6px}
+.vlist span{font-size:14px;line-height:1.65;color:#4A5568}
+.cx-cert{display:grid;grid-template-columns:7fr 5fr;gap:56px;align-items:center}
+.cx-h{font-family:var(--serif);font-size:clamp(22px,2.2vw,28px);color:#0B1B3A;margin:6px 0 14px;line-height:1.35}
+.cx-row{display:grid;grid-template-columns:7fr 5fr;gap:56px;margin-top:72px;padding-top:56px;border-top:1px solid #D5D0C2;align-items:start}
+.cx-row .cmp{margin-top:18px}
+.cx-row .lead{color:#2D3748}
+.cx-box{margin-top:18px;border:1px solid #C8A45C;border-radius:8px;padding:24px;background:#FBF8F1}
+.cx-box p{margin:0;color:#4A5568;font-size:15px}
+.cx-box .cx-bt{font-family:var(--serif);font-size:19px;color:#0B1B3A;margin-bottom:8px}
+.cx-cta{margin-top:64px;padding:28px 32px;border-radius:10px;background:#0B1B3A;display:flex;align-items:center;justify-content:space-between;gap:24px}
+.cx-cta p{margin:0;color:#fff;font-family:var(--serif);font-size:clamp(19px,2vw,24px);line-height:1.45}
+@media(max-width:1023px){.vlist{grid-template-columns:1fr 1fr}.vlist li{border-right:0;margin-right:0;border-bottom:1px solid #D5D0C2;padding:16px 12px 14px 0}.cx-cert,.cx-row{grid-template-columns:1fr;gap:32px}}
+@media(max-width:760px){.cert-x{padding:72px 0}
+.vlist{grid-template-columns:1fr;margin:26px 0 44px}
+.vlist li{display:grid;grid-template-columns:40px 1fr;column-gap:10px;padding:14px 0}
+.vlist i{grid-row:1/span 2;font-size:22px;padding-top:2px}.vlist b{margin:0 0 4px;font-size:17px}
+.cx-row{margin-top:48px;padding-top:40px}
+.cx-cta{flex-direction:column;align-items:stretch;padding:24px 20px;margin-top:44px}.cx-cta .btn{justify-content:center}}
+/* v12：Hero 計畫名稱 */
+.hero .hero-eb{font-size:15px;letter-spacing:.08em;color:#E8C77A;font-weight:700}
+@media(max-width:400px){.hero .hero-eb{font-size:13.5px;letter-spacing:.04em}}
+/* v12：桌機點擊區 ≥24px */
+@media(min-width:761px){.nav ul a{display:inline-block;padding:4px 0;min-height:24px;line-height:16px}
+.qx-src a{display:inline-block;padding:5px 0;min-height:24px}}
+.cert-x .lead{max-width:none}
