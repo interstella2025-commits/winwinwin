@@ -367,3 +367,17 @@ footer p{line-height:1.7}
 @media (max-width:1024px){.cv ul.two{grid-template-columns:minmax(0,1fr)}.out{grid-template-columns:minmax(0,1fr);gap:18px;padding:30px}.out .ok{justify-self:start;font-size:19px;padding:9px 16px}}
 @media (max-width:760px){.go-big{font-size:21px}.go-big.c{margin-top:36px}.h3.big{font-size:24px}.sub-h{font-size:23px}#faculty.sub-h{margin-top:64px}.out{padding:24px 20px}.out h3{font-size:20px}.out p{font-size:15.5px}}
 .ng4 figure:last-child{grid-column:span 2}
+/* r2：B 常見問題左欄 sticky＋重點色塊（文字取自 hero 原文） */
+.faq-side{position:sticky;top:112px;align-self:start}
+.faq-facts{margin-top:30px}
+/* r2：步驟／條列換行：避免孤字，編號與首行文字對齊 */
+.blk .tt>span,.blk .tt>b{text-wrap-style:pretty}
+.blk.steps .tt>span{text-wrap-style:balance}
+.blk.stack .n{padding-top:0;line-height:24.8px}
+@media(max-width:1024px){.faq-side{position:static}.faq-facts{display:none}}
+@media(max-width:760px){
+ .blk.stack .n{line-height:23.2px}
+ .nav .btn-sm{position:relative;padding:0 12px;font-size:13px;letter-spacing:.02em;min-height:36px;height:36px;gap:6px}
+ .nav .btn-sm:before{content:"";position:absolute;left:0;right:0;top:-4px;bottom:-4px}
+}
+@media(max-width:760px){.final{gap:28px}.final>div>.blk.steps:first-child{margin-top:0}}
