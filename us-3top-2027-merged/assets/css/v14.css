@@ -49,3 +49,13 @@
 .cc-btn{justify-content:center;min-height:52px}
 .cc-n{margin:0;font-size:12.5px;color:#8E9AB2}
 @media(max-width:760px){.call-card{padding:24px 20px;gap:14px}.cc-ic{width:52px;height:52px}.cc-tel b{font-size:26px;white-space:nowrap}.cc-tel{gap:14px}}
+/* 課程地圖：上課資訊改為條列色塊（取代膠囊 chip）。金 #E8C77A 底 × 深藍 #0B1B3A 字＝10.45:1 */
+.mp14{list-style:none;margin:30px 0 0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 12px;max-width:624px}
+.mp14 li{display:flex;align-items:center;gap:14px;min-width:0;background:#E8C77A;color:#0B1B3A;border-radius:4px;padding:13px 22px 13px 16px;position:relative;
+ box-shadow:0 1px 0 rgba(255,255,255,.35) inset,0 14px 30px -18px rgba(0,0,0,.6);transition:transform .45s cubic-bezier(.2,.7,.2,1),background-color .45s}
+.mp14 li:hover{transform:translateY(-2px);background:#EDD18E}
+.mp14 .mp-n{flex:none;font-family:var(--serif);font-size:14px;font-weight:700;letter-spacing:.04em;line-height:1;padding-right:14px;border-right:1px solid rgba(11,27,58,.35)}
+.mp14 b{font-size:16px;font-weight:700;letter-spacing:.03em;white-space:nowrap;line-height:1.35}
+@media(max-width:760px){.mp14{grid-template-columns:1fr;gap:8px;margin-top:24px}.mp14 li{padding:12px 16px 12px 14px;gap:12px}.mp14 .mp-n{padding-right:12px}.mp14 b{font-size:15.5px}}
+@media(max-width:360px){.mp14 b{font-size:14px;letter-spacing:.01em}}
+@media(prefers-reduced-motion:reduce){.mp14 li{transition:none}.mp14 li:hover{transform:none}}
