@@ -481,3 +481,10 @@ h1,h2,h3,h4,p,li,dt,dd,figcaption,.btn{text-wrap:pretty}
 .qt{min-width:0;flex:1 1 auto}
 @media(max-width:899px){.qt{font-size:clamp(14px,4.5vw,17px)}}
 #faculty p,#faculty li{overflow-wrap:break-word;word-break:keep-all}
+/* v17 big-q as #pain conclusion */
+.face .big-q{margin-top:28px;padding-top:24px;border-top:1px solid rgba(234,117,144,.35);text-align:left;font-size:clamp(26px,7vw,44px);line-height:1.35;font-weight:900;color:#EA7590}
+.face .big-q .nw{display:block}
+/* v17 #network gap */
+@media(max-width:899px){.stage-top{min-height:0;aspect-ratio:auto}.stage-top img{object-position:50% 70%}.stage-h{padding:44px 0 150px}.stage-b{padding:8px 0 64px}}
+@media(min-width:900px){.stage-top{min-height:520px}}
+@media(max-width:899px){.stage-h{padding:40px 0 96px}.stage-h .h2{font-size:clamp(19px,5.6vw,26px)}.stage-b{padding:0 0 64px}.stage-b .outs{margin-top:0}}
