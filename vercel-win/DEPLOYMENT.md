@@ -19,3 +19,8 @@ Validation: Next production build, npm audit 0 findings, 17 mocked backend payme
 Commands: npm ci; npm run build; node checks/proxy.test.cjs.
 
 Custom domain DNS: 2027course CNAME 0cc939a0c7526627.vercel-dns-016.com (DNS only). Vercel reported Valid Configuration; HTTPS and custom-domain checkout checked on 2026-10-18. Existing root/www and Resend DNS records preserved.
+
+## 2026-11 — Payment backend moved into this project (branch payuni-vercel-migration)
+The API routes no longer proxy to signature-speaker.elsaliao.chatgpt.site. create/checkout/status/notify/return/apply and the NT$1 test route run here (app/api/payuni/*, lib/payuni/*), with Postgres (Neon, DATABASE_URL) instead of D1. Schema: db/migrations/0001_init.sql (run once before go-live). Env vars: see .env.example. One session list (lib/course-sessions.ts) feeds both the form and server validation.
+All PAYUNi Return/Notify/Back URLs are https://2027course.win-lin.com. Preview deployments cannot receive PAYUNi notify (Deployment Protection), so acceptance is an NT$1 test on production after merge.
+Checks: npm run lint; npm test (20 mocked payment checks); npm run build. backend-vercel-bridge.patch describes the old Sites bridge and is kept for history only.

@@ -5,9 +5,12 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "lint": "tsc --noEmit",
+    "test": "node checks/payment.test.cjs"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.2.0",
     "next": "16.4.2",
     "react": "19.2.6",
     "react-dom": "19.2.6"
