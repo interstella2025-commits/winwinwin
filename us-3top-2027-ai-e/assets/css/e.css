@@ -43,7 +43,7 @@ br.d{display:none}
 .kicker .kb{display:none}
 .hero h1{margin:18px auto 0;font-size:clamp(32px,8.6vw,64px);line-height:1.22;font-weight:900;letter-spacing:-.02em;max-width:16em;text-wrap:balance}
 .hero-sub{margin:18px auto 0;max-width:36em;font-size:16px;color:rgba(20,19,15,.78)}
-.hero-cta{margin-top:26px;display:flex;justify-content:center}
+.hero-cta{margin-top:30px;display:flex;justify-content:center}
 .hero-bar{position:relative;color:#fff;padding:0 0 26px}
 .facts{display:grid;gap:14px}
 .facts li{display:flex;flex-direction:column;text-align:center}
