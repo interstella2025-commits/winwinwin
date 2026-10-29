@@ -3,7 +3,7 @@
  if(!('Segmenter' in Intl))return;
  var seg=new Intl.Segmenter('zh-Hant',{granularity:'word'});
  var CJK=/[\u3400-\u9fff]/, CL=/[，、。；：！？」』）》・｜|]$/;
- var KEEP=/(\d+\s?月底|每月\s?\d+\s?次|週[一二三四五六日](?:上午|下午|晚上)?|第\s?\d+\s?[期張屆名]|\d+\s?(?:個月|月|次|天\s?\d+\s?夜|張|堂|門課|天|夜|人|期|家|年|位)|（[^（）]{1,8}）|加州大學柏克萊分校|加州柏克萊大學|柏克萊大學|柏克萊分校|加州州立大學|史丹佛大學|矽谷研究院|胡佛研究所|實體校園班|研究計畫|訪問學者|博士後研究|說明會|結業證書|[A-Za-z]+商學院)/;
+ var KEEP=/(\d+\s?月底|每月\s?\d+\s?次|週[一二三四五六日](?:上午|下午|晚上)?|第\s?\d+\s?[期張屆名]|\d+\s?(?:個月|月|次|天\s?\d+\s?夜|張|堂|門課|天|夜|人|期|家|年|位)|（[^（）]{1,8}）|加州大學柏克萊分校|加州柏克萊大學|柏克萊大學|柏克萊分校|加州州立大學|史丹佛大學|矽谷研究院|胡佛研究所|實體校園班|研究計畫|博士後研究|說明會|結業證書|[A-Za-z]+商學院)/;
  var SEL='h1,h2,h3,h4,.eyebrow,.btn,figcaption,b,strong,td,th,dd,dt,li,p,.u-k,.aff,.qx-zh,.lead,.sub,label,button';
  function words(t){var a=[];for(var s of seg.segment(t))a.push(s.segment);return a}
  // merge particles/very short tokens onto neighbours to avoid 1-char fragments
