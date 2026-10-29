@@ -576,3 +576,8 @@ h1,h2,h3,h4,p,li,dt,dd,figcaption,.btn{text-wrap:pretty}
  .mt-gs{display:block;columns:2;column-gap:48px}
  #guide .gx-g{break-inside:avoid;display:inline-block;width:100%}
 }
+.mt-ph{aspect-ratio:854/930}.mt-ph img{object-position:50% 0}
+.mt-hl b{word-break:keep-all}
+.mt-hl b{white-space:nowrap}@media(max-width:899px){.mt-hl b{font-size:clamp(26px,7.6vw,44px)}.mt-hl li{padding:20px 14px}}
+.mt-hl p,#guide .gx-g li{word-break:normal;line-break:strict;overflow-wrap:break-word}
+.mt-hl p{word-break:keep-all;overflow-wrap:anywhere;line-break:strict}#guide .gx-g li{word-break:keep-all;line-break:strict}
