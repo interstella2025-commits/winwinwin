@@ -533,3 +533,7 @@ h1,h2,h3,h4,p,li,dt,dd,figcaption,.btn{text-wrap:pretty}
 .gx-sl{font-size:17px;line-height:1.6;flex:1 1 220px}
 .gx-note{margin-top:14px;font-size:16px;line-height:1.7;color:var(--ink)}
 .guide>*{min-width:0}.guide-x li,.gx-note{overflow-wrap:anywhere}
+/* v20 */
+.tab{word-break:keep-all;overflow-wrap:normal}
+@media(max-width:599px){.tab{letter-spacing:.06em}}
+@media(min-width:900px){.guide{align-items:start}.guide-i{position:sticky;top:110px;align-self:start}}
