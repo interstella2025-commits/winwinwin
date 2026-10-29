@@ -460,3 +460,24 @@ body{padding-bottom:0}
 @media(min-width:900px){.hero-in{grid-template-columns:minmax(0,1fr) minmax(300px,380px);gap:64px;max-width:1240px}.hero-copy{max-width:none}.hero h1{font-size:clamp(52px,4.8vw,74px)}.hero-fig{max-width:380px;width:100%}
 .intro-in{max-width:1040px}.intro-tags li{white-space:nowrap;font-size:clamp(16px,1.35vw,19px)}}
 @media(min-width:900px){.hero-fig img{width:100%;height:auto;display:block}.hero h1{font-size:clamp(50px,4.4vw,66px)}}
+/* v15 break rules: only after punctuation */
+body{word-break:keep-all;line-break:strict;overflow-wrap:break-word}
+h1,h2,h3,h4,p,li,dt,dd,figcaption,.btn{text-wrap:pretty}
+.kicker span:not(.kb){display:block;white-space:nowrap}.kicker .kb{display:none}
+.kicker{font-size:clamp(10.5px,3.3vw,13px)}
+.kicker span+span+span{margin-top:6px}
+@media(max-width:899px){
+ .hero h1{font-size:clamp(26px,8.4vw,46px)}
+ .intro-p .ln-k{font-size:clamp(15px,4.7vw,24px)}
+ .intro-p{font-size:clamp(17px,5.2vw,19px)}
+ #trip .h2,#contact .h2{font-size:clamp(17px,5.3vw,26px)}
+ #invest .h2{font-size:clamp(18px,5.8vw,26px)}
+}
+#contact .h2 br{display:none}
+.tab b{white-space:nowrap}
+@media(max-width:899px){.tab b{font-size:clamp(11px,3.6vw,14px)}}
+.day,.day *{min-width:0}.day p{overflow-wrap:anywhere}
+@media(max-width:899px){.tab{min-width:0}.tab b{font-size:clamp(10px,3.1vw,13px);letter-spacing:0}}
+.qt{min-width:0;flex:1 1 auto}
+@media(max-width:899px){.qt{font-size:clamp(14px,4.5vw,17px)}}
+#faculty p,#faculty li{overflow-wrap:break-word;word-break:keep-all}
