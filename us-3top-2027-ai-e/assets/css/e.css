@@ -384,3 +384,6 @@ body{padding-bottom:0}
 }
 @media (min-width:900px){.guide{grid-template-columns:220px 1fr;padding:44px 56px;gap:48px}.guide-i{width:220px;height:220px}}
 .hero-fig{isolation:isolate}
+.hero-fig img{object-position:50% 45%}
+.hero-fig img{aspect-ratio:1/1;object-position:50% 100%}
+@media (min-width:900px){.hero-fig::after{content:"";position:absolute;inset:0;border-radius:6px;background:linear-gradient(180deg,rgba(11,27,58,.45),rgba(11,27,58,0) 45%);pointer-events:none}}
