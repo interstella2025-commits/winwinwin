@@ -332,3 +332,8 @@ html{scroll-padding-top:calc(60px + var(--ann))}
 body{padding-bottom:0}
 @media (min-width:600px) and (max-width:899px){.hero-in.wrap{padding-top:40px}}
 .inv-q,.inv-p{text-wrap:balance}
+/* hero legibility (WCAG AA) */
+.hero-bg::after{background:linear-gradient(180deg,rgba(236,244,251,.96) 0%,rgba(236,244,251,.94) 58%,rgba(236,244,251,.9) 70%,rgba(236,244,251,.35) 84%,rgba(7,18,41,.6) 100%)}
+.hero-sub{color:#2A2A28}
+.hero-tags li{background:#fff}
+@media (min-width:900px){.hero-bg::after{background:linear-gradient(180deg,rgba(236,244,251,.96) 0%,rgba(236,244,251,.94) 62%,rgba(236,244,251,.88) 72%,rgba(236,244,251,.3) 86%,rgba(7,18,41,.55) 100%)}}
