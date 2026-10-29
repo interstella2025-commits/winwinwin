@@ -582,3 +582,9 @@ h1,h2,h3,h4,p,li,dt,dd,figcaption,.btn{text-wrap:pretty}
 .mt-hl p,#guide .gx-g li{word-break:normal;line-break:strict;overflow-wrap:break-word}
 .mt-hl p{word-break:keep-all;overflow-wrap:anywhere;line-break:strict}#guide .gx-g li{word-break:keep-all;line-break:strict}
 @media(min-width:900px) and (max-width:1199px){.mt-gs{columns:1!important}}
+/* v24 — left-aligned emphasis block (Elsa) */
+.inv-end{text-align:left!important;max-width:40em;margin-left:0!important;margin-right:auto!important}
+.inv-end .inv-q{text-align:left!important;margin:0!important;color:#9D2143!important;font-weight:900;font-size:clamp(30px,7.4vw,52px)!important;line-height:1.25;letter-spacing:-.01em}
+.inv-end .inv-q .nw{display:block;white-space:nowrap}
+.inv-end .inv-p,.inv-end .inv-b{text-align:left!important;margin-left:0!important;margin-right:0!important}
+.inv-end .inv-p{margin-top:20px;font-size:18px}
