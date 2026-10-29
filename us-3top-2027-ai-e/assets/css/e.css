@@ -588,3 +588,11 @@ h1,h2,h3,h4,p,li,dt,dd,figcaption,.btn{text-wrap:pretty}
 .inv-end .inv-q .nw{display:block;white-space:nowrap}
 .inv-end .inv-p,.inv-end .inv-b{text-align:left!important;margin-left:0!important;margin-right:0!important}
 .inv-end .inv-p{margin-top:20px;font-size:18px}
+/* Android fix: never let text widen the layout viewport */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;overflow-x:clip}
+body{overflow-x:clip}
+#top,.hero-bg,#faculty,#trip{overflow:hidden}
+@media(max-width:899px){.nw,.hero h1>.nw,.inv-q .nw,.inv-end .inv-q .nw,#network h2 .nw,.big-q .nw,.face .big-q .nw{white-space:normal!important;display:inline!important}
+h1,h2,h3,.h2,.inv-q,.big-q,p,li{word-break:keep-all;line-break:strict;overflow-wrap:anywhere;max-width:100%}
+section *{min-width:0}}
+@media(max-width:899px){.inv-q .nw,.inv-end .inv-q .nw,.face .big-q .nw{display:block!important}}
