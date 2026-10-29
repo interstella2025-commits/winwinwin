@@ -387,3 +387,6 @@ body{padding-bottom:0}
 .hero-fig img{object-position:50% 45%}
 .hero-fig img{aspect-ratio:1/1;object-position:50% 100%}
 @media (min-width:900px){.hero-fig::after{content:"";position:absolute;inset:0;border-radius:6px;background:linear-gradient(180deg,rgba(11,27,58,.45),rgba(11,27,58,0) 45%);pointer-events:none}}
+.hero-fig img{aspect-ratio:4/5;object-position:50% 0}
+.hero-fig::after{display:none}
+@media (min-width:900px){.hero-fig{max-width:400px;justify-self:end;width:100%}}
