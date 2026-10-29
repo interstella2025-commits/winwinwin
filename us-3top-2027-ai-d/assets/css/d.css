@@ -333,3 +333,13 @@ h1 span{display:block}h1 em{color:var(--gold)}
 .nw{white-space:nowrap}h1 .h1b .nw{display:inline-block}
 @media (max-width:640px){.cg{grid-template-columns:1fr 1fr;gap:8px}.cgc{padding:12px}.cgc h3{font-size:14.5px}.cgc p{font-size:12px}}
 @media (max-width:360px){h1 .h1b .nw{display:inline}}
+
+/* no decorative dividers */
+.eyebrow.ln span:before,.eyebrow.ln span:after,.bar{display:none}
+.pf-q{border-left:0;padding-left:0}
+.cl-h{border-bottom:0}
+.fc-c{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fc h3,.jt-tab b,.s4 b{white-space:nowrap}
+@media(max-width:400px){.jt-tab b{font-size:13px}}
+@media(max-width:360px){.s4 b{font-size:13px}.fc h3{font-size:16px}}
+@media(max-width:360px){.cgc h3{font-size:14px;white-space:nowrap}}

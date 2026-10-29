@@ -381,3 +381,12 @@ footer p{line-height:1.7}
  .nav .btn-sm:before{content:"";position:absolute;left:0;right:0;top:-4px;bottom:-4px}
 }
 @media(max-width:760px){.final{gap:28px}.final>div>.blk.steps:first-child{margin-top:0}}
+
+/* no decorative dividers */
+.kick:before,.pane:before,.card:before,.sub-h:before{display:none}
+.kick{gap:0}
+.day,.who5 div{border-top:1px solid var(--line)}
+.quote{border-left:0;padding-left:0}
+.course b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prof h3,.out .tt span,.info dt{white-space:nowrap}
+@media(max-width:360px){.prof h3{font-size:15px}}

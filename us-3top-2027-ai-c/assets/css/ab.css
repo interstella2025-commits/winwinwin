@@ -414,3 +414,12 @@ footer p{line-height:1.7}
 @media(max-width:1024px){.who5{grid-template-columns:repeat(3,1fr)}.cur{grid-template-columns:1fr}}
 @media(max-width:760px){.gg{grid-template-columns:1fr}.gg-ar{transform:rotate(90deg);height:40px}.who5{grid-template-columns:1fr 1fr}.ph-ph{grid-template-columns:1fr 1fr}.end2{font-size:20px}.gg-c{padding:24px}}
 .end2.c{text-align:center}
+
+/* no decorative dividers */
+.kick:before,.pane:before,.card:before,.sub-h:before{display:none}
+.kick{gap:0}
+.day,.who5 div{border-top:1px solid var(--line)}
+.quote{border-left:0;padding-left:0}
+.course b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prof h3,.out .tt span,.info dt{white-space:nowrap}
+@media(max-width:360px){.prof h3{font-size:15px}}
