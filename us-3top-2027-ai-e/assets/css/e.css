@@ -503,3 +503,33 @@ h1,h2,h3,h4,p,li,dt,dd,figcaption,.btn{text-wrap:pretty}
 @media(min-width:600px){.imm-cards{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(min-width:1100px){.rail{grid-template-columns:repeat(3,minmax(0,1fr))}.week{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .pc p:not(.pc-s){font-size:16px;line-height:1.75}.day p:not(.sk):not(.day-h){font-size:16px}.day h3{font-size:19px}
+/* v19 faculty bg word + trip stats */
+#faculty{position:relative;overflow:hidden}
+#faculty>.wrap,#faculty>.rail{position:relative;z-index:1}
+.fac-word{font-size:clamp(84px,17vw,230px)!important;top:24px!important;right:-.08em;white-space:nowrap}
+@media(max-width:599px){.fac-word{opacity:.22;font-size:84px!important;top:4px!important}#faculty .fac-h{padding-top:56px}}
+.stats{margin-top:56px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:36px 20px;border-top:1px solid rgba(255,255,255,.14);padding-top:40px}
+.st-n{display:flex;align-items:baseline;gap:6px;color:#fff;line-height:1}
+.st-n b{font:700 clamp(56px,16vw,104px)/1 var(--f);letter-spacing:-.03em;color:#EA7590;font-variant-numeric:tabular-nums}
+.st-n small{font-size:clamp(17px,4.6vw,22px);font-weight:700;color:#fff}
+.st-l{margin-top:10px;font-size:clamp(17px,4.6vw,20px);font-weight:700;color:rgba(255,255,255,.9)}
+.st:first-child .st-n{flex-wrap:wrap}
+.press{margin-top:40px;display:flex;flex-wrap:wrap;align-items:center;gap:12px 28px;padding:22px 0;border-top:1px solid rgba(255,255,255,.14);border-bottom:1px solid rgba(255,255,255,.14);font-size:clamp(17px,4.6vw,20px);font-weight:700;color:#fff}
+.press-k{font:600 13px/1 var(--m);letter-spacing:.2em;color:#EA7590}
+@media(min-width:900px){.stats{grid-template-columns:repeat(4,minmax(0,1fr))}.st+.st{border-left:1px solid rgba(255,255,255,.14);padding-left:32px}}
+@media(min-width:600px){#faculty .fac-h{padding-top:calc(clamp(84px,17vw,230px)*.62)}.fac-word{opacity:.55}}
+/* v19 quote optical centering */
+.inv-q{text-align:center!important;margin-left:auto;margin-right:auto}
+.inv-q .nw{display:block;white-space:nowrap}
+.inv-q .hq{margin-left:-.5em}.inv-q .hq-r{margin-left:0;margin-right:-.5em}
+/* v19 guide expanded */
+.guide-x .gx-g{margin-top:28px;padding-top:22px;border-top:1px solid rgba(11,27,58,.14)}
+.guide-x h4{font:600 13px/1 var(--m);letter-spacing:.2em;color:#9D2143;margin:0 0 12px}
+.guide-x .gx-g li{font-size:17px;line-height:1.7;margin:6px 0}
+.gx-stat{margin-top:28px;display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px}
+.gx-stat p{display:flex;align-items:baseline;gap:6px}
+.gx-stat b{font:700 clamp(56px,14vw,88px)/1 var(--f);color:#9D2143}
+.gx-stat small{font-size:18px;font-weight:700}
+.gx-sl{font-size:17px;line-height:1.6;flex:1 1 220px}
+.gx-note{margin-top:14px;font-size:16px;line-height:1.7;color:var(--ink)}
+.guide>*{min-width:0}.guide-x li,.gx-note{overflow-wrap:anywhere}

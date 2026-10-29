@@ -12,3 +12,5 @@ if(rail){const cs=[...rail.children];if(dots){cs.forEach(()=>dots.appendChild(d.
 const upd=()=>{const w=cs[0].getBoundingClientRect().width+14;const i=Math.round(rail.scrollLeft/w);dots&&[...dots.children].forEach((b,j)=>b.classList.toggle('on',j===Math.min(i,cs.length-1)))};rail.addEventListener('scroll',upd,{passive:true});upd();
 d.querySelectorAll('.arr').forEach(b=>b.addEventListener('click',()=>{const w=cs[0].getBoundingClientRect().width+14;rail.scrollBy({left:w*+b.dataset.dir,behavior:'smooth'})}))}
 })();
+(()=>{const ns=document.querySelectorAll('.st-n b[data-n]');if(!ns.length)return;const rm=matchMedia('(prefers-reduced-motion: reduce)').matches;if(rm||!('IntersectionObserver'in window))return;
+ns.forEach(b=>b.textContent='0');const io=new IntersectionObserver(es=>es.forEach(e=>{if(!e.isIntersecting)return;io.unobserve(e.target);const b=e.target,n=+b.dataset.n,t0=performance.now(),D=1400;const f=t=>{const p=Math.min(1,(t-t0)/D),v=Math.round(n*(1-Math.pow(1-p,3)));b.textContent=v;if(p<1)requestAnimationFrame(f)};requestAnimationFrame(f)}),{threshold:.4});ns.forEach(b=>io.observe(b))})();
