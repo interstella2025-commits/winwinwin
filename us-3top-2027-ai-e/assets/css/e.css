@@ -581,3 +581,4 @@ h1,h2,h3,h4,p,li,dt,dd,figcaption,.btn{text-wrap:pretty}
 .mt-hl b{white-space:nowrap}@media(max-width:899px){.mt-hl b{font-size:clamp(26px,7.6vw,44px)}.mt-hl li{padding:20px 14px}}
 .mt-hl p,#guide .gx-g li{word-break:normal;line-break:strict;overflow-wrap:break-word}
 .mt-hl p{word-break:keep-all;overflow-wrap:anywhere;line-break:strict}#guide .gx-g li{word-break:keep-all;line-break:strict}
+@media(min-width:900px) and (max-width:1199px){.mt-gs{columns:1!important}}
