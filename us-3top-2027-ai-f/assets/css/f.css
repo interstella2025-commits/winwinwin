@@ -787,3 +787,11 @@ body{padding-bottom:0}
 #cert .checks,#cert .checks li{box-sizing:border-box;max-width:100%;min-width:0}@media(max-width:340px){.h2{font-size:22px!important}}
 #top,#faculty,#trip{overflow:hidden}html{overflow-x:clip}
 #contact{min-height:0!important}
+/* Android fix: never let text widen the layout viewport */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;overflow-x:clip}
+body{overflow-x:clip}
+#top,.hero-bg,#faculty,#trip{overflow:hidden}
+@media(max-width:899px){.nw,.hero h1>.nw,.inv-q .nw,.inv-end .inv-q .nw,#network h2 .nw,.big-q .nw,.face .big-q .nw{white-space:normal!important;display:inline!important}
+h1,h2,h3,.h2,.inv-q,.big-q,p,li{word-break:keep-all;line-break:strict;overflow-wrap:anywhere;max-width:100%}
+section *{min-width:0}}
+@media(max-width:899px){.inv-q .nw,.inv-end .inv-q .nw,.face .big-q .nw{display:block!important}}
