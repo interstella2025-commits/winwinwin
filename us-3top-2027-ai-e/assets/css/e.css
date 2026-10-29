@@ -404,3 +404,12 @@ body{padding-bottom:0}
  .hero-cta{margin-top:40px}
  .hero-bg::after{background:linear-gradient(90deg,rgba(7,18,41,.92) 0%,rgba(7,18,41,.8) 45%,rgba(7,18,41,.35) 100%),linear-gradient(180deg,rgba(7,18,41,.4),transparent 30%,transparent 70%,rgba(7,18,41,.85))}
 }
+/* hero v4: Unsplash side image restored */
+@media (min-width:900px){
+ .hero-in{display:grid;max-width:1200px;margin-left:auto;margin-right:auto}
+ .hero-copy{max-width:none}
+ .hero h1{font-size:clamp(44px,4.4vw,64px)}
+ .hero-lead{font-size:24px}
+ .hero-fig{display:block!important}
+ .hero-fig img{aspect-ratio:4/5;object-position:50% 50%}
+}
