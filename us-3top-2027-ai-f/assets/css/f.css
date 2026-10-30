@@ -825,3 +825,38 @@ img{image-rendering:auto}
 .book-p{margin-top:16px;font-size:19px;color:rgba(255,255,255,.86)}
 .bf-go{margin-top:32px}
 @media(max-width:599px){.book-f{padding:28px 22px}}
+/* ===== F v8 — Tetr motion layer (only active under html.mo, set by m.js; no JS / reduced-motion = static, fully visible) ===== */
+.mo .rv{transform:translate3d(0,32px,0);transition:opacity .9s cubic-bezier(.22,1,.36,1),transform .9s cubic-bezier(.22,1,.36,1)}
+.mo .rv.in{transform:none}
+/* #002 stagger children */
+.mo .sg>*{opacity:0;transform:translate3d(0,24px,0);transition:opacity .8s cubic-bezier(.22,1,.36,1),transform .8s cubic-bezier(.22,1,.36,1);transition-delay:calc(var(--i,0)*80ms)}
+.mo .sg.in>*{opacity:1;transform:none}
+/* headline rise (#074 on h2, slightly ahead of body) */
+.mo .hu{opacity:0;transform:translate3d(0,28px,0);transition:opacity 1s cubic-bezier(.22,1,.36,1),transform 1s cubic-bezier(.22,1,.36,1)}
+.mo .hu.in{opacity:1;transform:none}
+.mo .rv .hu{opacity:1;transform:none}
+/* image settle: figure clips, img scales 1.08 -> 1 */
+section figure{overflow:hidden}
+.mo .kz img{transform:scale(1.08);transition:transform 1.4s cubic-bezier(.22,1,.36,1)}
+.mo .kz.in img{transform:none}
+/* hero entrance on load */
+.mo .hero .hero-in>*{opacity:0;transform:translate3d(0,24px,0)}
+.mo.mo-go .hero .hero-in>*{opacity:1;transform:none;transition:opacity 1s cubic-bezier(.22,1,.36,1),transform 1s cubic-bezier(.22,1,.36,1)}
+.mo.mo-go .hero .hero-in>*:nth-child(2){transition-delay:.12s}.mo.mo-go .hero .hero-in>*:nth-child(3){transition-delay:.24s}.mo.mo-go .hero .hero-in>*:nth-child(4){transition-delay:.36s}.mo.mo-go .hero .hero-in>*:nth-child(n+5){transition-delay:.48s}
+/* #081 hover lift + #082 image zoom (Tetr: translateY(-4px), img scale 1.04–1.06) */
+@media(hover:hover){
+.btn{transition:transform .3s ease,background-color .3s ease,opacity .3s}
+.btn i{display:inline-block;transition:transform .3s ease}
+.btn:hover i{transform:translate(4px,-4px)}
+.btn:hover{transform:translateY(-2px)}
+.day,.pc,.st,.outs>*,.imm-cards>*,.notc,.face,.inv-end,.pane,.book-f,.faq>*{transition:transform .4s cubic-bezier(.22,1,.36,1),border-color .4s}
+.day:hover,.pc:hover,.outs>*:hover,.imm-cards>*:hover,.notc:hover,.face:hover,.pane:hover,.book-f:hover{transform:translateY(-4px)}
+section figure img,.pc img,.imm-cards img{transition:transform .9s cubic-bezier(.22,1,.36,1)}
+section figure:hover img,.pc:hover img,.imm-cards>*:hover img{transform:scale(1.05)}
+.faq>*:hover{transform:translateX(4px)}
+}
+/* full reduced-motion */
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}
+.rv,.sg>*,.hu,.kz img,.hero .hero-in>*{opacity:1!important;transform:none!important;transition:none!important}
+*,*::before,*::after{animation:none!important;transition:none!important}
+.btn:hover,.btn:hover i,.day:hover,.pc:hover,section figure:hover img{transform:none!important}}
