@@ -235,3 +235,20 @@ em{font-style:normal;color:var(--r)}
 @media(min-width:900px){.hk-1{font-size:20px}.hk-2{font-size:36px;margin-top:10px}}
 @media(min-width:1600px){.hk-2{font-size:40px}}
 @media(prefers-reduced-motion:reduce){.hk-1,.hk-2,.hk-g{animation:none}.hk-g{background-position:30% 50%}}
+/* highlight marker */
+mark.hl{color:inherit;background:none;position:relative;z-index:0;padding:0 .08em}
+mark.hl::before{content:"";position:absolute;left:0;right:0;bottom:.08em;height:.4em;background:rgba(157,33,67,.55);z-index:-1;transform:scaleX(0);transform-origin:left center;transition:transform .6s cubic-bezier(.65,0,.25,1)}
+.light mark.hl::before{background:rgba(157,33,67,.16)}
+mark.hl.on::before{transform:scaleX(1)}
+html:not(.js-hl) mark.hl::before{transform:scaleX(1)}
+@media(prefers-reduced-motion:reduce){mark.hl::before{transform:scaleX(1)!important;transition:none}}
+/* shine sweep buttons */
+.btn-r{position:relative;overflow:hidden;isolation:isolate;transition:transform .25s ease,box-shadow .25s ease}
+.btn-r::after{content:"";position:absolute;top:-20%;bottom:-20%;left:0;width:45%;background:linear-gradient(105deg,transparent 0%,rgba(255,255,255,.25) 50%,transparent 100%);transform:translateX(-160%) skewX(-20deg);animation:shine 4s ease-in-out infinite;pointer-events:none;z-index:1}
+@keyframes shine{0%,70%{transform:translateX(-160%) skewX(-20deg)}100%{transform:translateX(320%) skewX(-20deg)}}
+.btn-r:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(157,33,67,.35)}
+.btn-r:hover::after{animation:shinefast .7s ease-out}
+@keyframes shinefast{from{transform:translateX(-160%) skewX(-20deg)}to{transform:translateX(320%) skewX(-20deg)}}
+@media(prefers-reduced-motion:reduce){.btn-r::after{animation:none!important;opacity:0}.btn-r:hover{transform:none}}
+.final mark.hl::before{background:rgba(255,255,255,.24)}
+.final .btn-r::after{background:linear-gradient(105deg,transparent 0%,rgba(157,33,67,.16) 50%,transparent 100%)}
