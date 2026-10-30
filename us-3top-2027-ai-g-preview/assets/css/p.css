@@ -252,3 +252,19 @@ html:not(.js-hl) mark.hl::before{transform:scaleX(1)}
 @media(prefers-reduced-motion:reduce){.btn-r::after{animation:none!important;opacity:0}.btn-r:hover{transform:none}}
 .final mark.hl::before{background:rgba(255,255,255,.24)}
 .final .btn-r::after{background:linear-gradient(105deg,transparent 0%,rgba(157,33,67,.16) 50%,transparent 100%)}
+/* faculty focus carousel (JS adds .fc) */
+.fgrid.fc{display:flex;gap:0;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding:12px calc(50% - min(42vw,280px));margin:0 calc(-1*var(--gut,20px));-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+.fgrid.fc::-webkit-scrollbar{display:none}
+.fc .pc{flex:0 0 min(84vw,560px);scroll-snap-align:center;margin:0;border:1px solid rgba(20,19,15,.12);border-radius:12px;background:#fff;transform:scale(.85);opacity:.45;filter:saturate(.6);transition:transform .5s cubic-bezier(.2,.7,.2,1),opacity .5s,filter .5s,box-shadow .5s}
+.fc .pc.is-c{transform:none;opacity:1;filter:none;box-shadow:0 18px 40px rgba(11,27,58,.12)}
+.fc .pc p{font-size:15px;line-height:1.7}
+.fc .pc .pc-s{font-size:14px}
+.fc-nav{display:flex;align-items:center;justify-content:center;gap:18px;margin-top:20px}
+.fc-nav button{width:44px;height:44px;border-radius:50%;border:1px solid rgba(20,19,15,.18);background:#fff;color:var(--n);font-size:18px;cursor:pointer;display:grid;place-items:center}
+.fc-nav button:hover{border-color:var(--r);color:var(--r)}
+.fc-dots{display:flex;gap:8px}
+.fc-dots i{width:7px;height:7px;border-radius:50%;background:rgba(20,19,15,.2);transition:width .3s,background .3s;cursor:pointer}
+.fc-dots i.on{width:22px;border-radius:4px;background:var(--r)}
+@media(prefers-reduced-motion:reduce){.fc .pc{transition:none}}
+.fgrid.fc{width:100vw;margin-left:calc(50% - 50vw);margin-right:0;padding:16px calc(50vw - min(42vw,320px));align-items:center}
+.fc .pc{flex-basis:min(84vw,640px)}
