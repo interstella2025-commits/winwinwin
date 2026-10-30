@@ -69,3 +69,42 @@ h2{font-size:clamp(32px,8.6vw,62px);line-height:1.2;font-weight:900;letter-spaci
 @media(min-width:768px){.sec{padding:156px 0}}
 main img:not([src$=".svg"]){filter:saturate(.94) contrast(1.06) brightness(1.01);image-rendering:auto}
 .xf-s img{object-fit:cover;object-position:50% 40%}
+
+/* G v3 split-section clones */
+#faculty-2 p,#faculty-2 li{overflow-wrap:break-word;word-break:keep-all}
+/* v19 faculty bg word + trip stats */
+#faculty-2{position:relative;overflow:hidden}
+#faculty-2>.wrap,#faculty-2>.rail{position:relative;z-index:1}
+@media(max-width:599px){#faculty-2 .fac-h{padding-top:56px}}
+@media(min-width:600px){#faculty-2 .fac-h{padding-top:calc(clamp(84px,17vw,230px)*.62)}}
+/* v21 mentor redesign */
+#guide-2{background:#0B1B3A;color:#fff}
+#guide-2 .gx-g{margin-top:24px;padding-top:20px;border-top:1px solid rgba(255,255,255,.16)}
+#guide-2 .gx-g h4{font:600 14px/1 var(--m);letter-spacing:.2em;color:#EA7590;margin:0 0 14px}
+#guide-2 .gx-g ul{list-style:none;padding:0;margin:0}
+#guide-2 .gx-g li{font-size:17px;line-height:1.6;margin:0 0 10px;color:#fff;word-break:keep-all;overflow-wrap:anywhere}
+#guide-2 .gx-note{margin-top:14px;font-size:16px;line-height:1.75;color:rgba(255,255,255,.78)}
+#guide-2 .gx-note{word-break:normal}
+@media(min-width:900px){#guide-2 .gx-g{break-inside:avoid;display:inline-block;width:100%}}
+.mt-hl p,#guide-2 .gx-g li{word-break:normal;line-break:strict;overflow-wrap:break-word}
+#guide-2 .gx-g li{word-break:keep-all;line-break:strict}
+#top,.hero-bg,#faculty-2,#trip{overflow:hidden}
+/* G v3 unified crops: landscape 4:3, portraits 4:5 (full-bleed backgrounds exempt) */
+.cred-i img,.how-i img,.pane-i img,#trip img,.xf-s img{width:100%;height:auto!important;aspect-ratio:4/3;object-fit:cover;object-position:50% 45%}
+.xf-v{aspect-ratio:4/3!important;max-width:1000px;margin-left:auto;margin-right:auto}
+.hero-fig img,.pc img,.mt-ph img{width:100%;height:auto!important;aspect-ratio:4/5;object-fit:cover;object-position:50% 25%}
+.sec-cont{padding-top:24px}
+@media(min-width:768px){.sec-cont{padding-top:40px}}
+/* G v3 line-break control: clauses break only at punctuation */
+h2 .nw,.hero-lead .nw,.mt-lead .nw,.gx-note .nw{white-space:nowrap!important}
+#guide-2 .gx-note,#guide .gx-note{word-break:keep-all;overflow-wrap:normal}
+@media(min-width:768px){h2 .k{white-space:nowrap}h2 .k wbr{display:none}}
+/* G v3 headline scale (E's .h2 rules outrank plain h2) */
+@media(min-width:900px){
+section h2.h2{font-size:clamp(44px,4.1vw,58px);line-height:1.2;font-weight:900;letter-spacing:-.02em;max-width:none}
+#cert h2.h2,#trip h2.h2{font-size:44px}
+}
+/* G v3 grid balance for split sections + cert photo size */
+@media(min-width:600px) and (max-width:1099px){#curriculum .week,#curriculum-2 .week,#faculty>.rail,#faculty-2>.rail{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(min-width:1100px){#curriculum .week,#curriculum-2 .week,#faculty>.rail,#faculty-2>.rail{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
+@media(min-width:900px){.cred-i img{width:451px;max-width:none}}
