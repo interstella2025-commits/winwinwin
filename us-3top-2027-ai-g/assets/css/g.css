@@ -131,3 +131,19 @@ section h2.h2{font-size:clamp(44px,4.1vw,58px);line-height:1.2;font-weight:900;l
 @media(min-width:900px){#top{background:#0B1B3A}#top .hero-bg{display:none}
 #top .hero-in{grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr)}
 #top .hero-fig img{aspect-ratio:4/3!important;object-position:50% 50%!important;box-shadow:none}}
+/* v16: embedded crossfade in #trip, larger/brighter hero photo, how w/o image */
+.xf.xf-in{background:none;padding:0;margin:0}
+.xf-in .xf-v{aspect-ratio:4/3!important;max-width:none;border-radius:14px;box-shadow:0 24px 60px -24px rgba(0,0,0,.6)}
+.xf-in .xf-s figcaption{font-size:16px;padding:48px 20px 56px}
+.xf-in .xf-bar{left:20px;right:20px;bottom:16px}
+.trip-row{display:grid;gap:28px;margin-top:34px}
+.trip-row .days{margin-top:0}
+@media(min-width:1100px){.trip-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:56px;align-items:center}.trip-row .days{grid-template-columns:1fr;max-width:none}}
+.how{grid-template-columns:1fr!important}
+@media(min-width:1100px){.how-r .steps{grid-template-columns:repeat(4,minmax(0,1fr));gap:20px}.how-r .steps li{flex-direction:column;gap:14px;padding:24px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(234,117,144,.22)}}
+#pain,#pain-2{background:#071229}
+@media(min-width:900px){
+#top .hero-in{grid-template-columns:minmax(0,1fr) minmax(0,1.05fr)!important;max-width:1320px;gap:56px}
+#top .hero-fig{max-width:none!important;justify-self:stretch}
+#top .hero-fig img{filter:brightness(1.18) contrast(1.04) saturate(1.02)!important;border-radius:10px}
+#top .hero h1,#top h1{font-size:clamp(48px,4.2vw,68px)}}
