@@ -20,3 +20,7 @@ if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;var paused=false
 g.addEventListener('touchstart',function(){hold=Date.now()+8000},{passive:true});
 var vis=false;new IntersectionObserver(function(e){vis=e[0].isIntersecting}).observe(g);
 setInterval(function(){if(vis&&!paused&&Date.now()>hold&&!document.hidden)go(cur+1)},5000)})();
+/* v8 orphan guard: keep last short phrase together */
+(function(){document.querySelectorAll('main p,main li,main .qt,main h2,main h3').forEach(function(e){if(e.querySelector('p,li,div,br')||e.closest('.final-p'))return;var w=document.createTreeWalker(e,NodeFilter.SHOW_TEXT),n,last=null;while(n=w.nextNode())if(n.textContent.trim())last=n;if(!last||last.parentNode.closest('.nw,.ib,w-n'))return;var t=last.textContent.replace(/\s+$/,''),cut=-1;
+if(t.indexOf('\u200b')>-1){var a=t.lastIndexOf('\u200b');var seg=t.slice(a+1).replace(/[，。！？：；」』）]/g,'');if(seg.length<=2){var b=t.lastIndexOf('\u200b',a-1);if(a-b-1+seg.length<=6)a=b}cut=a+1}else{var m=t.match(/[\u4e00-\u9fff]{2,4}[，。！？：；」』）]*$/);if(m)cut=t.length-m[0].length}
+if(cut<4||cut>=t.length)return;var s=document.createElement('w-n');s.textContent=t.slice(cut);last.textContent=t.slice(0,cut);last.parentNode.insertBefore(s,last.nextSibling)})})();

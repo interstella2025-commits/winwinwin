@@ -274,3 +274,15 @@ html:not(.js-hl) mark.hl::before{transform:scaleX(1)}
 .dark .btn-r:hover,.hero .btn-r:hover{box-shadow:0 10px 28px rgba(242,92,120,.35)}
 .final .tel{color:#fff}.final .btn{box-shadow:0 8px 24px rgba(40,4,16,.28)}
 @media(max-width:899px){.final .h2 .nw{display:block}}
+/* v10 line-break + final polish */
+p,li,summary,dd,figcaption,h3,h4,blockquote{text-wrap:pretty}
+h1,h2,.h2{text-wrap:balance}
+.ib{display:inline-block}br.m{display:none}
+#pain-2 li,#network li,.day,.pc,#trip li,#invest li,.mt-hl2,.pane-t{word-break:keep-all;overflow-wrap:anywhere}
+.st-n{white-space:nowrap}
+.final-in>p.final-p{line-height:1.9;max-width:600px}
+.final mark.hl{font-weight:700}
+.final mark.hl::before{height:.42em;bottom:.02em;background:rgba(255,236,214,.3);border-radius:2px}
+.flogo{filter:brightness(0) invert(1);opacity:.85}
+@media(max-width:899px){br.m{display:inline}}
+w-n{white-space:nowrap}
