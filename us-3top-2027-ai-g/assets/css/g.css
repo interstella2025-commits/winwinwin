@@ -147,3 +147,8 @@ section h2.h2{font-size:clamp(44px,4.1vw,58px);line-height:1.2;font-weight:900;l
 #top .hero-fig{max-width:none!important;justify-self:stretch}
 #top .hero-fig img{filter:brightness(1.18) contrast(1.04) saturate(1.02)!important;border-radius:10px}
 #top .hero h1,#top h1{font-size:clamp(48px,4.2vw,68px)}}
+/* v17: restore E-style photo hero on desktop (campus bg), gown photo side, no frame */
+@media(min-width:900px){#top{background:var(--dk2)}#top .hero-bg{display:block!important}
+#top .hero-fig img{aspect-ratio:1/1!important;object-position:50% 70%!important;filter:none!important;box-shadow:0 40px 80px -30px rgba(0,0,0,.8)!important}
+#top .hero-in{grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr)!important}}
+.hero-bg picture{display:contents}
