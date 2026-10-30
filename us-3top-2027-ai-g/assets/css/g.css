@@ -108,3 +108,26 @@ section h2.h2{font-size:clamp(44px,4.1vw,58px);line-height:1.2;font-weight:900;l
 @media(min-width:600px) and (max-width:1099px){#curriculum .week,#curriculum-2 .week,#faculty>.rail,#faculty-2>.rail{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 @media(min-width:1100px){#curriculum .week,#curriculum-2 .week,#faculty>.rail,#faculty-2>.rail{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
 @media(min-width:900px){.cred-i img{width:451px;max-width:none}}
+/* G v4: pain split — headline centred, 4 points as symmetric grid */
+#pain .split-h{display:block!important;text-align:center}
+#pain .split-h h2{margin:0 auto;max-width:none}
+#pain .nums{margin:56px auto 0;max-width:1120px;grid-template-columns:1fr;gap:16px;text-align:left}
+#pain .nums li{background:rgba(255,255,255,.05);border:1px solid rgba(234,117,144,.22);border-radius:12px;padding:64px 26px 28px;font-size:17px;line-height:1.8;color:rgba(244,239,226,.88)}
+#pain .nums li::before{left:26px;top:24px}
+@media(min-width:600px){#pain .nums{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}}
+@media(min-width:1100px){#pain .nums{grid-template-columns:repeat(4,minmax(0,1fr))}}
+#pain-2 .notc{margin:0 auto;max-width:46em;text-align:center}
+#pain-2 .notc p{font-size:17px}
+#pain-2 .notc-h b{font-size:clamp(24px,3vw,34px)}
+#pain-2 .face{margin-top:56px;max-width:1120px;margin-left:auto;margin-right:auto}
+#pain-2>.wrap,#pain>.wrap{position:relative;z-index:1}
+/* G v4: cert photo inside container */
+@media(min-width:900px){#cert .cred{grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr)!important;gap:72px;align-items:center}#cert .cred-i{justify-self:stretch;max-width:460px;margin-left:auto}#cert .cred-i img{width:100%!important;max-width:100%}}
+@media(min-width:900px){#cert h2 .k{white-space:normal!important}#cert h2 .k wbr{display:inline!important}#cert h2 .nw{white-space:nowrap!important}}
+/* G v4: single-image treatment — no image-on-image stacks, no offset frames */
+.hero-fig::before,.hero-fig::after{display:none!important}
+.cred-i{background:none!important;padding:0!important;outline:0!important;box-shadow:none!important;border-radius:6px;overflow:hidden}
+.cred-i img{border-radius:6px}
+@media(min-width:900px){#top{background:#0B1B3A}#top .hero-bg{display:none}
+#top .hero-in{grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr)}
+#top .hero-fig img{aspect-ratio:4/3!important;object-position:50% 50%!important;box-shadow:none}}
