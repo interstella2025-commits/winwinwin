@@ -809,19 +809,6 @@ strong{font-weight:700;color:var(--st)}
   .steps::after{transform:scaleY(1)!important}
   .hero::after{display:none}
 }
-/* hero kicker chips + highlighter */
-.hero .kicker .k-pill,.hero .kicker .k-prog{display:inline-block;max-width:100%;padding:7px 14px;border-radius:4px;border:0;-webkit-backdrop-filter:none;backdrop-filter:none;font-size:clamp(13px,3.6vw,15px);font-weight:600;line-height:1.55;letter-spacing:.12em;text-align:center;word-break:keep-all;overflow-wrap:normal;box-shadow:0 6px 18px rgba(7,18,41,.28)}
-.hero .kicker .k-pill{background:#fff;color:var(--navy)}
-.hero .kicker .k-prog{background:var(--red);color:#fff}
-.hero .kicker .k-pill::before,.hero .kicker .k-pill::after,.hero .kicker .k-prog::before,.hero .kicker .k-prog::after{display:none!important}
-.hero .kicker .k-yr{color:#fff;font-weight:700}
-.hlx{--hc:rgba(234,117,144,.42);background:linear-gradient(var(--hc),var(--hc)) 0 88%/0% 46% no-repeat;-webkit-box-decoration-break:clone;box-decoration-break:clone;animation:hlx 3s cubic-bezier(.4,0,.2,1) infinite}
-.k-prog .hlx{--hc:rgba(255,255,255,.26)}
-.k-prog .hlx{animation-delay:.25s}
-@property --hc{syntax:'<color>';inherits:true;initial-value:transparent}
-@keyframes hlx{0%{background-size:0% 46%;--hc:var(--h1)}33%{background-size:100% 46%}72%{background-size:100% 46%;--hc:var(--h1)}96%,100%{background-size:100% 46%;--hc:transparent}}
-.hlx{--h1:rgba(234,117,144,.55)}.k-prog .hlx{--h1:rgba(255,255,255,.34)}
-@media (prefers-reduced-motion:reduce){.hlx{animation:none;background-size:100% 46%}}
 /* 造浪者 rise-in (plays once) */
 .sl-flow{animation:none!important;background-position:0 0}
 .zw{white-space:nowrap}
@@ -849,3 +836,12 @@ strong{font-weight:700;color:var(--st)}
 #pain .nums li strong{color:#fff;font-weight:700}
 #pain .notc{margin-top:104px;max-width:none;padding-left:24px}
 @media (min-width:900px){#pain .nums{grid-template-columns:1fr 1fr;gap:20px}#pain .nums li{padding:36px 36px 38px;font-size:18px}#pain .split-h .h2{margin-bottom:64px}#pain .notc{margin-top:128px;max-width:44em}}
+/* face box -> card system */
+#pain .face{margin-top:104px;padding:0;border:0;background:none}
+#pain .face-h{margin-bottom:24px}
+#pain .face-l{margin-top:0;display:grid;grid-template-columns:1fr;gap:16px}
+#pain .face-l li{padding:28px 28px 30px;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:rgba(7,18,41,.55);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);font-size:15px;line-height:1.85;color:rgba(255,255,255,.75)}
+#pain .face-l li::before{display:none}
+#pain .face-l b{font-size:17px;color:#fff}
+#pain .big-q{margin-top:72px}
+@media (min-width:900px){#pain .face{margin-top:128px}#pain .face-l{grid-template-columns:1fr 1fr;gap:20px}#pain .face-l li{padding:36px 36px 38px;font-size:16px}#pain .big-q{margin-top:96px}}
