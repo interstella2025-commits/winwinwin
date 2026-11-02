@@ -1,7 +1,9 @@
 import { COURSE_SESSIONS } from '../course-sessions';
 import { createCipheriv, createDecipheriv, createHash, timingSafeEqual } from 'node:crypto';
 export const AMOUNT = 399;
-export const PRODUCT = 'WIN 講師班｜90分鐘線上前導課';
+export const PRODUCT = 'Expert to Enterprise WIN講師班｜90分鐘線上前導課';
+/** Public sales site (Vercel). Test orders return here. */
+export const PUBLIC_ORIGIN = 'https://2027course.win-lin.com';
 export const VERSION = '2.0';
 export type Config = { merchant: string; key: string; iv: string; origin: string; endpoint: string };
 export function config(env: { PAYUNI_MER_ID?: string; PAYUNI_HASH_KEY?: string; PAYUNI_HASH_IV?: string }): Config {
