@@ -10,7 +10,7 @@ function demoResult(kind:string):Result|null{
  const base={amount:399,orderNo:'WIN-DEMO-0001',emailSent:true,session:null};
  if(kind==='paid')return{...base,status:'paid'};if(kind==='pending'||kind==='timeout')return{...base,status:'pending'};
  if(kind==='failed')return{...base,status:'failed'};if(kind==='test')return{...base,amount:1,status:'paid',isTest:true};return null}
-function LineButton({label}:{label:string}){return <a className="pay-line" href={LINE_URL} target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><path d="M20.5 10.5c0 4.4-4.1 8-9.2 8H9.8L5 21l.9-4.2C3.8 15.3 2.5 13 2.5 10.5c0-4.4 4-8 9-8s9 3.6 9 8Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/></svg><span>{label}</span></a>}
+function LineButton({label}:{label:string}){return <a className="pay-line" href={LINE_URL} target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="#fff" d="M12 2.5C6.2 2.5 1.5 6.3 1.5 11c0 4.2 3.7 7.7 8.8 8.4.3.1.8.2.9.5.1.3.1.7 0 1l-.1.9c0 .3-.2 1 .9.5 1.1-.5 6-3.5 8.2-6.1 1.5-1.6 2.3-3.3 2.3-5.2 0-4.7-4.7-8.5-10.5-8.5Z"/><path fill="#06C755" d="M5.3 13.6h2.1c.3 0 .5-.2.5-.5s-.2-.5-.5-.5H5.8V8.9c0-.3-.2-.5-.5-.5s-.5.2-.5.5v4.2c0 .3.2.5.5.5Zm3.6-5.2c-.3 0-.5.2-.5.5v4.2c0 .3.2.5.5.5s.5-.2.5-.5V8.9c0-.3-.2-.5-.5-.5Zm5.1 0c-.3 0-.5.2-.5.5v2.6l-2.1-2.9a.5.5 0 0 0-.9.3v4.2c0 .3.2.5.5.5s.5-.2.5-.5v-2.6l2.1 2.9c.1.1.3.2.4.2h.2c.2-.1.3-.3.3-.5V8.9c0-.3-.2-.5-.5-.5Zm4 1c.3 0 .5-.2.5-.5s-.2-.5-.5-.5h-2.1c-.3 0-.5.2-.5.5v4.2c0 .3.2.5.5.5h2.1c.3 0 .5-.2.5-.5s-.2-.5-.5-.5h-1.6v-.8h1.6c.3 0 .5-.2.5-.5s-.2-.5-.5-.5h-1.6v-.8h1.6Z"/></svg><span>{label}</span></a>}
 export default function Payment(){
  const [result,setResult]=useState<Result|null>(null),[error,setError]=useState(''),[token,setToken]=useState(''),[timedOut,setTimedOut]=useState(false);
  useEffect(()=>{const q=new URLSearchParams(location.search);const demo=q.get('demo');if(demo){const d=demoResult(demo);if(d){setResult(d);setToken('demo');if(demo==='timeout')setTimedOut(true);return}}
@@ -25,7 +25,7 @@ export default function Payment(){
  <p className="pay-eyebrow">{test?'WIN · PAYMENT TEST':'WIN · ONLINE EXPERIENCE'}</p>
  <div className={'pay-icon '+(paid?'ok':failed||error?'bad':'wait')} aria-hidden="true">{paid?'✓':failed||error?'!':<span className="pay-spin"/>}</div>
  <h1>{title}</h1>
- <p className="pay-product">{test?'WIN 金流驗收測試':'WIN 講師班｜90分鐘線上前導課'}<br/><strong>NT${result?.amount??(test?1:399)}</strong></p>
+ <p className="pay-product">{test?'WIN 金流驗收測試':<>Expert to Enterprise<br/>90 分鐘線上前導課</>}<br/><strong>NT${result?.amount??(test?1:399)}</strong></p>
  {result&&<dl className="pay-meta"><div><dt>訂單編號</dt><dd>{result.orderNo}</dd></div>{!test&&result.session&&<div><dt>暫定場次</dt><dd>{result.session}</dd></div>}</dl>}
  {paid&&!test&&<section className="pay-next" aria-labelledby="next-title"><h2 id="next-title">下一步</h2><ol>
  <li><span className="pay-step">1</span><div><strong>加入 LINE 官方帳號</strong><p>加入後，課程相關問題<br/>可直接在 LINE 詢問。</p><LineButton label="加入 LINE 官方帳號"/></div></li>
@@ -37,6 +37,6 @@ export default function Payment(){
  {failed&&<><p className="pay-text">{result!.status==='expired'?'這筆付款連結已逾時。':'目前尚未確認付款成功。'}<br/>若已扣款，請勿重複付款，<br/>請保留訂單編號並透過 LINE 聯絡我們。</p><LineButton label="LINE 聯絡專人協助"/></>}
  {error&&<><p className="pay-text" role="alert">{error}</p><LineButton label="LINE 聯絡專人協助"/></>}
  <p className="pay-back"><a href="/#apply">返回課程報名頁</a></p>
- <p className="pay-note">{test?'此為 NT$1 測試付款，不包含課程報名。':<>此款項僅為線上前導課，<br/>不代表正式講師班錄取或費用。</>}</p>
+ <p className="pay-note">{test?'此為 NT$1 測試付款，不包含課程報名。':<>此款項僅為線上前導課，<br/>不代表 Expert to Enterprise<br/>正式課程錄取或費用。</>}</p>
  </div></main></div>
 }

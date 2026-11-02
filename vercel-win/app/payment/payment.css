@@ -14,7 +14,7 @@
 .pay-next ol{list-style:none;margin:0;padding:0;display:grid;gap:14px}.pay-next li{display:flex;gap:14px;align-items:flex-start;background:#f7fbff;border:1px solid #dbe9f5;border-radius:12px;padding:18px 16px}
 .pay-next li>div{flex:1;min-width:0}.pay-next li strong{font-size:17px;font-weight:700;display:block}.pay-next li p{margin:6px 0 0;font-size:14px;line-height:1.8;color:#3e536b}
 .pay-step{flex:0 0 30px;height:30px;border-radius:50%;background:#102d52;color:#fff;font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center}
-.pay-line{display:flex;align-items:center;justify-content:center;gap:10px;min-height:56px;margin-top:16px;border-radius:10px;background:#bb2b34;color:#fff;font-size:17px;font-weight:700;box-shadow:0 7px 20px #881c241f}.pay-line:hover{background:#a8242c}
+.pay-line{display:flex;align-items:center;justify-content:center;gap:10px;min-height:56px;margin-top:16px;border-radius:10px;background:#06C755;color:#fff;font-size:17px;font-weight:700;box-shadow:0 7px 20px #06c75533}.pay-line:hover{background:#05B04C}
 .pay-text{font-size:15px;line-height:1.9;color:#3e536b;margin:0 0 8px}
 .pay-secondary{display:inline-block;margin-top:18px;font-size:15px;font-weight:700;color:#102d52;border-bottom:1px solid #102d52;padding-bottom:2px}
 .pay-back{margin:28px 0 8px;font-size:14px}.pay-back a{color:#536d87;border-bottom:1px solid #bccbdd}
