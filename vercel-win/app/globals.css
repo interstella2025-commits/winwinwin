@@ -176,7 +176,7 @@ section.generated-artwork{padding-top:20px}
 .registration .form-heading{margin-bottom:44px}
 .registration .form-heading .eyebrow{margin:0 0 22px;font-size:13px;letter-spacing:4px;font-weight:800;color:#c82e35}
 .registration .form-heading h2{margin:0;font-size:min(68px,9.4cqw);line-height:1.32;font-weight:900;letter-spacing:-.02em;color:#0d1f3c}
-.registration .form-heading h2 span{color:#e0262d;padding-bottom:.1em;background:linear-gradient(#e0262d,#e0262d) left bottom/100% .075em no-repeat}
+.registration .form-heading h2 span{color:#e0262d;padding-bottom:.1em}
 .registration .form-heading>p:last-child{margin:26px 0 0;font-size:clamp(16px,2.3vw,22px);font-weight:800;color:#263e59;letter-spacing:.5px}
 .registration .course-summary{gap:0;margin:0 0 18px;padding:8px 32px;background:#ffffffd9;border:1px solid #fff;border-radius:22px;box-shadow:0 14px 40px #5da2c51a}
 .registration .course-summary p{display:flex;gap:14px;align-items:baseline;margin:0;padding:22px 0;border:0;border-bottom:1px solid #dceaf2;border-radius:0;background:none;color:#0d1f3c;font-size:clamp(16px,2.2vw,20px);line-height:1.7;font-weight:700}
