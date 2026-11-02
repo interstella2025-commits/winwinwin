@@ -31,6 +31,9 @@
 |---|---|---|
 | `BUNNY_STREAM_VIDEO_ID` | Vercel 管理員 | 現在就可以。Bunny 影片編號，長得像一串帶減號的英文數字。 |
 | `BUNNY_STREAM_CDN_HOSTNAME` | Vercel 管理員 | 現在就可以。Bunny 的播放網址，通常是 `vz-` 開頭、`.b-cdn.net` 結尾，不要加 `https://`。 |
+| `CLOUDFLARE_STREAM_VIDEO_ID` | Vercel 管理員 | 改用 Cloudflare Stream 時才要。公開影片編號，32 位英文數字，不是簽章金鑰。 |
+| `CLOUDFLARE_STREAM_CUSTOMER_SUBDOMAIN` | Vercel 管理員 | Cloudflare 的客戶子網域，長得像 `customer-` 開頭。公開播放用，不是密鑰。 |
+| `PREMIERE_VIDEO_PROVIDER` | Vercel 管理員 | 可不設。兩邊都有值時預設用 Bunny。要改播 Cloudflare 就寫 `cloudflare`。 |
 | `PREMIERE_PAGE_ENABLED` | Vercel 管理員 | 值寫 `1` 之後，`/premiere` 才看得到。沒設就是 404。 |
 | `PREMIERE_CHECKOUT_ENABLED` | Vercel 管理員 | **最後才設。** 值寫 `1`。文案裡還有「待 Elsa 確認」時，按鈕仍不會送出訂單。 |
 | `PREMIERE_ALLOWED_ORIGINS` | Vercel 管理員 | 可不設。只放寬「登記」「進入時間」和「儲存即時訊息」的來源網址，不放寬付款。若要在預覽網址試設定頁，把完整網址填在這裡，多個用逗號分開。 |
@@ -41,7 +44,15 @@
 
 設定影片變數後要重新部署，這一頁才看得到影片。兩個都空著時，開播後會顯示「影片尚未設定」，其餘功能仍可看。
 
-若 Bunny 有打開 Token 驗證，這版播不了。請先讓這支影片可以用公開的 HLS 網址播放，或先關掉那支影片的 Token 驗證。這版不會讀取簽章金鑰。
+若 Bunny 有打開 Token 驗證，這版播不了。請先讓這支影片可以用公開的 HLS 網址播放，或先關掉那支影片的 Token 驗證。這版不會讀取簽章金鑰。Cloudflare Stream 也一樣，只用公開的 HLS 位址，不讀簽章。
+
+## 預覽整段流程
+
+正式環境會忽略這個參數。只有 `VERCEL_ENV` 不是 `production` 時（本機或 Vercel 預覽）才有效：
+
+`/premiere?demo=1`
+
+每兩分鐘重播一小段：前 15 秒是倒數，接著播放，約 25 秒後切到產品列表，70 秒後結束，然後下一輪。結帳表單可以打開，按「前往結帳」不會送出付款。正式站的 11 月 3 日時程不受影響。目前還沒有找到可嵌入的美國三校影片，所以預覽裡影片區仍會寫「影片尚未設定」，除非另外設了上面的 Bunny 或 Cloudflare 變數。
 
 ## 不用 Neon
 
@@ -111,7 +122,7 @@
 
 - 所有標成【待 Elsa 確認】的標題、說明、退費與條款。
 - 影片實際長度，以及購買按鈕要在幾點出現。
-- 正式課程在統一金流頁上顯示的商品名稱（patch 裡的 `fullcourse` 名稱目前也是待確認）。
+- 課程名稱已定為 Expert to Enterprise。退費、條款、原價與主持人句子仍是【待 Elsa 確認】。
 - 統一金流是否允許單筆 NT$39,800，以及要不要分期。
 - 付款成功信。NT$399 那封沒有改。NT$39,800 那封已在舊後端 patch 裡，但句子仍是【待 Elsa 確認】。定稿前不要打開付款。
 - Bunny 影片編號與 CDN 網址。

@@ -19,6 +19,7 @@ main.stage>header.stage-bar{
 .stage-brand{font-size:12px;font-weight:800;letter-spacing:.16em;white-space:nowrap}
 .stage-brand em{font-style:normal;color:#ff6a62}
 .stage-back{font-size:13px;font-weight:700;letter-spacing:.04em;border-bottom:1px solid currentColor;padding-bottom:1px;white-space:nowrap}
+.stage-demo{margin-left:auto;padding:4px 8px;border:1px solid var(--gold);border-radius:999px;color:var(--gold);font-size:12px;font-weight:800;letter-spacing:.12em;white-space:nowrap}
 
 .stage-grid{display:flex;flex-direction:column;gap:0}
 .stage-player{min-width:0}

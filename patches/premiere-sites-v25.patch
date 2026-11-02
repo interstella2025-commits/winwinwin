@@ -307,7 +307,8 @@ diff -ruN '--exclude=node_modules' '--exclude=.next' '--exclude=.git' sites-v25-
 + const page = await checkout.GET(new Request(origin + '/api/payuni/checkout?token=' + full.token));
 + const html = await page.text();
 + assert.match(html, /NT\$39800/);
-+ assert.match(html, /待 Elsa 確認/);
++ assert.match(html, /Expert to Enterprise/);
++ assert.equal(html.includes('待 Elsa 確認'), false);
 + assert.equal(html.includes(cfg.key), false);
 + assert.equal((await notify.POST(callback({ MerID: cfg.merchant, MerTradeNo: full.order_no, TradeAmt: 399, TradeStatus: '1', TradeNo: 'FULL399' }))).status, 400);
 + assert.equal(sqlite.prepare('SELECT status FROM payment_orders WHERE id=?').get(full.id).status, 'pending');
@@ -316,6 +317,7 @@ diff -ruN '--exclude=node_modules' '--exclude=.next' '--exclude=.git' sites-v25-
 + const fullMail = emails.find(item => item.key === 'win-paid/' + full.id);
 + const fullBlob = fullMail.body.subject + fullMail.body.text + fullMail.body.html;
 + assert.match(fullBlob, /待 Elsa 確認/);
++ assert.match(fullBlob, /Expert to Enterprise/);
 + assert.equal(fullBlob.includes('399'), false);
 + assert.equal(fullBlob.includes('前導課'), false);
 + assert.equal((await notify.POST(callback({ MerID: cfg.merchant, MerTradeNo: full.order_no, TradeAmt: 39800, TradeStatus: '1', TradeNo: 'FULL39800' }))).status, 200);
@@ -536,7 +538,7 @@ diff -ruN '--exclude=node_modules' '--exclude=.next' '--exclude=.git' sites-v25-
 -export const PRODUCT = 'WIN 講師班｜90分鐘線上前導課';
 +export const PRODUCTS = {
 + precourse: { code: 'precourse', amount: 399, shortName: 'WIN 90分鐘線上前導課', gatewayName: 'WIN 講師班｜90分鐘線上前導課' },
-+ fullcourse: { code: 'fullcourse', amount: 39800, shortName: '【待 Elsa 確認】WIN 講師班正式課程', gatewayName: '【待 Elsa 確認】WIN 講師班正式課程' },
++ fullcourse: { code: 'fullcourse', amount: 39800, shortName: 'Expert to Enterprise', gatewayName: 'Expert to Enterprise' },
 +} as const;
 +export const AMOUNT = PRODUCTS.precourse.amount;
 +export const PRODUCT = PRODUCTS.precourse.gatewayName;
@@ -593,7 +595,7 @@ diff -ruN '--exclude=node_modules' '--exclude=.next' '--exclude=.git' sites-v25-
 +++ sites-v25-new/lib/payuni/receipt.ts	2026-10-27 13:41:03.290668209 +0000
 @@ -0,0 +1,83 @@
 +export const PRECOURSE_PRODUCT = 'WIN 講師班｜90分鐘線上前導課';
-+export const FULLCOURSE_PRODUCT = '【待 Elsa 確認】WIN 講師班正式課程';
++export const FULLCOURSE_PRODUCT = 'Expert to Enterprise';
 +
 +export type PaymentSnapshot = {
 +  status?: string;
@@ -643,7 +645,7 @@ diff -ruN '--exclude=node_modules' '--exclude=.next' '--exclude=.git' sites-v25-
 +        ? (result.productName || FULLCOURSE_PRODUCT)
 +        : (result.productName || '【待確認】款項');
 +  const title = plan === 'fullcourse'
-+    ? (paid ? '【待 Elsa 確認】正式課程付款成功' : pending ? '【待 Elsa 確認】正在確認正式課程付款' : '【待 Elsa 確認】正式課程付款結果')
++    ? (paid ? '【待 Elsa 確認】Expert to Enterprise 付款成功' : pending ? '【待 Elsa 確認】正在確認 Expert to Enterprise 付款' : '【待 Elsa 確認】Expert to Enterprise 付款結果')
 +    : plan === 'unknown'
 +      ? (paid ? '【待確認】付款已收到' : pending ? '【待確認】正在確認付款' : '【待確認】付款結果')
 +      : (paid ? (plan === 'test' ? '測試付款成功' : '前導課付款成功') : pending ? '正在確認付款結果' : 'WIN 前導課付款結果');
@@ -651,7 +653,7 @@ diff -ruN '--exclude=node_modules' '--exclude=.next' '--exclude=.git' sites-v25-
 +    ? (plan === 'test'
 +      ? 'NT$1 測試付款已完成。此為金流驗收，不包含課程報名或席位。'
 +      : plan === 'fullcourse'
-+        ? '【待 Elsa 確認】已收到正式課程款項。後續通知方式尚未定稿。'
++        ? '【待 Elsa 確認】已收到 Expert to Enterprise 款項。後續通知方式尚未定稿。'
 +        : plan === 'unknown'
 +          ? '【待確認】已收到款項。請保留訂單編號，並等候主辦方核對課程方案。'
 +          : '已收到你的 NT$399 前導課款項。線上課程的實際安排與上課連結將另行通知。')
@@ -663,7 +665,7 @@ diff -ruN '--exclude=node_modules' '--exclude=.next' '--exclude=.git' sites-v25-
 +  const note = plan === 'test'
 +    ? '此為 NT$1 測試付款，不包含課程報名。'
 +    : plan === 'fullcourse'
-+      ? '【待 Elsa 確認】此付款結果頁的正式課程說明尚未定稿。'
++      ? '【待 Elsa 確認】此付款結果頁的 Expert to Enterprise 說明尚未定稿。'
 +      : plan === 'unknown'
 +        ? '【待確認】這筆訂單的課程方案尚未核對完成。'
 +        : '此款項僅為線上前導課，不代表正式講師班錄取或費用。';
@@ -695,7 +697,7 @@ diff -ruN '--exclude=node_modules' '--exclude=.next' '--exclude=.git' sites-v25-
 + return {from:env.RESEND_FROM,to:[person.email],subject,text:`${person.name}，你好：\n\n${message}\n\n項目：${product}\n金額：NT$${order.amount}\n訂單：${order.order_no}\n\nWIN 課程團隊`,html:`<div lang="zh-Hant" style="font-family:Arial,sans-serif;line-height:1.8;max-width:600px;margin:auto;padding:28px;color:#17243a"><p>${escape(person.name)}，你好：</p><h2>${escape(heading)}</h2><p>${escape(message)}</p><p>項目：${escape(product)}<br>金額：NT$${order.amount}<br>訂單：${escape(order.order_no)}</p><p>WIN 課程團隊</p></div>`,...(env.RESEND_REPLY_TO?{reply_to:env.RESEND_REPLY_TO}:{})};
 +}
 +function paidEmailBody(order:Order,person:{name:string;email:string;session_code:string|null}){
-+ if(order.plan==='fullcourse')return courseEmail(order,person,'【待 Elsa 確認】付款成功｜WIN 講師班正式課程','【待 Elsa 確認】已收到你的正式課程款項。上課方式、後續通知與退費說明都尚未定稿，請先保留訂單編號。','【待 Elsa 確認】WIN 講師班正式課程','【待 Elsa 確認】正式課程付款成功');
++ if(order.plan==='fullcourse')return courseEmail(order,person,'【待 Elsa 確認】付款成功｜Expert to Enterprise','【待 Elsa 確認】已收到你的 Expert to Enterprise 款項。上課方式、後續通知與退費說明都尚未定稿，請先保留訂單編號。','Expert to Enterprise','【待 Elsa 確認】Expert to Enterprise 付款成功');
 + if(order.plan!=='precourse'&&order.plan!=='test'&&order.source!=='win-test-1')return courseEmail(order,person,'【待確認】付款已收到','【待確認】已收到款項。這筆訂單的課程方案尚未核對，請保留訂單編號，並等候主辦方確認。','【待確認】款項','【待確認】付款已收到');
 + const test=order.source==='win-test-1';
 + const subject=test?'測試付款成功｜WIN NT$1 金流驗收':'付款成功｜WIN 90分鐘線上前導課';

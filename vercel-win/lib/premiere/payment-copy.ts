@@ -52,7 +52,7 @@ export function paymentView(result: PaymentResult, failed = false): PaymentView 
         ? (result.productName || PREMIERE.payment.productLine)
         : (result.productName || '【待確認】款項');
   const title = plan === 'fullcourse'
-    ? (paid ? PREMIERE.payment.paidTitle : pending ? '【待 Elsa 確認】正在確認正式課程付款' : '【待 Elsa 確認】正式課程付款結果')
+    ? (paid ? PREMIERE.payment.paidTitle : pending ? '【待 Elsa 確認】正在確認 Expert to Enterprise 付款' : '【待 Elsa 確認】Expert to Enterprise 付款結果')
     : plan === 'unknown'
       ? (paid ? '【待確認】付款已收到' : pending ? '【待確認】正在確認付款' : '【待確認】付款結果')
       : (paid ? (plan === 'test' ? '測試付款成功' : PRECOURSE_PAID_TITLE) : pending ? '正在確認付款結果' : 'WIN 前導課付款結果');

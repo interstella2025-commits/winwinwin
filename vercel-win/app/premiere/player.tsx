@@ -38,7 +38,7 @@ export default function Player({ initial }: { initial: PremiereState }) {
     let timer = 0;
     async function pull() {
       try {
-        const response = await fetch('/api/premiere/clock', { cache: 'no-store' });
+        const response = await fetch(stateRef.current.demo ? '/api/premiere/clock?demo=1' : '/api/premiere/clock', { cache: 'no-store' });
         if (!response.ok) throw new Error('clock');
         const next = await response.json() as PremiereState;
         if (stop) return;
@@ -85,6 +85,11 @@ export default function Player({ initial }: { initial: PremiereState }) {
   void tick;
 
   useEffect(() => {
+    if (phase === 'countdown') {
+      offered.current = false;
+      setTab('chat');
+      return;
+    }
     if (!offerOpen || phase === 'ended' || offered.current) return;
     offered.current = true;
     setTab('product');
@@ -174,6 +179,10 @@ export default function Player({ initial }: { initial: PremiereState }) {
 
   async function pay(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (state.demo) {
+      setPayStatus('這是預覽，不會送出付款。');
+      return;
+    }
     if (!state.checkoutEnabled || phase === 'ended') return;
     setPayBusy(true);
     setPayStatus('');
@@ -215,6 +224,7 @@ export default function Player({ initial }: { initial: PremiereState }) {
   return <main className={`stage stage--${phase}`} data-phase={phase} data-tab={tab}>
     <header className="stage-bar">
       <a className="stage-brand" href="/">EXPERT <em>TO</em> ENTERPRISE</a>
+      {state.demo && <span className="stage-demo">預覽時程</span>}
       <a className="stage-back" href="/">{copy.backHome}</a>
     </header>
     <div className="stage-grid">

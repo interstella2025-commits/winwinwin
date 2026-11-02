@@ -18,8 +18,8 @@ export const PREMIERE = {
   /** 顯示用價格（新台幣元）。實際扣款以後端 fullcourse 允許清單為準。 */
   priceTwd: 39800,
   productCode: 'fullcourse' as const,
-  /** 跟舊後端 fullcourse 的刷卡頁名稱同一句。還有「待 Elsa 確認」時，付款按鈕不會打開。 */
-  gatewayName: '【待 Elsa 確認】WIN 講師班正式課程',
+  /** 跟舊後端 fullcourse 的刷卡頁名稱同一句。其他句子還有「待 Elsa 確認」時，付款按鈕不會打開。 */
+  gatewayName: 'Expert to Enterprise',
   hostName: '【待 Elsa 確認】林嘉宏',
   hostNote: '【待 Elsa 確認】定時播映。進度依照伺服器時間，不能快轉。',
   /** 畫面上的原價。還沒定稿，所以標成待確認。真正扣款仍是 39800。 */
@@ -27,7 +27,7 @@ export const PREMIERE = {
   productImage: '/images/revision/japan.webp',
   copy: {
     eyebrow: '定時播映',
-    title: '【待 Elsa 確認】首播說明會',
+    title: 'Expert to Enterprise',
     lead: '【待 Elsa 確認】這是一場定時播映的說明會。播放進度依照伺服器時間，不能快轉，也不能從頭重看已經播過的部分。',
     countdown: '距離首播開始',
     playing: '定時播映中',
@@ -43,7 +43,7 @@ export const PREMIERE = {
     chatEmpty: '這段還沒有訊息。',
     chatWaiting: '首播開始後，訊息會跟著播放進度出現。',
     offerBadge: '限時',
-    purchaseTitle: '【待 Elsa 確認】正式課程',
+    purchaseTitle: 'Expert to Enterprise',
     purchaseLead: '【待 Elsa 確認】以下課程說明、價格呈現與退費條款都尚未定稿。',
     orderButton: '我要下單',
     checkoutSubmit: '前往結帳',
@@ -55,9 +55,9 @@ export const PREMIERE = {
     backHome: '回到課程頁',
   },
   payment: {
-    productLine: '【待 Elsa 確認】WIN 講師班正式課程',
-    paidTitle: '【待 Elsa 確認】正式課程付款成功',
-    paidBody: '【待 Elsa 確認】已收到正式課程款項。後續通知方式尚未定稿。',
-    note: '【待 Elsa 確認】此付款結果頁的正式課程說明尚未定稿。',
+    productLine: 'Expert to Enterprise',
+    paidTitle: '【待 Elsa 確認】Expert to Enterprise 付款成功',
+    paidBody: '【待 Elsa 確認】已收到 Expert to Enterprise 款項。後續通知方式尚未定稿。',
+    note: '【待 Elsa 確認】此付款結果頁的 Expert to Enterprise 說明尚未定稿。',
   },
 } as const;

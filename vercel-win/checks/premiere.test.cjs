@@ -79,6 +79,34 @@ assert.equal(armed.phase, 'playing');
 assert.equal(armed.positionSeconds, 0);
 assert.equal(armed.checkoutEnabled, false);
 assert.match(armed.hlsUrl, /playlist\.m3u8$/);
+assert.equal(armed.demo, false);
+assert.equal(video.cloudflareStreamUrl({}), null);
+assert.equal(video.cloudflareStreamUrl({ CLOUDFLARE_STREAM_VIDEO_ID: 'zzzz', CLOUDFLARE_STREAM_CUSTOMER_SUBDOMAIN: 'customer-abc' }), null);
+const streamId = 'a'.repeat(32);
+assert.equal(
+  video.cloudflareStreamUrl({ CLOUDFLARE_STREAM_VIDEO_ID: streamId, CLOUDFLARE_STREAM_CUSTOMER_SUBDOMAIN: 'https://customer-abc.cloudflarestream.com/extra' }),
+  `https://customer-abc.cloudflarestream.com/${streamId}/manifest/video.m3u8`,
+);
+const both = {
+  BUNNY_STREAM_VIDEO_ID: '11111111-1111-1111-1111-111111111111',
+  BUNNY_STREAM_CDN_HOSTNAME: 'vz-demo.b-cdn.net',
+  CLOUDFLARE_STREAM_VIDEO_ID: streamId,
+  CLOUDFLARE_STREAM_CUSTOMER_SUBDOMAIN: 'customer-abc',
+};
+assert.match(video.premiereHlsUrl(both), /b-cdn\.net/);
+assert.match(video.premiereHlsUrl({ ...both, PREMIERE_VIDEO_PROVIDER: 'cloudflare' }), /cloudflarestream\.com/);
+assert.equal(state.premiereDemoRequested('1', { VERCEL_ENV: 'production' }), false);
+assert.equal(state.premiereDemoRequested('1', {}), true);
+const preview = state.getPremiereState(new Date(), {}, { demo: true });
+assert.equal(preview.demo, true);
+assert.equal(preview.checkoutEnabled, true);
+assert.ok(['countdown', 'playing', 'ended'].includes(preview.phase));
+assert.ok(Math.abs(Date.parse(preview.startAt) - Date.parse(preview.serverNow)) < 120000);
+const again = state.getPremiereState(new Date(Date.parse(preview.serverNow) + 4000), {}, { demo: true });
+assert.equal(again.startAt, preview.startAt);
+const productionDemo = state.getPremiereState(new Date(), { VERCEL_ENV: 'production' }, { demo: true });
+assert.equal(productionDemo.demo, false);
+assert.equal(productionDemo.checkoutEnabled, false);
 assert.equal(state.premiereCheckoutEnabled({ PREMIERE_CHECKOUT_ENABLED: '1' }, 'WIN 正式課程', 'WIN 正式課程'), true);
 assert.equal(state.premiereCheckoutEnabled({ PREMIERE_CHECKOUT_ENABLED: '1' }, '【待 Elsa 確認】課程', 'WIN 正式課程'), false);
 assert.equal(state.premiereCheckoutEnabled({}, 'WIN 正式課程', 'WIN 正式課程'), false);
@@ -152,6 +180,8 @@ assert.match(player, /copy\.chatTab/);
 assert.match(player, /copy\.productTab/);
 assert.match(player, /copy\.orderButton/);
 assert.match(player, /\/api\/premiere\/messages/);
+assert.match(player, /clock\?demo=1/);
+assert.match(player, /這是預覽，不會送出付款/);
 assert.match(player, /checkoutEnded/);
 assert.match(player, /phase === 'ended'/);
 assert.equal(player.includes("searchParams.get('product')"), false);
@@ -174,14 +204,23 @@ new Function('require', 'module', 'exports', pageCode)(name => {
 }, pageModule, pageModule.exports);
 const savedFlag = process.env.PREMIERE_PAGE_ENABLED;
 const savedCheckout = process.env.PREMIERE_CHECKOUT_ENABLED;
+async function expectMissing(run) {
+  let missing = false;
+  try { await run(); } catch (error) {
+    missing = /NEXT_NOT_FOUND/.test(error instanceof Error ? error.message : String(error));
+    if (!missing) throw error;
+  }
+  assert.equal(missing, true);
+}
+(async () => {
 try {
   delete process.env.PREMIERE_PAGE_ENABLED;
   process.env.PREMIERE_CHECKOUT_ENABLED = '1';
-  assert.throws(() => pageModule.exports.default(), /NEXT_NOT_FOUND/);
+  await expectMissing(() => pageModule.exports.default());
   process.env.PREMIERE_PAGE_ENABLED = '0';
-  assert.throws(() => pageModule.exports.default(), /NEXT_NOT_FOUND/);
+  await expectMissing(() => pageModule.exports.default());
   process.env.PREMIERE_PAGE_ENABLED = '1';
-  assert.ok(pageModule.exports.default());
+  assert.ok(await pageModule.exports.default());
   const editorPage = ts.transpileModule(fs.readFileSync('app/premiere/messages/page.tsx', 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX },
   }).outputText;
@@ -195,7 +234,7 @@ try {
     throw new Error('unexpected import ' + name);
   }, editorModule, editorModule.exports);
   delete process.env.PREMIERE_PAGE_ENABLED;
-  assert.throws(() => editorModule.exports.default(), /NEXT_NOT_FOUND/);
+  await expectMissing(() => editorModule.exports.default());
   process.env.PREMIERE_PAGE_ENABLED = '1';
   assert.ok(editorModule.exports.default());
 } finally {
@@ -204,5 +243,5 @@ try {
   if (savedCheckout === undefined) delete process.env.PREMIERE_CHECKOUT_ENABLED;
   else process.env.PREMIERE_CHECKOUT_ENABLED = savedCheckout;
 }
-
 console.log('PASS premiere clock, late join, offer gate, ended state, Bunny URL, 399 copy lock');
+})().catch(error => { console.error(error); process.exitCode = 1; });
