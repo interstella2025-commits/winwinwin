@@ -33,8 +33,10 @@
 | `BUNNY_STREAM_CDN_HOSTNAME` | Vercel 管理員 | 現在就可以。Bunny 的播放網址，通常是 `vz-` 開頭、`.b-cdn.net` 結尾，不要加 `https://`。 |
 | `CLOUDFLARE_STREAM_VIDEO_ID` | Vercel 管理員 | 改用 Cloudflare Stream 時才要。公開影片編號，32 位英文數字，不是簽章金鑰。 |
 | `CLOUDFLARE_STREAM_CUSTOMER_SUBDOMAIN` | Vercel 管理員 | Cloudflare 的客戶子網域，長得像 `customer-` 開頭。公開播放用，不是密鑰。 |
-| `PREMIERE_VIDEO_PROVIDER` | Vercel 管理員 | 可不設。有多個來源時預設用 Bunny。可寫 `bunny`、`cloudflare` 或 `youtube`。 |
+| `PREMIERE_VIDEO_PROVIDER` | Vercel 管理員 | 可不設。有多個來源時預設用 Bunny。可寫 `bunny`、`cloudflare`、`youtube` 或 `vimeo`。 |
 | `PREMIERE_YOUTUBE_VIDEO_ID` | Vercel 管理員 | 只在提供者是 `youtube` 時使用。11 碼的影片編號，不是網址。 |
+| `PREMIERE_VIMEO_VIDEO_ID` | Vercel 管理員 | 只在提供者是 `vimeo` 時使用。一串數字，不是完整網址。 |
+| `PREMIERE_VIMEO_HASH` | Vercel 管理員 | 未公開影片網址上的 `h` 參數。不是簽章金鑰，但不要貼到公開頁面。 |
 | `PREMIERE_LINE_URL` | Vercel 管理員 | 可不設。有設才顯示「真人客服」，必須是 https 網址。 |
 | `META_PIXEL_ID` | Vercel 管理員 | 可不設。沒設就不會載入 Meta Pixel。只接受數字。 |
 | `META_CAPI_ACCESS_TOKEN` | Vercel 管理員 | 可不設。沒設就不會把事件送到 Meta。這是密鑰，不要寫進程式或聊天。 |
@@ -53,6 +55,8 @@
 若 Bunny 有打開 Token 驗證，這版播不了。請先讓這支影片可以用公開的 HLS 網址播放，或先關掉那支影片的 Token 驗證。這版不會讀取簽章金鑰。Cloudflare Stream 也一樣，只用公開的 HLS 位址，不讀簽章。
 
 YouTube 用 `youtube-nocookie.com` 嵌進來，控制列關掉，並依伺服器時間對回進度。觀眾仍可以自己打開 youtube.com 看同一支影片，所以它適合預覽或暫時套用模板。正式播映建議用 Cloudflare Stream。
+
+Vimeo 用 `player.vimeo.com`，關掉控制列、標題和鍵盤，並依伺服器時間對回進度。播放框跟影片本身的比例（這支約 1658×1080，不是 16:9），多出來的地方是黑邊，沒有紅框。有些 Vimeo 方案會忽略 `controls=0`，控制列仍可能出現在畫面裡；點擊已被擋住，若觀眾還是把時間拖走，頁面會對回伺服器時間。
 
 結帳表單打開時影片會暫停，關掉之後對回伺服器時間再繼續，不能從暫停的地方自己快轉。
 

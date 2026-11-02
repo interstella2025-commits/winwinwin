@@ -97,6 +97,23 @@ assert.match(video.premiereHlsUrl(both), /b-cdn\.net/);
 assert.match(video.premiereHlsUrl({ ...both, PREMIERE_VIDEO_PROVIDER: 'cloudflare' }), /cloudflarestream\.com/);
 assert.equal(video.premiereHlsUrl({ ...both, PREMIERE_VIDEO_PROVIDER: 'youtube', PREMIERE_YOUTUBE_VIDEO_ID: 'abcdefghijk' }), null);
 assert.equal(video.premiereSource({ PREMIERE_VIDEO_PROVIDER: 'youtube', PREMIERE_YOUTUBE_VIDEO_ID: 'abcdefghijk' }).youtubeId, 'abcdefghijk');
+const vimeo = video.premiereSource({
+  PREMIERE_VIDEO_PROVIDER: 'vimeo',
+  PREMIERE_VIMEO_VIDEO_ID: '123456789',
+  PREMIERE_VIMEO_HASH: 'abcdef1234',
+  BUNNY_STREAM_VIDEO_ID: '11111111-1111-1111-1111-111111111111',
+  BUNNY_STREAM_CDN_HOSTNAME: 'vz-demo.b-cdn.net',
+});
+assert.equal(vimeo.hlsUrl, null);
+assert.equal(vimeo.vimeoId, '123456789');
+assert.equal(vimeo.vimeoHash, 'abcdef1234');
+const vimeoUrl = new URL(video.vimeoPlayerUrl('123456789', 'abcdef1234'));
+assert.equal(vimeoUrl.origin + vimeoUrl.pathname, 'https://player.vimeo.com/video/123456789');
+for (const [key, value] of [['h', 'abcdef1234'], ['controls', '0'], ['title', '0'], ['byline', '0'], ['portrait', '0'], ['muted', '1'], ['autoplay', '1'], ['playsinline', '1'], ['dnt', '1'], ['keyboard', '0'], ['pip', '0']]) {
+  assert.equal(vimeoUrl.searchParams.get(key), value, key);
+}
+assert.equal(video.vimeoEmbed({ PREMIERE_VIMEO_VIDEO_ID: '123456789', PREMIERE_VIMEO_HASH: 'bad hash' }), null);
+assert.equal(video.premiereHlsUrl({ PREMIERE_VIDEO_PROVIDER: 'cloudflare', CLOUDFLARE_STREAM_VIDEO_ID: streamId, CLOUDFLARE_STREAM_CUSTOMER_SUBDOMAIN: 'customer-abc' }).includes('cloudflarestream.com'), true);
 assert.equal(video.youtubeVideoId({ PREMIERE_YOUTUBE_VIDEO_ID: 'short' }), null);
 assert.equal(video.premiereLineUrl({}), null);
 assert.equal(video.premiereLineUrl({ PREMIERE_LINE_URL: 'http://line.me/R/ti/p/example' }), null);
@@ -196,6 +213,8 @@ assert.match(player, /copy\.orderButton/);
 assert.match(player, /\/api\/premiere\/messages/);
 assert.match(player, /clock\?demo=1/);
 assert.match(player, /youtube-nocookie\.com/);
+assert.match(player, /setMuted\(false\)/);
+assert.match(fs.readFileSync('lib/premiere/video.ts', 'utf8'), /https:\/\/player\.vimeo\.com\/video\//);
 assert.equal(player.includes('rKelAZC2dA4'), false);
 assert.match(player, /sheetRef/);
 assert.match(fs.readFileSync('lib/premiere/track-client.ts', 'utf8'), /PageView/);

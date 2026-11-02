@@ -16,6 +16,8 @@ export type PremiereState = {
   checkoutEnabled: boolean;
   hlsUrl: string | null;
   youtubeId: string | null;
+  vimeoId: string | null;
+  vimeoHash: string | null;
   lineUrl: string | null;
   /** Preview-only compressed schedule. Always false on production. */
   demo: boolean;
@@ -75,6 +77,8 @@ export function getPremiereState(now: Date, env: Record<string, string | undefin
     checkoutEnabled: demo ? true : premiereCheckoutEnabled(env),
     hlsUrl: source.hlsUrl,
     youtubeId: source.youtubeId,
+    vimeoId: source.vimeoId,
+    vimeoHash: source.vimeoHash,
     lineUrl: premiereLineUrl(env),
     demo,
   };

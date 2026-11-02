@@ -9,6 +9,7 @@
     "check": "node checks/proxy.test.cjs && node checks/premiere.test.cjs"
   },
   "dependencies": {
+    "@vimeo/player": "2.30.1",
     "hls.js": "^1.6.15",
     "next": "16.4.2",
     "react": "19.2.6",

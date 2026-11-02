@@ -41,24 +41,60 @@ export function premiereLineUrl(env: Record<string, string | undefined>) {
   }
 }
 
-export type PremiereSource = { hlsUrl: string | null; youtubeId: string | null };
+export type VimeoEmbed = { id: string; hash: string };
+
+const VIMEO_PARAMS = {
+  controls: '0',
+  title: '0',
+  byline: '0',
+  portrait: '0',
+  muted: '1',
+  autoplay: '1',
+  playsinline: '1',
+  dnt: '1',
+  keyboard: '0',
+  pip: '0',
+} as const;
+
+/** Unlisted Vimeo clip. The hash is the public `h` parameter, not a signing secret. */
+export function vimeoEmbed(env: Record<string, string | undefined>): VimeoEmbed | null {
+  const id = read(env, 'PREMIERE_VIMEO_VIDEO_ID');
+  const hash = read(env, 'PREMIERE_VIMEO_HASH');
+  if (!/^\d{6,12}$/.test(id) || !/^[a-f0-9]{8,64}$/i.test(hash)) return null;
+  return { id, hash };
+}
+
+export function vimeoPlayerUrl(id: string, hash: string) {
+  const url = new URL(`https://player.vimeo.com/video/${id}`);
+  url.searchParams.set('h', hash);
+  for (const [key, value] of Object.entries(VIMEO_PARAMS)) url.searchParams.set(key, value);
+  return url.toString();
+}
+
+export type PremiereSource = { hlsUrl: string | null; youtubeId: string | null; vimeoId: string | null; vimeoHash: string | null };
+
+const emptySource: PremiereSource = { hlsUrl: null, youtubeId: null, vimeoId: null, vimeoHash: null };
 
 /**
  * Public playback. Bunny stays the default when several are set.
- * PREMIERE_VIDEO_PROVIDER: bunny, cloudflare, or youtube.
- * Never reads a signing secret. YouTube is for preview; the watch page on youtube.com cannot be locked.
+ * PREMIERE_VIDEO_PROVIDER: bunny, cloudflare, youtube, or vimeo.
+ * Never reads a signing secret. YouTube can still be opened on youtube.com.
+ * Vimeo `controls=0` can be ignored by some account plans; playback sync still runs.
  */
 export function premiereSource(env: Record<string, string | undefined>): PremiereSource {
   const bunny = bunnyUrl(env);
   const cloudflare = cloudflareStreamUrl(env);
   const youtube = youtubeVideoId(env);
+  const vimeo = vimeoEmbed(env);
   const provider = read(env, 'PREMIERE_VIDEO_PROVIDER').toLowerCase();
-  if (provider === 'youtube') return { hlsUrl: null, youtubeId: youtube };
-  if (provider === 'cloudflare') return { hlsUrl: cloudflare, youtubeId: null };
-  if (provider === 'bunny') return { hlsUrl: bunny, youtubeId: null };
-  if (bunny) return { hlsUrl: bunny, youtubeId: null };
-  if (cloudflare) return { hlsUrl: cloudflare, youtubeId: null };
-  return { hlsUrl: null, youtubeId: youtube };
+  if (provider === 'youtube') return { ...emptySource, youtubeId: youtube };
+  if (provider === 'vimeo') return { ...emptySource, vimeoId: vimeo?.id || null, vimeoHash: vimeo?.hash || null };
+  if (provider === 'cloudflare') return { ...emptySource, hlsUrl: cloudflare };
+  if (provider === 'bunny') return { ...emptySource, hlsUrl: bunny };
+  if (bunny) return { ...emptySource, hlsUrl: bunny };
+  if (cloudflare) return { ...emptySource, hlsUrl: cloudflare };
+  if (youtube) return { ...emptySource, youtubeId: youtube };
+  return { ...emptySource, vimeoId: vimeo?.id || null, vimeoHash: vimeo?.hash || null };
 }
 
 export function premiereHlsUrl(env: Record<string, string | undefined>) {

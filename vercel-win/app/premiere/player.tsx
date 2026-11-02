@@ -4,6 +4,7 @@ import { PREMIERE } from '@/lib/premiere/config';
 import { formatTimestamp, kindLabel, normalizeMessages, visibleMessages, type PremiereMessage } from '@/lib/premiere/messages';
 import type { PremiereState } from '@/lib/premiere/state';
 import { formatCountdown, formatTwd, playbackTarget, shouldResync } from '@/lib/premiere/schedule';
+import { vimeoPlayerUrl } from '@/lib/premiere/video';
 import { track } from '@/lib/premiere/track-client';
 
 const copy = PREMIERE.copy;
@@ -22,6 +23,8 @@ export default function Player({ initial }: { initial: PremiereState }) {
   const [payBusy, setPayBusy] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const ytRef = useRef<YtPlayer | null>(null);
+  const vimeoRef = useRef<VimeoHandle | null>(null);
+  const [vimeoRatio, setVimeoRatio] = useState(1658 / 1080);
   const sheetRef = useRef(false);
   const feedRef = useRef<HTMLDivElement>(null);
   const played = useRef(false);
@@ -231,9 +234,69 @@ export default function Player({ initial }: { initial: PremiereState }) {
   }, [phase, state.youtubeId]);
 
   useEffect(() => {
+    if (phase !== 'playing' || !state.vimeoId || !state.vimeoHash) return;
+    let destroyed = false;
+    let timer = 0;
+    let ignore = false;
+    const id = state.vimeoId;
+    const hash = state.vimeoHash;
+    const target = () => playbackTarget((Date.now() + offsetRef.current - Date.parse(stateRef.current.startAt)) / 1000, stateRef.current.durationSeconds);
+    const sync = async (force = false) => {
+      const player = vimeoRef.current;
+      if (!player || sheetRef.current || destroyed) return;
+      const current = await player.getCurrentTime().catch(() => target());
+      const next = target();
+      if (!force && !shouldResync(current, next)) return;
+      ignore = true;
+      await player.setCurrentTime(next).catch(() => undefined);
+      window.setTimeout(() => { ignore = false; }, 400);
+    };
+    void (async () => {
+      const { default: VimeoPlayer } = await import('@vimeo/player');
+      if (destroyed) return;
+      const created = new VimeoPlayer('vimeo-premiere', {
+        url: vimeoPlayerUrl(id, hash) as `https://player.vimeo.com/video/${string}`,
+        controls: false,
+        title: false,
+        byline: false,
+        portrait: false,
+        muted: true,
+        autoplay: true,
+        playsinline: true,
+        dnt: true,
+        keyboard: false,
+        pip: false,
+        responsive: false,
+      }) as VimeoHandle;
+      vimeoRef.current = created;
+      created.on('seeked', () => { if (!ignore) void sync(true); });
+      created.on('play', () => { if (sheetRef.current) void created.pause(); });
+      try {
+        await created.ready();
+        const [width, height] = await Promise.all([created.getVideoWidth(), created.getVideoHeight()]);
+        if (!destroyed && width > 0 && height > 0) setVimeoRatio(width / height);
+        await created.setMuted(true);
+        if (sheetRef.current) await created.pause();
+        else {
+          await created.setCurrentTime(target()).catch(() => undefined);
+          await created.play().catch(() => setNeedsGesture(true));
+        }
+      } catch { /* an account plan may ignore controls=0; sync still runs */ }
+      timer = window.setInterval(() => { void sync(false); }, 2000);
+    })();
+    return () => {
+      destroyed = true;
+      window.clearInterval(timer);
+      void vimeoRef.current?.destroy();
+      vimeoRef.current = null;
+    };
+  }, [phase, state.vimeoId, state.vimeoHash]);
+
+  useEffect(() => {
     if (sheet) {
       videoRef.current?.pause();
       ytRef.current?.pauseVideo();
+      void vimeoRef.current?.pause();
       return;
     }
     const next = playbackTarget((Date.now() + offsetRef.current - Date.parse(stateRef.current.startAt)) / 1000, stateRef.current.durationSeconds);
@@ -247,10 +310,14 @@ export default function Player({ initial }: { initial: PremiereState }) {
       youtube.seekTo(next, true);
       youtube.playVideo();
     }
+    const vimeo = vimeoRef.current;
+    if (vimeo && stateRef.current.vimeoId) {
+      void vimeo.setCurrentTime(next).then(() => vimeo.play()).catch(() => setNeedsGesture(true));
+    }
   }, [sheet]);
 
   useEffect(() => {
-    if (phase !== 'playing' || (!state.hlsUrl && !state.youtubeId)) return;
+    if (phase !== 'playing' || (!state.hlsUrl && !state.youtubeId && !state.vimeoId)) return;
     if (!played.current) {
       played.current = true;
       track('video_play', { video_time: Math.round(position) });
@@ -259,7 +326,7 @@ export default function Player({ initial }: { initial: PremiereState }) {
     for (const mark of [25, 50, 75, 100]) {
       if (ratio >= mark) track('video_progress', { progress: mark, video_time: Math.round(position) });
     }
-  }, [phase, position, state.durationSeconds, state.hlsUrl, state.youtubeId]);
+  }, [phase, position, state.durationSeconds, state.hlsUrl, state.youtubeId, state.vimeoId]);
 
   useEffect(() => {
     if (!offerOpen || phase === 'ended' || offeredView.current) return;
@@ -342,8 +409,12 @@ export default function Player({ initial }: { initial: PremiereState }) {
     </header>
     <div className="stage-grid">
       <section className="stage-player" aria-label={copy.eyebrow}>
-        <div className="frame">
-          {phase === 'playing' && state.youtubeId ? <>
+        <div className="frame" style={phase === 'playing' && state.vimeoId ? { aspectRatio: String(vimeoRatio) } : undefined}>
+          {phase === 'playing' && state.vimeoId && state.vimeoHash ? <>
+            <div id="vimeo-premiere" className="vimeo-premiere" />
+            <div className="frame-progress" role="progressbar" aria-label={copy.progressLabel} aria-valuemin={0} aria-valuemax={state.durationSeconds} aria-valuenow={Math.floor(position)} aria-valuetext={copy.playing}><span style={{ width: `${percent}%` }} /></div>
+            {(muted || needsGesture) && <button type="button" className="frame-engage" onClick={() => { void vimeoRef.current?.setMuted(false); void vimeoRef.current?.setVolume(1); void vimeoRef.current?.play().then(() => { setMuted(false); setNeedsGesture(false); }).catch(() => setNeedsGesture(true)); }}>{copy.unmute}</button>}
+          </> : phase === 'playing' && state.youtubeId ? <>
             <div id="yt-premiere" className="yt-premiere" />
             <div className="frame-progress" role="progressbar" aria-label={copy.progressLabel} aria-valuemin={0} aria-valuemax={state.durationSeconds} aria-valuenow={Math.floor(position)} aria-valuetext={copy.playing}><span style={{ width: `${percent}%` }} /></div>
             {(muted || needsGesture) && <button type="button" className="frame-engage" onClick={() => { ytRef.current?.unMute(); ytRef.current?.setVolume?.(100); ytRef.current?.playVideo(); setMuted(false); setNeedsGesture(false); }}>{copy.unmute}</button>}
@@ -434,6 +505,20 @@ export default function Player({ initial }: { initial: PremiereState }) {
     </div>}
   </main>;
 }
+
+type VimeoHandle = {
+  play: () => Promise<void>;
+  pause: () => Promise<void>;
+  setCurrentTime: (seconds: number) => Promise<number>;
+  getCurrentTime: () => Promise<number>;
+  setMuted: (muted: boolean) => Promise<boolean>;
+  setVolume: (volume: number) => Promise<number>;
+  getVideoWidth: () => Promise<number>;
+  getVideoHeight: () => Promise<number>;
+  ready: () => Promise<void>;
+  on: (event: string, callback: () => void) => void;
+  destroy: () => Promise<void>;
+};
 
 type YtPlayer = {
   seekTo: (seconds: number, allowSeekAhead: boolean) => void;
