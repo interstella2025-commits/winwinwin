@@ -1,6 +1,6 @@
 import { PREMIERE } from './config';
 import { premiereClock } from './schedule';
-import { premiereHlsUrl } from './video';
+import { premiereLineUrl, premiereSource } from './video';
 
 export type PremiereState = {
   serverNow: string;
@@ -15,6 +15,8 @@ export type PremiereState = {
   productCode: typeof PREMIERE.productCode;
   checkoutEnabled: boolean;
   hlsUrl: string | null;
+  youtubeId: string | null;
+  lineUrl: string | null;
   /** Preview-only compressed schedule. Always false on production. */
   demo: boolean;
 };
@@ -58,6 +60,7 @@ export function getPremiereState(now: Date, env: Record<string, string | undefin
   const demo = options.demo === true && premiereDemoAllowed(env);
   const schedule = demo ? demoSchedule(now) : PREMIERE;
   const clock = premiereClock(now, schedule);
+  const source = premiereSource(env);
   return {
     serverNow: now.toISOString(),
     startAt: new Date(clock.start).toISOString(),
@@ -70,7 +73,9 @@ export function getPremiereState(now: Date, env: Record<string, string | undefin
     priceTwd: PREMIERE.priceTwd,
     productCode: PREMIERE.productCode,
     checkoutEnabled: demo ? true : premiereCheckoutEnabled(env),
-    hlsUrl: premiereHlsUrl(env),
+    hlsUrl: source.hlsUrl,
+    youtubeId: source.youtubeId,
+    lineUrl: premiereLineUrl(env),
     demo,
   };
 }

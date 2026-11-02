@@ -33,7 +33,13 @@
 | `BUNNY_STREAM_CDN_HOSTNAME` | Vercel 管理員 | 現在就可以。Bunny 的播放網址，通常是 `vz-` 開頭、`.b-cdn.net` 結尾，不要加 `https://`。 |
 | `CLOUDFLARE_STREAM_VIDEO_ID` | Vercel 管理員 | 改用 Cloudflare Stream 時才要。公開影片編號，32 位英文數字，不是簽章金鑰。 |
 | `CLOUDFLARE_STREAM_CUSTOMER_SUBDOMAIN` | Vercel 管理員 | Cloudflare 的客戶子網域，長得像 `customer-` 開頭。公開播放用，不是密鑰。 |
-| `PREMIERE_VIDEO_PROVIDER` | Vercel 管理員 | 可不設。兩邊都有值時預設用 Bunny。要改播 Cloudflare 就寫 `cloudflare`。 |
+| `PREMIERE_VIDEO_PROVIDER` | Vercel 管理員 | 可不設。有多個來源時預設用 Bunny。可寫 `bunny`、`cloudflare` 或 `youtube`。 |
+| `PREMIERE_YOUTUBE_VIDEO_ID` | Vercel 管理員 | 只在提供者是 `youtube` 時使用。11 碼的影片編號，不是網址。 |
+| `PREMIERE_LINE_URL` | Vercel 管理員 | 可不設。有設才顯示「真人客服」，必須是 https 網址。 |
+| `META_PIXEL_ID` | Vercel 管理員 | 可不設。沒設就不會載入 Meta Pixel。只接受數字。 |
+| `META_CAPI_ACCESS_TOKEN` | Vercel 管理員 | 可不設。沒設就不會把事件送到 Meta。這是密鑰，不要寫進程式或聊天。 |
+| `META_GRAPH_API_VERSION` | Vercel 管理員 | 例如 `v21.0`。格式不對就不會送。 |
+| `PUBLIC_SITE_URL` | Vercel 管理員 | 可不設。事件上記的網站位址，預設是 `https://2027course.win-lin.com`。 |
 | `PREMIERE_PAGE_ENABLED` | Vercel 管理員 | 值寫 `1` 之後，`/premiere` 才看得到。沒設就是 404。 |
 | `PREMIERE_CHECKOUT_ENABLED` | Vercel 管理員 | **最後才設。** 值寫 `1`。文案裡還有「待 Elsa 確認」時，按鈕仍不會送出訂單。 |
 | `PREMIERE_ALLOWED_ORIGINS` | Vercel 管理員 | 可不設。只放寬「登記」「進入時間」和「儲存即時訊息」的來源網址，不放寬付款。若要在預覽網址試設定頁，把完整網址填在這裡，多個用逗號分開。 |
@@ -45,6 +51,12 @@
 設定影片變數後要重新部署，這一頁才看得到影片。兩個都空著時，開播後會顯示「影片尚未設定」，其餘功能仍可看。
 
 若 Bunny 有打開 Token 驗證，這版播不了。請先讓這支影片可以用公開的 HLS 網址播放，或先關掉那支影片的 Token 驗證。這版不會讀取簽章金鑰。Cloudflare Stream 也一樣，只用公開的 HLS 位址，不讀簽章。
+
+YouTube 用 `youtube-nocookie.com` 嵌進來，控制列關掉，並依伺服器時間對回進度。觀眾仍可以自己打開 youtube.com 看同一支影片，所以它適合預覽或暫時套用模板。正式播映建議用 Cloudflare Stream。
+
+結帳表單打開時影片會暫停，關掉之後對回伺服器時間再繼續，不能從暫停的地方自己快轉。
+
+Meta 事件只有在上面的變數有設時才會送出。瀏覽器送的是：頁面瀏覽、開始播放、播放 25/50/75/100%、產品列表出現、打開結帳、結帳步驟、欄位沒過、以及真人客服點擊。只送雜湊過的訪客編號和事件編號，不送姓名、電話、Email。購買（Purchase）不從瀏覽器送。若要送，只能加在舊 Sites 已驗證成功的付款通知裡，這次沒有接，避免把 Meta 密鑰放進 patch。
 
 ## 預覽整段流程
 

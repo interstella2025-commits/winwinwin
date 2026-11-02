@@ -10,7 +10,7 @@ function load(file) {
   const module = { exports: {} };
   const dirname = path.dirname(file);
   new Function('require', 'module', 'exports', code)(
-    name => load(path.resolve(dirname, name.endsWith('.ts') ? name : name + '.ts')),
+    name => name.startsWith('.') ? load(path.resolve(dirname, name.endsWith('.ts') ? name : name + '.ts')) : require(name),
     module,
     module.exports,
   );
@@ -95,6 +95,20 @@ const both = {
 };
 assert.match(video.premiereHlsUrl(both), /b-cdn\.net/);
 assert.match(video.premiereHlsUrl({ ...both, PREMIERE_VIDEO_PROVIDER: 'cloudflare' }), /cloudflarestream\.com/);
+assert.equal(video.premiereHlsUrl({ ...both, PREMIERE_VIDEO_PROVIDER: 'youtube', PREMIERE_YOUTUBE_VIDEO_ID: 'abcdefghijk' }), null);
+assert.equal(video.premiereSource({ PREMIERE_VIDEO_PROVIDER: 'youtube', PREMIERE_YOUTUBE_VIDEO_ID: 'abcdefghijk' }).youtubeId, 'abcdefghijk');
+assert.equal(video.youtubeVideoId({ PREMIERE_YOUTUBE_VIDEO_ID: 'short' }), null);
+assert.equal(video.premiereLineUrl({}), null);
+assert.equal(video.premiereLineUrl({ PREMIERE_LINE_URL: 'http://line.me/R/ti/p/example' }), null);
+assert.match(video.premiereLineUrl({ PREMIERE_LINE_URL: 'https://line.me/R/ti/p/example' }) || '', /^https:\/\/line\.me\//);
+const analytics = load('lib/premiere/analytics.ts');
+assert.equal(Object.hasOwn(analytics.META_EVENTS, 'purchase'), false);
+assert.equal(analytics.META_EVENTS.page_view[0], 'PageView');
+assert.equal(analytics.META_EVENTS.video_progress[0], 'VideoProgress');
+assert.equal(analytics.hashVisitor('Visitor').length, 64);
+assert.deepEqual(analytics.customData({ email: 'a@b.test', phone: '0912', progress: 25, offer: 'product', field: 'name' }), { progress: 25, offer: 'product', field: 'name' });
+assert.equal(analytics.pixelId({ META_PIXEL_ID: '12345' }), '12345');
+assert.equal(analytics.pixelId({ META_PIXEL_ID: 'not-a-pixel' }), '');
 assert.equal(state.premiereDemoRequested('1', { VERCEL_ENV: 'production' }), false);
 assert.equal(state.premiereDemoRequested('1', {}), true);
 const preview = state.getPremiereState(new Date(), {}, { demo: true });
@@ -181,6 +195,11 @@ assert.match(player, /copy\.productTab/);
 assert.match(player, /copy\.orderButton/);
 assert.match(player, /\/api\/premiere\/messages/);
 assert.match(player, /clock\?demo=1/);
+assert.match(player, /youtube-nocookie\.com/);
+assert.equal(player.includes('rKelAZC2dA4'), false);
+assert.match(player, /sheetRef/);
+assert.match(fs.readFileSync('lib/premiere/track-client.ts', 'utf8'), /PageView/);
+assert.equal(fs.readFileSync('app/api/premiere/track/route.ts', 'utf8').includes('Purchase'), false);
 assert.match(player, /這是預覽，不會送出付款/);
 assert.match(player, /checkoutEnded/);
 assert.match(player, /phase === 'ended'/);
@@ -213,6 +232,7 @@ async function expectMissing(run) {
   assert.equal(missing, true);
 }
 (async () => {
+assert.equal(await analytics.sendCapi({ eventName: 'PageView', eventId: '1', visitorId: '11111111-1111-4111-8111-111111111111' }, {}), false);
 try {
   delete process.env.PREMIERE_PAGE_ENABLED;
   process.env.PREMIERE_CHECKOUT_ENABLED = '1';

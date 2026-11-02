@@ -4,6 +4,7 @@ import { PREMIERE } from '@/lib/premiere/config';
 import { formatTimestamp, kindLabel, normalizeMessages, visibleMessages, type PremiereMessage } from '@/lib/premiere/messages';
 import type { PremiereState } from '@/lib/premiere/state';
 import { formatCountdown, formatTwd, playbackTarget, shouldResync } from '@/lib/premiere/schedule';
+import { track } from '@/lib/premiere/track-client';
 
 const copy = PREMIERE.copy;
 
@@ -20,11 +21,18 @@ export default function Player({ initial }: { initial: PremiereState }) {
   const [payStatus, setPayStatus] = useState('');
   const [payBusy, setPayBusy] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const ytRef = useRef<YtPlayer | null>(null);
+  const sheetRef = useRef(false);
   const feedRef = useRef<HTMLDivElement>(null);
+  const played = useRef(false);
+  const offeredView = useRef(false);
   const offsetRef = useRef(0);
   const stateRef = useRef(state);
   const offered = useRef(false);
   stateRef.current = state;
+  sheetRef.current = sheet;
+
+  useEffect(() => { track('page_view'); }, []);
 
   useEffect(() => {
     offsetRef.current = Date.parse(initial.serverNow) - Date.now();
@@ -103,6 +111,7 @@ export default function Player({ initial }: { initial: PremiereState }) {
     const ignore = { current: false };
     const target = () => playbackTarget((Date.now() + offsetRef.current - Date.parse(stateRef.current.startAt)) / 1000, stateRef.current.durationSeconds);
     const snap = (force = false) => {
+      if (sheetRef.current) return;
       const next = target();
       if (!force && !shouldResync(video.currentTime, next)) return;
       ignore.current = true;
@@ -112,7 +121,7 @@ export default function Player({ initial }: { initial: PremiereState }) {
     const onSeeking = () => { if (!ignore.current && shouldResync(video.currentTime, target())) snap(true); };
     const onRate = () => { if (video.playbackRate !== 1) video.playbackRate = 1; };
     const onPause = () => {
-      if (destroyed || document.visibilityState === 'hidden') return;
+      if (destroyed || sheetRef.current || document.visibilityState === 'hidden') return;
       if (Date.now() + offsetRef.current >= Date.parse(stateRef.current.endsAt)) return;
       snap(true);
       void video.play().catch(() => setNeedsGesture(true));
@@ -167,6 +176,97 @@ export default function Player({ initial }: { initial: PremiereState }) {
     };
   }, [phase, state.hlsUrl]);
 
+  useEffect(() => {
+    if (phase !== 'playing' || !state.youtubeId) return;
+    let destroyed = false;
+    let timer = 0;
+    const videoId = state.youtubeId;
+    const target = () => playbackTarget((Date.now() + offsetRef.current - Date.parse(stateRef.current.startAt)) / 1000, stateRef.current.durationSeconds);
+    const sync = (force = false) => {
+      const player = ytRef.current;
+      if (!player || sheetRef.current) return;
+      const current = player.getCurrentTime?.() || 0;
+      const next = target();
+      if (force || shouldResync(current, next)) player.seekTo(next, true);
+    };
+    const start = () => {
+      if (destroyed || !window.YT?.Player) return;
+      const player = new window.YT.Player('yt-premiere', {
+        host: 'https://www.youtube-nocookie.com',
+        videoId,
+        playerVars: { autoplay: 1, controls: 0, disablekb: 1, fs: 0, modestbranding: 1, rel: 0, playsinline: 1, mute: 1, start: Math.floor(target()) },
+        events: {
+          onReady(event: { target: YtPlayer }) {
+            ytRef.current = event.target;
+            event.target.mute();
+            if (sheetRef.current) event.target.pauseVideo();
+            else { event.target.playVideo(); sync(true); }
+          },
+          onStateChange(event: { target: YtPlayer; data: number }) {
+            if (event.data === 1 && sheetRef.current) event.target.pauseVideo();
+            else if (event.data === 1) sync(false);
+          },
+        },
+      });
+      ytRef.current = player;
+      timer = window.setInterval(() => sync(false), 2000);
+    };
+    if (window.YT?.Player) start();
+    else {
+      const previous = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = () => { previous?.(); start(); };
+      if (!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
+        const script = document.createElement('script');
+        script.src = 'https://www.youtube.com/iframe_api';
+        script.async = true;
+        document.head.append(script);
+      }
+    }
+    return () => {
+      destroyed = true;
+      window.clearInterval(timer);
+      ytRef.current?.destroy();
+      ytRef.current = null;
+    };
+  }, [phase, state.youtubeId]);
+
+  useEffect(() => {
+    if (sheet) {
+      videoRef.current?.pause();
+      ytRef.current?.pauseVideo();
+      return;
+    }
+    const next = playbackTarget((Date.now() + offsetRef.current - Date.parse(stateRef.current.startAt)) / 1000, stateRef.current.durationSeconds);
+    const video = videoRef.current;
+    if (video && stateRef.current.hlsUrl) {
+      try { video.currentTime = next; } catch { /* not ready */ }
+      void video.play().catch(() => setNeedsGesture(true));
+    }
+    const youtube = ytRef.current;
+    if (youtube && stateRef.current.youtubeId) {
+      youtube.seekTo(next, true);
+      youtube.playVideo();
+    }
+  }, [sheet]);
+
+  useEffect(() => {
+    if (phase !== 'playing' || (!state.hlsUrl && !state.youtubeId)) return;
+    if (!played.current) {
+      played.current = true;
+      track('video_play', { video_time: Math.round(position) });
+    }
+    const ratio = state.durationSeconds ? (position / state.durationSeconds) * 100 : 0;
+    for (const mark of [25, 50, 75, 100]) {
+      if (ratio >= mark) track('video_progress', { progress: mark, video_time: Math.round(position) });
+    }
+  }, [phase, position, state.durationSeconds, state.hlsUrl, state.youtubeId]);
+
+  useEffect(() => {
+    if (!offerOpen || phase === 'ended' || offeredView.current) return;
+    offeredView.current = true;
+    track('live_offer_view', { offer: 'product', video_time: Math.round(position) });
+  }, [offerOpen, phase, position]);
+
   function engage() {
     const video = videoRef.current;
     if (!video) return;
@@ -175,6 +275,17 @@ export default function Player({ initial }: { initial: PremiereState }) {
     const next = playbackTarget((Date.now() + offsetRef.current - start) / 1000, state.durationSeconds);
     try { video.currentTime = next; } catch { /* not ready */ }
     void video.play().then(() => { setMuted(false); setNeedsGesture(false); }).catch(() => setNeedsGesture(true));
+  }
+
+  function openSheet() {
+    setSheet(true);
+    track('checkout_open', { video_time: Math.round(position) });
+    track('checkout_step', { step: 1 });
+  }
+
+  function invalid(event: React.FormEvent<HTMLFormElement>) {
+    const name = (event.target as HTMLInputElement).name;
+    if (name) track('checkout_validation_error', { field: name, step: 1 });
   }
 
   async function pay(event: React.FormEvent<HTMLFormElement>) {
@@ -208,6 +319,7 @@ export default function Player({ initial }: { initial: PremiereState }) {
       location.assign(body.checkoutUrl);
     } catch (error) {
       setPayStatus(error instanceof Error ? error.message : '暫時無法建立付款，請稍後再試。');
+      track('checkout_validation_error', { field: 'submit', step: 1 });
       setPayBusy(false);
     }
   }
@@ -225,12 +337,17 @@ export default function Player({ initial }: { initial: PremiereState }) {
     <header className="stage-bar">
       <a className="stage-brand" href="/">EXPERT <em>TO</em> ENTERPRISE</a>
       {state.demo && <span className="stage-demo">預覽時程</span>}
+      {state.lineUrl && <a className="stage-line" href={state.lineUrl} target="_blank" rel="noopener noreferrer" onClick={() => track('line_contact_click', { source: '/premiere' })}>真人客服</a>}
       <a className="stage-back" href="/">{copy.backHome}</a>
     </header>
     <div className="stage-grid">
       <section className="stage-player" aria-label={copy.eyebrow}>
         <div className="frame">
-          {phase === 'playing' && state.hlsUrl ? <>
+          {phase === 'playing' && state.youtubeId ? <>
+            <div id="yt-premiere" className="yt-premiere" />
+            <div className="frame-progress" role="progressbar" aria-label={copy.progressLabel} aria-valuemin={0} aria-valuemax={state.durationSeconds} aria-valuenow={Math.floor(position)} aria-valuetext={copy.playing}><span style={{ width: `${percent}%` }} /></div>
+            {(muted || needsGesture) && <button type="button" className="frame-engage" onClick={() => { ytRef.current?.unMute(); ytRef.current?.setVolume?.(100); ytRef.current?.playVideo(); setMuted(false); setNeedsGesture(false); }}>{copy.unmute}</button>}
+          </> : phase === 'playing' && state.hlsUrl ? <>
             <video ref={videoRef} playsInline muted autoPlay preload="auto" disablePictureInPicture />
             <div className="frame-progress" role="progressbar" aria-label={copy.progressLabel} aria-valuemin={0} aria-valuemax={state.durationSeconds} aria-valuenow={Math.floor(position)} aria-valuetext={copy.playing}><span style={{ width: `${percent}%` }} /></div>
             {(muted || needsGesture) && <button type="button" className="frame-engage" onClick={engage}>{needsGesture ? copy.startPlayback : copy.unmute}</button>}
@@ -292,7 +409,7 @@ export default function Player({ initial }: { initial: PremiereState }) {
                 <p className="product-now">{formatTwd(state.priceTwd)}</p>
                 <p className="product-lead">{copy.purchaseLead}</p>
                 <p className="product-terms">{copy.terms}</p>
-                {phase === 'ended' ? <p className="product-locked">{copy.checkoutEnded}</p> : state.checkoutEnabled ? <button type="button" className="order-button" onClick={() => setSheet(true)}>{copy.orderButton}</button> : <p className="product-locked">{copy.checkoutClosed}</p>}
+                {phase === 'ended' ? <p className="product-locked">{copy.checkoutEnded}</p> : state.checkoutEnabled ? <button type="button" className="order-button" onClick={openSheet}>{copy.orderButton}</button> : <p className="product-locked">{copy.checkoutClosed}</p>}
               </div>
             </article>
           </>}
@@ -300,7 +417,7 @@ export default function Player({ initial }: { initial: PremiereState }) {
       </section>
     </div>
     {sheet && <div className="sheet-back" onClick={() => setSheet(false)}>
-      <form className="sheet" data-sheet="open" onClick={event => event.stopPropagation()} onSubmit={pay}>
+      <form className="sheet" data-sheet="open" onClick={event => event.stopPropagation()} onSubmit={pay} onInvalid={invalid}>
         <p className="host-kicker">02</p>
         <h2>{copy.purchaseTitle}</h2>
         <p className="product-now">{formatTwd(state.priceTwd)}</p>
@@ -316,6 +433,24 @@ export default function Player({ initial }: { initial: PremiereState }) {
       </form>
     </div>}
   </main>;
+}
+
+type YtPlayer = {
+  seekTo: (seconds: number, allowSeekAhead: boolean) => void;
+  playVideo: () => void;
+  pauseVideo: () => void;
+  mute: () => void;
+  unMute: () => void;
+  setVolume?: (volume: number) => void;
+  getCurrentTime: () => number;
+  destroy: () => void;
+};
+
+declare global {
+  interface Window {
+    YT?: { Player: new (id: string, options: unknown) => YtPlayer };
+    onYouTubeIframeAPIReady?: () => void;
+  }
 }
 
 function splitTitle(title: string) {

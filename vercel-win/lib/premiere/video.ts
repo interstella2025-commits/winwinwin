@@ -23,16 +23,44 @@ export function cloudflareStreamUrl(env: Record<string, string | undefined>) {
   return `https://${host}/${videoId}/manifest/video.m3u8`;
 }
 
+/** 11-character YouTube id. Empty unless PREMIERE_VIDEO_PROVIDER is youtube, or nothing else is configured. */
+export function youtubeVideoId(env: Record<string, string | undefined>) {
+  const videoId = read(env, 'PREMIERE_YOUTUBE_VIDEO_ID');
+  return /^[A-Za-z0-9_-]{11}$/.test(videoId) ? videoId : null;
+}
+
+export function premiereLineUrl(env: Record<string, string | undefined>) {
+  const raw = read(env, 'PREMIERE_LINE_URL');
+  if (!raw) return null;
+  try {
+    const url = new URL(raw);
+    if (url.protocol !== 'https:' || url.username || url.password) return null;
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+export type PremiereSource = { hlsUrl: string | null; youtubeId: string | null };
+
 /**
- * Public playback URL. Bunny stays the default when both are set.
- * Set PREMIERE_VIDEO_PROVIDER to bunny or cloudflare to choose.
- * Never reads a signing secret.
+ * Public playback. Bunny stays the default when several are set.
+ * PREMIERE_VIDEO_PROVIDER: bunny, cloudflare, or youtube.
+ * Never reads a signing secret. YouTube is for preview; the watch page on youtube.com cannot be locked.
  */
-export function premiereHlsUrl(env: Record<string, string | undefined>) {
+export function premiereSource(env: Record<string, string | undefined>): PremiereSource {
   const bunny = bunnyUrl(env);
   const cloudflare = cloudflareStreamUrl(env);
+  const youtube = youtubeVideoId(env);
   const provider = read(env, 'PREMIERE_VIDEO_PROVIDER').toLowerCase();
-  if (provider === 'cloudflare') return cloudflare;
-  if (provider === 'bunny') return bunny;
-  return bunny || cloudflare;
+  if (provider === 'youtube') return { hlsUrl: null, youtubeId: youtube };
+  if (provider === 'cloudflare') return { hlsUrl: cloudflare, youtubeId: null };
+  if (provider === 'bunny') return { hlsUrl: bunny, youtubeId: null };
+  if (bunny) return { hlsUrl: bunny, youtubeId: null };
+  if (cloudflare) return { hlsUrl: cloudflare, youtubeId: null };
+  return { hlsUrl: null, youtubeId: youtube };
+}
+
+export function premiereHlsUrl(env: Record<string, string | undefined>) {
+  return premiereSource(env).hlsUrl;
 }

@@ -92,3 +92,4 @@ curl -H "Authorization: Bearer 這裡換成 PREMIERE_EXPORT_TOKEN 的值" \
 - NT$399 的付款成功信沒有改。NT$39,800 的信已經換成待確認的句子，主旨和內文都有【待 Elsa 確認】。請 Elsa 改完 `lib/payuni/server.ts` 裡正式課程那一封，再真的收款。
 - 跟統一確認單筆 39800 是否可刷、要不要分期。
 - `fullcourse` 的商品名稱已經是 Expert to Enterprise，刷卡頁與付款成功信的項目都用這一句。信裡其他說明仍有【待 Elsa 確認】。Vercel 上只要說明會文案還有「待 Elsa 確認」，付款按鈕就不會打開。
+- Meta 的購買事件這次沒有加在付款通知裡。之後若要加，只能在已驗證 `TradeStatus=1` 的通知成功之後送，而且不能帶姓名、電話或 Email。不要在瀏覽器送購買事件。
