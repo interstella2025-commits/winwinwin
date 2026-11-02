@@ -426,7 +426,7 @@ export default function Player({ initial }: { initial: PremiereState }) {
         <label className="field"><span className="field-name">手機<span className="required" aria-hidden="true">＊</span></span><input name="phone" type="tel" autoComplete="tel" required maxLength={100} placeholder="例：0912 345 678" /></label>
         <label className="field"><span className="field-name">Email<span className="required" aria-hidden="true">＊</span></span><input type="email" name="email" autoComplete="email" required maxLength={200} /></label>
         <label className="consent"><input type="checkbox" name="consent" required /><span>{copy.consent}</span></label>
-        <p className="sheet-warning">下一頁顯示的金額必須是 {formatTwd(state.priceTwd)}。若看到 NT$399，請不要付款。</p>
+        <p className="sheet-warning">下一頁顯示的金額必須是 {formatTwd(state.priceTwd)}。</p>
         <button className="order-button" disabled={payBusy}>{payBusy ? '正在送出…' : copy.checkoutSubmit}</button>
         <p role="status" className="sheet-status">{payStatus}</p>
         <button type="button" className="sheet-close" onClick={() => setSheet(false)}>關閉</button>

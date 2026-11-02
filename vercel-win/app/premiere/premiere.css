@@ -109,7 +109,7 @@ main.stage>header.stage-bar{
 .product-card>div{padding:14px 16px 16px}
 .product-card h2{margin:6px 0 0;font-size:22px;font-weight:900;line-height:1.35;letter-spacing:0;color:var(--navy);text-wrap:balance;word-break:keep-all}
 .product-card .offer-badge{margin:0 0 2px}
-.product-was{margin:10px 0 0;color:#5c5348;font-size:14px;font-weight:700;text-decoration:line-through;text-decoration-thickness:1px}
+.product-was{margin:10px 0 0;color:#3e382f;font-size:14px;font-weight:700;text-decoration:line-through;text-decoration-color:#3e382f;text-decoration-thickness:1px}
 .product-now{margin:2px 0 0;color:#c41e24;font-size:32px;font-weight:900;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1.15}
 .product-lead,.product-terms{margin:10px 0 0;color:#3d3832;font-size:14px;line-height:1.7}
 .order-button{
