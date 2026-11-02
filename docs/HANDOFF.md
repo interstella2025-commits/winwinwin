@@ -7,6 +7,20 @@
 
 ---
 
+## 最新狀態（2026-11-03）
+
+- 正式站停在 PR #29（squash `7fb8de9`）。
+- PR #31（拿掉紅底線）：head `07aab52`，等 Elsa 同意，未 merge。
+- PR #30（舊後端修正）：draft，`db4e206`，未部署。
+- PR #27（首播頁）：preview 在 `a1f4e1b`。Preview env：`PREMIERE_PAGE_ENABLED=1`、`PREMIERE_VIDEO_PROVIDER=vimeo`、`PREMIERE_VIMEO_VIDEO_ID=1156112381`、`PREMIERE_VIMEO_HASH=8767a79cd8`。正式環境未動。
+- Vimeo 播放尚未在真手機上確認。
+- NT$1 測試從未刷過。
+- WIN特助與研發部已停手，此線由 Codex 接手。
+
+參考文件：
+- [舊後端上線方案](./舊後端上線方案.md)
+- [LIFF 規劃](./LIFF規劃.md)
+
 ## 1. 專案概要
 
 | 項目 | 內容 |
