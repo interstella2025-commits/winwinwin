@@ -1,0 +1,24 @@
+.pay-page{min-height:100vh;background:linear-gradient(160deg,#f0f9ff 0%,#e3f5ff 55%,#fafdff 100%);font-family:'Noto Sans TC',Arial,'Microsoft JhengHei',sans-serif;font-weight:500;font-synthesis:none;color:#102d52}
+.pay-page header{justify-content:center}
+.pay-main{max-width:none;background:transparent;box-shadow:none;padding:40px 18px 120px}
+.pay-card{max-width:560px;margin:0 auto;background:#fff;border-radius:16px;padding:40px 28px 32px;box-shadow:0 2px 4px #0b284a0f,0 24px 60px -20px #0b284a40;text-align:center}
+.pay-eyebrow{letter-spacing:3px;font-size:12px;font-weight:700;color:#b52c36;margin:0 0 20px}
+.pay-icon{width:64px;height:64px;border-radius:50%;margin:0 auto 18px;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:700;color:#fff}
+.pay-icon.ok{background:#102d52}.pay-icon.bad{background:#bb2b34}.pay-icon.wait{background:#e3f1fb}
+.pay-spin{width:28px;height:28px;border:3px solid #bcd6ec;border-top-color:#102d52;border-radius:50%;animation:payspin 1s linear infinite}
+@keyframes payspin{to{transform:rotate(360deg)}}
+.pay-card h1{font-size:clamp(26px,6vw,34px);line-height:1.4;font-weight:800;margin:0 0 12px;color:#102d52}
+.pay-product{font-size:15px;line-height:1.8;color:#3e536b;margin:0 0 20px}.pay-product strong{display:block;font-size:22px;font-weight:800;color:#bb2b34}
+.pay-meta{margin:0 0 24px;background:#f0f8ff;border-radius:10px;padding:14px 18px}.pay-meta div{display:flex;justify-content:space-between;gap:12px;font-size:14px;line-height:1.8}.pay-meta dt{color:#536d87;font-weight:500}.pay-meta dd{margin:0;font-weight:700;word-break:break-all;text-align:right}
+.pay-next{text-align:left;margin-top:8px}.pay-next h2{font-size:20px;font-weight:800;color:#bb2b34;margin:0 0 14px;text-align:center}
+.pay-next ol{list-style:none;margin:0;padding:0;display:grid;gap:14px}.pay-next li{display:flex;gap:14px;align-items:flex-start;background:#f7fbff;border:1px solid #dbe9f5;border-radius:12px;padding:18px 16px}
+.pay-next li>div{flex:1;min-width:0}.pay-next li strong{font-size:17px;font-weight:700;display:block}.pay-next li p{margin:6px 0 0;font-size:14px;line-height:1.8;color:#3e536b}
+.pay-step{flex:0 0 30px;height:30px;border-radius:50%;background:#102d52;color:#fff;font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center}
+.pay-line{display:flex;align-items:center;justify-content:center;gap:10px;min-height:56px;margin-top:16px;border-radius:10px;background:#06C755;color:#fff;font-size:17px;font-weight:700;box-shadow:0 7px 20px #06c75533}.pay-line:hover{background:#05B04C}
+.pay-text{font-size:15px;line-height:1.9;color:#3e536b;margin:0 0 8px}
+.pay-secondary{display:inline-block;margin-top:18px;font-size:15px;font-weight:700;color:#102d52;border-bottom:1px solid #102d52;padding-bottom:2px}
+.pay-back{margin:28px 0 8px;font-size:14px}.pay-back a{color:#536d87;border-bottom:1px solid #bccbdd}
+.pay-note{font-size:12px;line-height:1.8;color:#7a8ba0;margin:0}
+@media(min-width:601px){.pay-main{padding:64px 24px 120px}.pay-card{padding:48px 48px 36px}}
+body:has(.pay-page) .line-support{display:none}.pay-next li{flex-wrap:wrap}.pay-next li .pay-line{margin-left:-44px}@media(max-width:600px){.pay-card{padding:32px 20px 28px}}
+.pay-product-sub{display:inline-block;margin-top:4px;font-size:.88em;opacity:.8}
