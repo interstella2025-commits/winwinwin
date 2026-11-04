@@ -1,0 +1,4 @@
+import { sessionLabel } from '../../../../lib/course-sessions';
+import { json,orderBy,first } from '../../../../lib/payuni/server';
+export const dynamic='force-dynamic';export const runtime='nodejs';
+export async function GET(request:Request){try{const token=new URL(request.url).searchParams.get('token');if(!token||! /^[0-9a-f-]{36}$/i.test(token))return json({error:'付款連結無效。'},400);const order=await orderBy('token',token);if(!order)return json({error:'找不到訂單。'},404);const application=await first<{session_code:string|null}>('SELECT session_code FROM applications WHERE id=$1',[order.application_id]);return json({session:sessionLabel(application?.session_code),status:order.status==='pending'&&Date.now()-Date.parse(order.created_at)>20*60000?'expired':order.status,amount:order.amount,orderNo:order.order_no,isTest:order.source==='win-test-1',emailSent:order.email_status==='sent'});}catch{return json({error:'暫時無法取得付款結果，請稍後重試。'},503)}}
