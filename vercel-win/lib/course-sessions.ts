@@ -6,4 +6,7 @@ export const COURSE_SESSIONS = [
  {code:'2026-11-27',date:'11 月 27 日（五）',time:'20:00–21:30'},
  {code:'2026-11-30',date:'11 月 30 日（一）',time:'12:00–13:30'},
 ] as const;
+/** Free "notify me about other sessions" signup. Never payable. */
+export const NOTIFY_CODE='notify';
+export const NOTIFY_LABEL='其他場次通知';
 export function sessionLabel(code:string|null|undefined){const s=COURSE_SESSIONS.find(v=>v.code===code);return s?`2026 年 ${s.date} ${s.time}（台灣時間）`:null}

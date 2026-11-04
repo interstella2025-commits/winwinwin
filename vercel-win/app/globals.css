@@ -284,3 +284,7 @@ section.audience{padding:96px 7% 88px;text-align:center;background:radial-gradie
 .registration form .submit-button:focus-visible{outline-color:#9fd8ff}
 .registration form .submit-button:disabled{opacity:.7;cursor:not-allowed}
 @media(max-width:700px){.registration form{margin-top:28px;padding:24px 16px 22px;border-radius:18px}.registration form .field-grid{padding:22px 18px 4px;border-radius:14px}.registration form .session-option label{border-radius:14px}}
+.registration .session-grid{grid-auto-rows:1fr}
+.registration form .session-notify label{justify-content:center}
+.registration .notify-done{margin:36px 0 0;border-radius:22px;text-align:center;font-size:clamp(16px,2.2vw,20px);font-weight:700}
+@media(max-width:700px){.registration .notify-done{margin-top:28px;border-radius:18px}}
