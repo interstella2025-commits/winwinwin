@@ -26,7 +26,7 @@ export default function Payment(){
  <div className={'pay-icon '+(paid?'ok':failed||error?'bad':'wait')} aria-hidden="true">{paid?'✓':failed||error?'!':<span className="pay-spin"/>}</div>
  <h1>{title}</h1>
  <p className="pay-product">{test?'WIN 金流驗收測試':<>Expert to Enterprise<br/>WIN講師班<br/><span className="pay-product-sub">90 分鐘線上前導課</span></>}<br/><strong>NT${result?.amount??(test?1:399)}</strong></p>
- {result&&<dl className="pay-meta"><div><dt>訂單編號</dt><dd>{result.orderNo}</dd></div>{!test&&result.session&&<div><dt>暫定場次</dt><dd>{result.session}</dd></div>}</dl>}
+ {result&&<dl className="pay-meta"><div><dt>訂單編號</dt><dd>{result.orderNo}</dd></div>{!test&&result.session&&<div><dt>場次</dt><dd>{result.session}</dd></div>}</dl>}
  {paid&&!test&&<section className="pay-next" aria-labelledby="next-title"><h2 id="next-title">下一步</h2><ol>
  <li><span className="pay-step">1</span><div><strong>加入 LINE 官方帳號</strong><p>上課連結會透過<br/>LINE 官方帳號發送。</p><LineButton label="加入 LINE 官方帳號"/></div></li>
  <li><span className="pay-step">2</span><div><strong>查收付款確認信</strong><p>{result.emailSent?'確認信已寄到你填寫的 Email，':'確認信正在寄送中，'}<br/>沒看到請查看垃圾郵件匣。</p></div></li></ol></section>}
