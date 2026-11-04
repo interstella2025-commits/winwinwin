@@ -288,3 +288,5 @@ section.audience{padding:96px 7% 88px;text-align:center;background:radial-gradie
 .registration form .session-notify label{justify-content:center}
 .registration .notify-done{margin:36px 0 0;border-radius:22px;text-align:center;font-size:clamp(16px,2.2vw,20px);font-weight:700}
 @media(max-width:700px){.registration .notify-done{margin-top:28px;border-radius:18px}}
+.registration .form-heading-left{text-align:left}
+.registration .form-heading-left h2>span{display:inline;white-space:normal;background:none;padding:0}
