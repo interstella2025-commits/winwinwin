@@ -296,3 +296,6 @@ section.audience{padding:96px 7% 88px;text-align:center;background:radial-gradie
 .registration form{background:none;box-shadow:none;padding-left:0;padding-right:0}
 .registration .form-heading-left .course-name{margin:0 0 14px;color:#dff1ff;font-weight:700;font-size:clamp(18px,2.4vw,22px);line-height:1.5;letter-spacing:.5px}
 .registration .course-summary{background:#fff;border-color:#fff}
+.registration .form-heading-left h2 span{background:none;padding-bottom:0}
+.floating{transition:opacity .2s,transform .2s}.floating.floating-hidden{opacity:0;transform:translateY(16px);pointer-events:none}
+.registration input,.registration select,.registration textarea{scroll-margin:96px 0 96px}

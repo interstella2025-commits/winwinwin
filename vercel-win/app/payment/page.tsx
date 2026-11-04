@@ -1,6 +1,7 @@
 'use client';
 import { useEffect,useState } from 'react';
 import './payment.css';
+import { track } from '../../components/analytics';
 type Result={status:string;amount:number;orderNo:string;emailSent:boolean;isTest?:boolean;session?:string|null;error?:string};
 const LINE_URL='https://line.me/R/ti/p/@dmd9019a';
 const MAX_POLLS=30;
@@ -13,6 +14,8 @@ function demoResult(kind:string):Result|null{
 function LineButton({label}:{label:string}){return <a className="pay-line" href={LINE_URL} target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="#fff" d="M12 2.5C6.2 2.5 1.5 6.3 1.5 11c0 4.2 3.7 7.7 8.8 8.4.3.1.8.2.9.5.1.3.1.7 0 1l-.1.9c0 .3-.2 1 .9.5 1.1-.5 6-3.5 8.2-6.1 1.5-1.6 2.3-3.3 2.3-5.2 0-4.7-4.7-8.5-10.5-8.5Z"/><path fill="#06C755" d="M5.3 13.6h2.1c.3 0 .5-.2.5-.5s-.2-.5-.5-.5H5.8V8.9c0-.3-.2-.5-.5-.5s-.5.2-.5.5v4.2c0 .3.2.5.5.5Zm3.6-5.2c-.3 0-.5.2-.5.5v4.2c0 .3.2.5.5.5s.5-.2.5-.5V8.9c0-.3-.2-.5-.5-.5Zm5.1 0c-.3 0-.5.2-.5.5v2.6l-2.1-2.9a.5.5 0 0 0-.9.3v4.2c0 .3.2.5.5.5s.5-.2.5-.5v-2.6l2.1 2.9c.1.1.3.2.4.2h.2c.2-.1.3-.3.3-.5V8.9c0-.3-.2-.5-.5-.5Zm4 1c.3 0 .5-.2.5-.5s-.2-.5-.5-.5h-2.1c-.3 0-.5.2-.5.5v4.2c0 .3.2.5.5.5h2.1c.3 0 .5-.2.5-.5s-.2-.5-.5-.5h-1.6v-.8h1.6c.3 0 .5-.2.5-.5s-.2-.5-.5-.5h-1.6v-.8h1.6Z"/></svg><span>{label}</span></a>}
 export default function Payment(){
  const [result,setResult]=useState<Result|null>(null),[error,setError]=useState(''),[token,setToken]=useState(''),[timedOut,setTimedOut]=useState(false);
+ // Purchase fires only when the backend status API reports a real paid, non-test order; once per order number.
+ useEffect(()=>{if(!result||result.status!=='paid'||result.isTest||token==='demo'||!result.orderNo)return;const k='win-purchase-'+result.orderNo;try{if(localStorage.getItem(k))return;localStorage.setItem(k,'1')}catch{}track('Purchase','purchase',{value:result.amount,currency:'TWD',transaction_id:result.orderNo},result.orderNo)},[result,token]);
  useEffect(()=>{const q=new URLSearchParams(location.search);const demo=q.get('demo');if(demo){const d=demoResult(demo);if(d){setResult(d);setToken('demo');if(demo==='timeout')setTimedOut(true);return}}
  const value=q.get('token');if(!value){setError('付款連結無效，請回到報名頁。');return}setToken(value);let cancelled=false,count=0;let timer:ReturnType<typeof setTimeout>;
  async function read(){try{const r=await fetch('/api/payuni/status?token='+encodeURIComponent(value!),{cache:'no-store'});const body=await r.json() as Result;if(!r.ok)throw new Error(body.error||'無法取得付款結果。');if(cancelled)return;setResult(body);setError('');if(body.status==='pending'){if(++count<MAX_POLLS)timer=setTimeout(read,3000);else setTimedOut(true)}}catch(e){if(!cancelled)setError(e instanceof Error?e.message:'無法取得付款結果。')}}
