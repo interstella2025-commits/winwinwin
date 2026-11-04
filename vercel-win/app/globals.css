@@ -290,3 +290,4 @@ section.audience{padding:96px 7% 88px;text-align:center;background:radial-gradie
 @media(max-width:700px){.registration .notify-done{margin-top:28px;border-radius:18px}}
 .registration .form-heading-left{text-align:left}
 .registration .form-heading-left h2>span{display:inline;white-space:normal;background:none;padding:0}
+.course-summary p.fee-row{flex-wrap:wrap;row-gap:4px}.course-summary p.fee-row>.fee-note{flex-basis:100%}
