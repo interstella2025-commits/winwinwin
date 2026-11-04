@@ -264,3 +264,23 @@ section.audience{padding:96px 7% 88px;text-align:center;background:radial-gradie
 .audience-close{margin:56px 0 0;font-size:clamp(22px,3.6vw,36px);font-weight:900;line-height:1.5}
 .audience-close em{font-style:normal;color:#d9272e}
 @media(max-width:600px){section.audience{padding:60px 20px 56px}.audience-grid{grid-template-columns:1fr;gap:14px;margin-top:36px}.audience-grid li{padding:26px 16px;gap:8px}.audience-close{margin-top:40px}.aud-lead{font-size:19px}}
+/* form navy block (Elsa 2026-11-05) */
+.registration form{margin-top:36px;padding:32px 32px 28px;border-radius:22px;background:#0d1f3c;color:#fff;box-shadow:0 14px 40px #0d1f3c33}
+.registration form legend{font-size:clamp(20px,2.6vw,26px);font-weight:900;color:#fff}
+.registration form legend .required{color:#ff5a60}
+.registration form .session-option label{background:#e8f4fc;border:2px solid #e8f4fc;box-shadow:none}
+.registration form .session-option label:hover{border-color:#9fd8ff}
+.registration form .session-option strong{font-size:clamp(18px,2.4vw,22px);font-weight:900;color:#0d1f3c}
+.registration form .session-option label>span:last-child{font-size:15px;font-weight:500;color:#36506b}
+.registration form .session-option input:checked+label{background:#fff;border:2px solid #fff;box-shadow:0 0 0 4px #7cc4f2}
+.registration form .session-option input:focus-visible+label{outline:3px solid #9fd8ff;outline-offset:5px}
+.registration form .field-grid{background:#fff;border:0;box-shadow:none}
+.registration form .field-grid>label{font-size:clamp(15px,2.2vw,18px);font-weight:800}
+.registration form .field-grid input:user-invalid{border:2px solid #e0a020;background:#fffaf0}
+.registration form .consent{font-size:15px;font-weight:500;color:#e8f4fc}
+.registration form .consent input{accent-color:#7cc4f2}
+.registration form .form-note{font-size:14px;font-weight:500;color:#cfe6f7}
+.registration form .error{color:#ffb4b8;font-weight:700}
+.registration form .submit-button:focus-visible{outline-color:#9fd8ff}
+.registration form .submit-button:disabled{opacity:.7;cursor:not-allowed}
+@media(max-width:700px){.registration form{margin-top:28px;padding:24px 16px 22px;border-radius:18px}.registration form .field-grid{padding:22px 18px 4px;border-radius:14px}.registration form .session-option label{border-radius:14px}}
