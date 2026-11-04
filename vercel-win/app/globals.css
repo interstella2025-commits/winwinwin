@@ -291,3 +291,8 @@ section.audience{padding:96px 7% 88px;text-align:center;background:radial-gradie
 .registration .form-heading-left{text-align:left}
 .registration .form-heading-left h2>span{display:inline;white-space:normal;background:none;padding:0}
 .course-summary p.fee-row{flex-wrap:wrap;row-gap:4px}.course-summary p.fee-row>.fee-note{flex-basis:100%}
+.application.registration{background:#0d1f3c}
+.application.registration::before,.application.registration::after{display:none}
+.registration form{background:none;box-shadow:none;padding-left:0;padding-right:0}
+.registration .form-heading-left .course-name{margin:0 0 14px;color:#dff1ff;font-weight:700;font-size:clamp(18px,2.4vw,22px);line-height:1.5;letter-spacing:.5px}
+.registration .course-summary{background:#fff;border-color:#fff}
