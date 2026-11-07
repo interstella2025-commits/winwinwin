@@ -30,15 +30,16 @@ await test('status is uncached and contains no applicant PII',async()=>{const r=
 await test('email failure keeps paid data and callback retry recovers',async()=>{const data={...valid,requestId:crypto.randomUUID()};await create.POST(request(data));const second=sqlite.prepare('SELECT * FROM payment_orders WHERE id!=?').get(order.id);const values={...paid,MerTradeNo:second.order_no,TradeNo:'PROVIDER002'};mailOK=false;assert.equal((await notify.POST(callback(values))).status,503);assert.equal(sqlite.prepare('SELECT status FROM payment_orders WHERE id=?').get(second.id).status,'paid');mailOK=true;assert.equal((await notify.POST(callback(values))).status,200);assert.equal(sqlite.prepare('SELECT email_status FROM payment_orders WHERE id=?').get(second.id).email_status,'sent')});
 await test('changed registration cannot silently reuse another payload',async()=>{const r=await create.POST(request({...valid,name:'Changed'}));assert.equal(r.status,409);assert.equal((await r.json()).resetRequest,true)});
 await test('invalid receipt token does not expose order',async()=>{assert.equal((await status.GET(new Request(origin+'/api/payuni/status?token=bad'))).status,400);assert.equal((await status.GET(new Request(origin+'/api/payuni/status?token='+crypto.randomUUID()))).status,404)});
-await test('one-dollar test is protected, idempotent, and independent of course price',async()=>{
+await test('one-dollar test is protected, makes a new order each call, returns to 2027course, and is independent of course price',async()=>{
 assert.equal((await testCreate.POST(new Request(origin+'/api/payuni/test/create',{method:'POST'}))).status,404);
 const req=()=>new Request(origin+'/api/payuni/test/create',{method:'POST',headers:{Authorization:'Bearer '+env.PAYUNI_TEST_ACCESS}});
-const first=await testCreate.POST(req());assert.equal(first.status,200);const body=await first.json();assert.equal((await testCreate.POST(req())).status,200);
-const testOrder=sqlite.prepare("SELECT * FROM payment_orders WHERE source='win-test-1'").get();assert.equal(testOrder.amount,1);assert.equal(core.AMOUNT,399);
+const first=await testCreate.POST(req());assert.equal(first.status,200);const body=await first.json();const second=await testCreate.POST(req());assert.equal(second.status,200);const body2=await second.json();assert.notEqual(body2.orderNo,body.orderNo);assert.notEqual(body2.checkoutUrl,body.checkoutUrl);
+const testOrder=sqlite.prepare("SELECT * FROM payment_orders WHERE order_no=?").get(body.orderNo);assert.equal(testOrder.source,'win-test-1');assert.equal(testOrder.amount,1);assert.equal(core.AMOUNT,399);
 const payment=await checkout.GET(new Request(body.checkoutUrl));assert.match(await payment.text(),/NT\$1/);
+const testBack=await returned.POST(callback({MerID:cfg.merchant,MerTradeNo:testOrder.order_no,TradeAmt:1,TradeStatus:'1',TradeNo:'PROVIDERTEST000'}));assert.equal(testBack.headers.get('location'),'https://2027course.win-lin.com/payment?token='+testOrder.token);
 const values={MerID:cfg.merchant,MerTradeNo:testOrder.order_no,TradeAmt:1,TradeStatus:'1',TradeNo:'PROVIDERTEST001'};
 assert.equal((await notify.POST(callback(values))).status,200);assert.match(lastEmail.subject,/測試/);assert.match(lastEmail.text,/不包含課程/);
-assert.equal(sqlite.prepare("SELECT count(*) n FROM payment_orders WHERE source='win-test-1'").get().n,1);
+assert.equal(sqlite.prepare("SELECT count(*) n FROM payment_orders WHERE source='win-test-1'").get().n,2);
 });
 await test('per-minute checkout rate limit enforced',async()=>{let limited=false;for(let i=0;i<6;i++){const r=await create.POST(request({...valid,requestId:crypto.randomUUID()}));if(r.status===429)limited=true}assert.ok(limited)});
 console.log(`${passes} payment checks passed; mock credentials, in-memory database, no real payments or emails.`);
