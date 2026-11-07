@@ -7,17 +7,22 @@ import PrecourseInfo from './precourse-info';
 import Audience from './audience';
 import { COURSE_SESSIONS, NOTIFY_CODE, NOTIFY_LABEL } from '../lib/course-sessions';
 import CourseRevision,{revisedIndexes,hiddenIndexes,MentorGallery,InternationalExchange} from './course-revisions';
+function checkoutRequestId(){
+ try{const existing=sessionStorage.getItem('win-checkout-id');if(existing)return existing;const id=crypto.randomUUID();sessionStorage.setItem('win-checkout-id',id);return id}catch{return crypto.randomUUID()}
+}
 export default function Page(){
  const [status,setStatus]=useState('');const [busy,setBusy]=useState(false);const [formInView,setFormInView]=useState(false);
  useEffect(()=>{const el=document.getElementById('apply');if(!el||!('IntersectionObserver' in window))return;const o=new IntersectionObserver(([e])=>setFormInView(e.isIntersecting),{rootMargin:'0px 0px -80px 0px'});o.observe(el);return()=>o.disconnect()},[]);const [notify,setNotify]=useState(false);const [done,setDone]=useState(false);
  async function submit(event:React.FormEvent<HTMLFormElement>){
- event.preventDefault();setBusy(true);setStatus('');const form=event.currentTarget;const values=Object.fromEntries(new FormData(form));const phone=String(values.phone||'').replace(/[\s-]/g,'');if(!/^09\d{8}$/.test(phone)){setStatus('請輸入正確的台灣手機號碼，例：0912 345 678');setBusy(false);return}values.phone=phone;
- track('Lead','generate_lead',{content_name:'WIN講師班 90分鐘線上前導課',value:values.sessionCode==='notify'?0:399,currency:'TWD'});
- if(values.sessionCode===NOTIFY_CODE){try{const r=await fetch('/api/notify-signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...values,consent:values.consent==='on',requestId:crypto.randomUUID()})});const body=await r.json() as {error?:string;ok?:boolean};if(!r.ok||!body.ok)throw new Error(body.error||'暫時無法完成登記，請稍後再試。');setDone(true);setBusy(false)}catch(e){setStatus(e instanceof Error?e.message:'暫時無法完成登記，請稍後再試。');setBusy(false)}return}
- try{let requestId=sessionStorage.getItem('win-checkout-id');if(!requestId){requestId=crypto.randomUUID();sessionStorage.setItem('win-checkout-id',requestId)}
- const r=await fetch('/api/payuni/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...values,consent:values.consent==='on',requestId})});const body=await r.json() as {error?:string;checkoutUrl?:string;resetRequest?:boolean};
+ event.preventDefault();setBusy(true);setStatus('');const form=event.currentTarget;const values=Object.fromEntries(new FormData(form));const phone=String(values.phone||'').replace(/[\s-]/g,'');if(!/^09\d{8}$/.test(phone)){setStatus('請輸入正確的台灣手機號碼，例：0912 345 678');setBusy(false);return} values.phone=phone;
+ const notifyMode=values.sessionCode===NOTIFY_CODE;
+ const requestId=notifyMode?crypto.randomUUID():checkoutRequestId();
+ const leadEventId=requestId,checkoutEventId=requestId+':ic';
+ track('Lead','generate_lead',{content_name:'WIN講師班 90分鐘線上前導課',value:notifyMode?0:399,currency:'TWD'},leadEventId);
+ if(notifyMode){try{const r=await fetch('/api/notify-signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...values,consent:values.consent==='on',requestId,leadEventId})});const body=await r.json() as {error?:string;ok?:boolean};if(!r.ok||!body.ok)throw new Error(body.error||'暫時無法完成登記，請稍後再試。');setDone(true);setBusy(false)}catch(e){setStatus(e instanceof Error?e.message:'暫時無法完成登記，請稍後再試。');setBusy(false)}return}
+ try{const r=await fetch('/api/payuni/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...values,consent:values.consent==='on',requestId,leadEventId,checkoutEventId})});const body=await r.json() as {error?:string;checkoutUrl?:string;resetRequest?:boolean};
  if(body.resetRequest)sessionStorage.removeItem('win-checkout-id');
- if(!r.ok||!body.checkoutUrl)throw new Error(body.error||'目前無法前往付款。');track('InitiateCheckout','begin_checkout',{value:399,currency:'TWD'});setStatus('報名資料已保存，即將前往付款…');location.assign(body.checkoutUrl);
+ if(!r.ok||!body.checkoutUrl)throw new Error(body.error||'目前無法前往付款。');track('InitiateCheckout','begin_checkout',{value:399,currency:'TWD'},checkoutEventId);setStatus('報名資料已保存，即將前往付款…');location.assign(body.checkoutUrl);
  }catch(e){setStatus(e instanceof Error?e.message:'暫時無法建立付款，請稍後再試。');setBusy(false)}}
  return <><header><a className="brand" href="#top">EXPERT TO <b>ENTERPRISE</b></a><nav><a href="#curriculum">課綱</a><a href="#mentor">導師</a><a className="nav-cta" href="#apply">報名前導課 →</a></nav></header><main id="top"><h1 className="sr-only">Expert to Enterprise WIN講師班｜銷講・招商・募資實戰</h1>{assets.map((a,i)=>hiddenIndexes.has(i)?null:<div key={a.src}>{i===18?<PrecourseInfo/>:i===17?<Audience/>:revisedIndexes.has(i)?<CourseRevision index={i}/>:<section className={i===0?"source-hero":undefined} id={i===7?'curriculum':undefined} aria-label={a.alt}><img src={a.src} width={a.width} height={a.height} alt={a.alt} loading={i===0?'eager':'lazy'} fetchPriority={i===0?'high':'auto'}/>{i===0&&<a className="blueprint-cta-hit" href="#apply" aria-label="報名線上90分鐘前導課"></a>}</section>}{i===13&&<MentorGallery/>}{i===16&&<InternationalExchange/>}</div>)}<section className="application registration" id="apply" aria-labelledby="registration-title"><div className="form-shell">
 <div className="form-heading form-heading-left"><p className="course-name">Expert to Enterprise<br/>WIN講師班</p><h2 id="registration-title"><span><span>想讓專業變成企業，</span><span>就從這堂課開始！</span></span></h2></div>

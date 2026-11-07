@@ -1,3 +1,4 @@
+import { sendPurchaseEvent } from '../../../../lib/meta/capi';
 import { decode,verifyOrder } from '../../../../lib/payuni/core';
 import { db,settings,readCallback,orderBy,sendPaidEmail } from '../../../../lib/payuni/server';
 export const dynamic='force-dynamic';export const runtime='nodejs';
@@ -14,6 +15,8 @@ export async function POST(request:Request){
  }else{await db().query("UPDATE payment_orders SET status=$1,notify_count=notify_count+1 WHERE id=$2 AND status!='paid'",[status,order.id])}
  const current=await orderBy('order_no',order.order_no);if(!current)return reply('RETRY',503);
  if(current.status==='paid'&&current.provider_trade_no!==data.TradeNo&&status==='paid')return reply('INVALID',400);
+ // Purchase goes out only for the notify that first marks the order paid. A duplicate does not send it again.
+ if(current.status==='paid')await sendPurchaseEvent(current,order.status!=='paid'&&status==='paid');
  if(current.status==='paid'&&!await sendPaidEmail(current))return reply('RETRY',503);
  return reply('OK',200);
  }catch{return reply('RETRY',503)}
