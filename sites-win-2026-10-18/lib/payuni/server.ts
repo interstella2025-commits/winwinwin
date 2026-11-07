@@ -14,14 +14,14 @@ export async function sendPaidEmail(order:Order){
  if(order.status!=='paid')return true;
  const claimed=await db().prepare("UPDATE payment_orders SET email_status='sending',email_lease=? WHERE id=? AND status='paid' AND email_status!='sent' AND (email_status!='sending' OR email_lease<?) RETURNING id").bind(Date.now()+60000,order.id,Date.now()).first();
  if(!claimed){const latest=await orderBy('order_no',order.order_no);return latest?.email_status==='sent'}
- const person=await db().prepare('SELECT name,email,session_code FROM applications WHERE id=?').bind(order.application_id).first<{name:string;email:string;session_code:string|null}>();
+ const person=await db().prepare('SELECT name,email,session_code,session_catalog FROM applications WHERE id=?').bind(order.application_id).first<{name:string;email:string;session_code:string|null;session_catalog:string|null}>();
  try{
  if(!person||!env.RESEND_API_KEY||!env.RESEND_FROM)throw new Error('Email unavailable');
  const test=order.source==='win-test-1';
  const subject=test?'測試付款成功｜WIN NT$1 金流驗收':'付款成功｜WIN 90分鐘線上前導課';
  const message=test?'NT$1 金流測試款項已收到。此為系統驗收測試，不包含課程報名或席位。':'已收到你的 NT$399 前導課款項。課程所有場次均為線上課程，上課連結將另行通知。此付款僅為線上前導課，不代表正式講師班錄取或費用。';
  const product=test?'WIN NT$1 金流驗收測試':PRODUCT;
- const session=test?null:sessionLabel(person.session_code);
+ const session=test?null:sessionLabel(person.session_code,person.session_catalog);
  const schedule=session?`暫定場次：${session}，線上課程；實際安排與上課連結以主辦方通知為準。`:'課程日期與參加方式確定後將另行通知。';
  const response=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${env.RESEND_API_KEY}`,'Content-Type':'application/json','Idempotency-Key':`win-paid/${order.id}`},body:JSON.stringify({from:env.RESEND_FROM,to:[person.email],subject,text:`${person.name}，你好：\n\n${message}\n\n${test?'':schedule}\n\n項目：${product}\n訂單：${order.order_no}\n\nWIN 課程團隊`,html:`<div lang="zh-Hant" style="font-family:Arial,sans-serif;line-height:1.8;max-width:600px;margin:auto;padding:28px;color:#17243a"><p>${escape(person.name)}，你好：</p><h2>${test?'測試付款成功':'前導課付款成功'}</h2><p>${message}</p>${test?'':`<p>${escape(schedule)}</p>`}<p>項目：${product}<br>金額：NT$${order.amount}<br>訂單：${order.order_no}</p><p>WIN 課程團隊</p></div>`,...(env.RESEND_REPLY_TO?{reply_to:env.RESEND_REPLY_TO}:{})}),signal:AbortSignal.timeout(10000)});
  if(!response.ok)throw new Error('Email rejected');const result=await response.json() as {id?:string};

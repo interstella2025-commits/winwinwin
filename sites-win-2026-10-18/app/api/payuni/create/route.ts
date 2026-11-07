@@ -1,5 +1,6 @@
 import { AMOUNT,digest,validate } from '../../../../lib/payuni/core';
 import { db,settings,json,orderBy } from '../../../../lib/payuni/server';
+import { ACTIVE_SESSION_CATALOG } from '../../../../lib/course-sessions';
 export async function POST(request:Request){
  const origin=request.headers.get('origin');if(!origin||origin!==new URL(request.url).origin)return json({error:'請從本頁送出報名。'},403);
  let c;try{c=settings()}catch{return json({error:'付款服務尚未開放，請稍後再試。'},503)}
@@ -18,7 +19,7 @@ export async function POST(request:Request){
  if(!rate||rate.attempts>5)return json({error:'送出次數較多，請稍候一分鐘再試。'},429);
  const id=crypto.randomUUID(),token=crypto.randomUUID(),application=crypto.randomUUID(),now=new Date().toISOString();const orderNo='WIN'+Date.now().toString(36).toUpperCase()+crypto.randomUUID().replaceAll('-','').slice(0,10).toUpperCase();
  await db().batch([
- db().prepare('INSERT INTO applications (id,name,email,phone,profession,stage,topic,session_code,line_name,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)').bind(application,data.name,data.email,data.phone,data.profession,data.stage,data.topic,data.sessionCode,data.lineName,now),
+ db().prepare('INSERT INTO applications (id,name,email,phone,profession,stage,topic,session_code,line_name,session_catalog,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').bind(application,data.name,data.email,data.phone,data.profession,data.stage,data.topic,data.sessionCode,data.lineName,ACTIVE_SESSION_CATALOG,now),
  db().prepare('INSERT INTO payment_orders (id,application_id,order_no,merchant,amount,token,request_id,status,created_at,consent_at,source) VALUES (?,?,?,?,?,?,?,\'pending\',?,?,?)').bind(id,application,orderNo,c.merchant,AMOUNT,token,requestKey,now,now,c.origin+'/#apply')]);
  return json({checkoutUrl:`/api/payuni/checkout?token=${token}`});
  }catch{return json({error:'暫時無法建立付款，請保留資料稍後再試。'},503)}
