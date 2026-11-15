@@ -2,7 +2,6 @@
 import { useEffect,useState } from 'react';
 import './payment.css';
 import { track } from '../../components/analytics';
-import FlowText from '../../components/flow-text';
 type Result={status:string;amount:number;orderNo:string;emailSent:boolean;isTest?:boolean;session?:string|null;error?:string};
 const LINE_URL='https://line.me/R/ti/p/@dmd9019a';
 const MAX_POLLS=30;
@@ -15,7 +14,8 @@ function demoResult(kind:string):Result|null{
  if(kind==='paid')return{...base,status:'paid',session:online};if(kind==='inperson')return{...base,status:'paid',session:place};
  if(kind==='pending'||kind==='timeout')return{...base,status:'pending'};
  if(kind==='failed')return{...base,status:'failed'};if(kind==='test')return{...base,amount:1,status:'paid',isTest:true};return null}
-function SessionValue({session}:{session:string}){const cut=session.indexOf('，');const parts=cut<0?[session]:[session.slice(0,cut+1),session.slice(cut+1)];return <FlowText parts={parts}/>}
+function sessionParts(session:string){const cut=session.indexOf('，');if(cut<0)return [session];const rest=session.slice(cut+1);const time=rest.match(/\d{2}:\d{2}–\d{2}:\d{2}（台灣時間）$/);if(!time||time.index===undefined)return [session.slice(0,cut),rest];return [session.slice(0,cut),rest.slice(0,time.index),time[0]]}
+function SessionValue({session}:{session:string}){return <span className="session-lines">{sessionParts(session).map(part=><span className="session-line" key={part}>{part}</span>)}</span>}
 function LineButton({label}:{label:string}){return <a className="pay-line" href={LINE_URL} target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="#fff" d="M12 2.5C6.2 2.5 1.5 6.3 1.5 11c0 4.2 3.7 7.7 8.8 8.4.3.1.8.2.9.5.1.3.1.7 0 1l-.1.9c0 .3-.2 1 .9.5 1.1-.5 6-3.5 8.2-6.1 1.5-1.6 2.3-3.3 2.3-5.2 0-4.7-4.7-8.5-10.5-8.5Z"/><path fill="#06C755" d="M5.3 13.6h2.1c.3 0 .5-.2.5-.5s-.2-.5-.5-.5H5.8V8.9c0-.3-.2-.5-.5-.5s-.5.2-.5.5v4.2c0 .3.2.5.5.5Zm3.6-5.2c-.3 0-.5.2-.5.5v4.2c0 .3.2.5.5.5s.5-.2.5-.5V8.9c0-.3-.2-.5-.5-.5Zm5.1 0c-.3 0-.5.2-.5.5v2.6l-2.1-2.9a.5.5 0 0 0-.9.3v4.2c0 .3.2.5.5.5s.5-.2.5-.5v-2.6l2.1 2.9c.1.1.3.2.4.2h.2c.2-.1.3-.3.3-.5V8.9c0-.3-.2-.5-.5-.5Zm4 1c.3 0 .5-.2.5-.5s-.2-.5-.5-.5h-2.1c-.3 0-.5.2-.5.5v4.2c0 .3.2.5.5.5h2.1c.3 0 .5-.2.5-.5s-.2-.5-.5-.5h-1.6v-.8h1.6c.3 0 .5-.2.5-.5s-.2-.5-.5-.5h-1.6v-.8h1.6Z"/></svg><span>{label}</span></a>}
 export default function Payment(){
  const [result,setResult]=useState<Result|null>(null),[error,setError]=useState(''),[token,setToken]=useState(''),[timedOut,setTimedOut]=useState(false);
