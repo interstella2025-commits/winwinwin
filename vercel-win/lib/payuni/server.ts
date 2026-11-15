@@ -26,7 +26,7 @@ const FOOTER_TEXT='此封信件為系統自動發送，請勿直接回覆。如�
  const test=order.source==='win-test-1';
  const chosen=test?null:sessionByCode(person.session_code);
  const inPerson=!test&&isInPersonCode(person.session_code);
- const subject=test?'測試付款成功｜WIN NT$1 金流驗收':inPerson?'付款成功｜Expert to Enterprise WIN講師班 90分鐘實體前導課':'付款成功｜Expert to Enterprise WIN講師班 90分鐘線上前導課';
+ const subject=test?'測試付款成功｜WIN NT$1 金流驗收':inPerson?'付款成功｜Expert to Enterprise WIN講師班 90分鐘實體前導課（台北場）':'付款成功｜Expert to Enterprise WIN講師班 90分鐘線上前導課';
  const message=test?'NT$1 金流測試款項已收到。此為系統驗收測試，不包含課程報名或席位。':inPerson?'已收到你的 NT$399 前導課款項。此付款僅為實體前導課，不代表正式講師班錄取或費用。':'已收到你的 NT$399 前導課款項。此付款僅為線上前導課，不代表正式講師班錄取或費用。';
  const product=test?'WIN NT$1 金流驗收測試':productFor(person.session_code);
  const session=chosen?sessionLabel(chosen.code):test?null:sessionLabel(person.session_code);
