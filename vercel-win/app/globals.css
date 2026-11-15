@@ -62,6 +62,7 @@ main>div:first-of-type>section{container-type:inline-size}
 @media(max-width:600px){
  .wrap-unit{display:inline-block;white-space:nowrap}
  .precourse-info{container-type:inline-size}
+ .precourse-lead{font-size:min(16px,4.35cqw)}
  .precourse-info h2{font-size:min(34px,11cqw)}
  .heading-phrase{white-space:nowrap}
  .precourse-info p,.registration p,.registration .consent,footer{text-wrap:pretty}
@@ -203,6 +204,7 @@ section.generated-artwork{padding-top:20px}
 .registration .field-grid input::placeholder{color:#8aa0b5}
 .registration .field-grid input:focus{outline:0;border-color:#0d1f3c;background:#fff;box-shadow:0 0 0 4px #2858872e}
 .registration .field-grid input:focus-visible{box-shadow:0 0 0 4px #2858872e}
+.registration form .phone-row{display:flex;gap:8px;margin-top:10px}.registration form .dial{position:relative;flex:0 0 auto}.registration form .dial-button{display:flex;align-items:center;min-height:54px;margin:0;padding:0 28px 0 10px;border:1px solid #d3e3ef;border-radius:12px;background:#f7fbfe url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%230d1f3c' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E") right 8px center/12px 8px no-repeat;color:#0d1f3c;font:inherit;font-size:16px;font-weight:800;white-space:nowrap;cursor:pointer}.registration form .dial-button:focus-visible{outline:0;border-color:#0d1f3c;box-shadow:0 0 0 4px #2858872e}.registration form .dial-list{position:absolute;z-index:6;top:calc(100% + 6px);left:0;width:max-content;min-width:220px;max-height:520px;overflow:auto;margin:0;padding:6px;list-style:none;border:1px solid #d3e3ef;border-radius:12px;background:#fff;box-shadow:0 12px 32px #0d1f3c22}.registration form .dial-list button{display:block;width:100%;min-height:40px;padding:8px 10px;border:0;border-radius:8px;background:transparent;color:#0d1f3c;font:inherit;font-size:16px;font-weight:700;text-align:left;white-space:nowrap;cursor:pointer}.registration form .dial-list button[aria-selected=true],.registration form .dial-list button:hover{background:#e8f4fc}.registration form .phone-row input{flex:1;min-width:0;margin-top:0}
 .registration .consent{margin:0 4px 28px;font-size:14px;color:#3e536b;line-height:1.8;font-weight:500}
 .registration .consent input{width:20px;height:20px;margin:3px 10px 0 0;accent-color:#c82e35}
 .registration .submit-button{display:flex;align-items:center;justify-content:center;width:100%;min-height:68px;padding:20px 24px;border:1px solid #c99a34;border-radius:99px;background:linear-gradient(180deg,#fff0a1,#f2cb64);box-shadow:0 8px 20px #8b6b2226;color:#071e41;font-size:clamp(18px,2.6vw,24px);font-weight:900;letter-spacing:.5px;transition:background .15s,transform .15s,box-shadow .15s}
@@ -299,7 +301,8 @@ section.audience{padding:96px 7% 88px;text-align:center;background:radial-gradie
 @media(max-width:700px){.registration .notify-done{margin-top:28px;border-radius:18px}}
 .registration .form-heading-left{text-align:left}
 .registration .form-heading-left h2>span{display:inline;white-space:normal;background:none;padding:0}
-.course-summary p.fee-row{flex-wrap:wrap;row-gap:4px}.course-summary p.fee-row>.fee-note{flex-basis:100%}
+.registration .course-summary p.fee-row{display:grid;grid-template-columns:auto 1fr;column-gap:14px;row-gap:4px;align-items:baseline}.registration .course-summary p.fee-row>.fee-note{grid-column:2;min-width:0}.registration .fee-note .wrap-unit{display:inline-block;white-space:nowrap}
+@media(max-width:600px){.registration .course-summary p.fee-row{column-gap:8px}}
 .application.registration{background:#0d1f3c}
 .application.registration::before,.application.registration::after{display:none}
 .registration form{background:none;box-shadow:none;padding-left:0;padding-right:0}
