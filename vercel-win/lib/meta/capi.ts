@@ -4,7 +4,7 @@ import { db, first } from '../payuni/db';
 
 /** Graph version still inside the Conversions API two-year support window. */
 const GRAPH_VERSION = 'v25.0';
-const CONTENT_NAME = 'WIN講師班 90分鐘線上前導課';
+const CONTENT_NAME = 'WIN講師班 90分鐘前導課';
 const APPLY_URL = `${PUBLIC_ORIGIN}/#apply`;
 const PAYMENT_URL = `${PUBLIC_ORIGIN}/payment`;
 const EVENT_ID = /^[A-Za-z0-9:_-]{8,80}$/;
