@@ -1,7 +1,9 @@
-import { COURSE_SESSIONS, NOTIFY_CODE } from '../course-sessions';
+import { COURSE_SESSIONS, NOTIFY_CODE, isInPersonCode } from '../course-sessions';
 import { createCipheriv, createDecipheriv, createHash, timingSafeEqual } from 'node:crypto';
 export const AMOUNT = 399;
 export const PRODUCT = 'Expert to Enterprise WIN講師班｜90分鐘線上前導課';
+export const PRODUCT_IN_PERSON = 'Expert to Enterprise WIN講師班｜90分鐘實體前導課（台北場）';
+export function productFor(code:string|null|undefined){return isInPersonCode(code)?PRODUCT_IN_PERSON:PRODUCT}
 /** Public sales site. All PAYUNi Return/Notify/Back URLs point here. */
 export const PUBLIC_ORIGIN = 'https://2027course.win-lin.com';
 /** Origins allowed to submit the registration form. */

@@ -1,5 +1,5 @@
-import { sessionByCode, sessionLabel } from '../course-sessions';
-import { config, PRODUCT, escape } from './core';
+import { isInPersonCode, sessionByCode, sessionLabel } from '../course-sessions';
+import { config, productFor, escape } from './core';
 import { db, first } from './db';
 // Sender is fixed to the verified Resend domain mail.win-lin.com; no reply-to.
 export const EMAIL_FROM='WIN講師班 <noreply@mail.win-lin.com>';
@@ -25,10 +25,10 @@ const FOOTER_TEXT='此封信件為系統自動發送，請勿直接回覆。如�
  if(!person||!env.RESEND_API_KEY)throw new Error('Email unavailable');
  const test=order.source==='win-test-1';
  const chosen=test?null:sessionByCode(person.session_code);
- const inPerson=chosen?.format==='inperson';
- const subject=test?'測試付款成功｜WIN NT$1 金流驗收':inPerson?'付款成功｜Expert to Enterprise WIN講師班 實體前導課':'付款成功｜Expert to Enterprise WIN講師班 90分鐘線上前導課';
- const message=test?'NT$1 金流測試款項已收到。此為系統驗收測試，不包含課程報名或席位。':inPerson?'已收到你的 NT$399 前導課款項。此付款為實體前導課，不代表正式講師班錄取或費用。':'已收到你的 NT$399 前導課款項。此付款僅為線上前導課，不代表正式講師班錄取或費用。';
- const product=test?'WIN NT$1 金流驗收測試':inPerson?'Expert to Enterprise WIN講師班｜實體前導課':PRODUCT;
+ const inPerson=!test&&isInPersonCode(person.session_code);
+ const subject=test?'測試付款成功｜WIN NT$1 金流驗收':inPerson?'付款成功｜Expert to Enterprise WIN講師班 90分鐘實體前導課':'付款成功｜Expert to Enterprise WIN講師班 90分鐘線上前導課';
+ const message=test?'NT$1 金流測試款項已收到。此為系統驗收測試，不包含課程報名或席位。':inPerson?'已收到你的 NT$399 前導課款項。此付款僅為實體前導課，不代表正式講師班錄取或費用。':'已收到你的 NT$399 前導課款項。此付款僅為線上前導課，不代表正式講師班錄取或費用。';
+ const product=test?'WIN NT$1 金流驗收測試':productFor(person.session_code);
  const session=chosen?sessionLabel(chosen.code):test?null:sessionLabel(person.session_code);
  const schedule=session?(inPerson?`場次：${session}。`:`場次：${session}。上課連結將於開課前寄送至您的 Email，請留意信箱。`):'課程日期與參加方式確定後將另行通知。';
  const response=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${env.RESEND_API_KEY}`,'Content-Type':'application/json','Idempotency-Key':`win-paid/${order.id}`},body:JSON.stringify({from:EMAIL_FROM,to:[person.email],subject,text:`${person.name}，你好：\n\n${message}\n\n${test?'':schedule}\n\n項目：${product}\n訂單：${order.order_no}\n\nWIN 課程團隊\n\n${FOOTER_TEXT}：${LINE_URL}`,html:`<div lang="zh-Hant" style="font-family:Arial,sans-serif;line-height:1.8;max-width:600px;margin:auto;padding:28px;color:#17243a"><p>${escape(person.name)}，你好：</p><h2>${test?'測試付款成功':'前導課付款成功'}</h2><p>${message}</p>${test?'':`<p>${escape(schedule)}</p>`}<p>項目：${product}<br>金額：NT$${order.amount}<br>訂單：${order.order_no}</p><p>WIN 課程團隊</p><p style="margin-top:24px;padding-top:16px;border-top:1px solid #e3e7ee;font-size:14px;color:#5b6577">${FOOTER_TEXT.replace('LINE 官方帳號',`<a href="${LINE_URL}" style="color:#17243a;font-weight:inherit;text-decoration:underline">LINE 官方帳號</a>`)}</p></div>`}),signal:AbortSignal.timeout(10000)});
