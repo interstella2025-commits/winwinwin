@@ -18,7 +18,7 @@ export async function sendPaidEmail(order:Order){
  try{
  if(!person||!env.RESEND_API_KEY||!env.RESEND_FROM)throw new Error('Email unavailable');
  const test=order.source==='win-test-1';
- const subject=test?'測試付款成功｜WIN NT$1 金流驗收':'付款成功｜WIN 90分鐘線上前導課';
+ const subject=test?'測試付款成功｜WIN NT$1 金流驗收':'付款成功｜Expert to Enterprise WIN講師班 90分鐘線上前導課';
  const message=test?'NT$1 金流測試款項已收到。此為系統驗收測試，不包含課程報名或席位。':'已收到你的 NT$399 前導課款項。課程所有場次均為線上課程，上課連結將另行通知。此付款僅為線上前導課，不代表正式講師班錄取或費用。';
  const product=test?'WIN NT$1 金流驗收測試':PRODUCT;
  const session=test?null:sessionLabel(person.session_code);
