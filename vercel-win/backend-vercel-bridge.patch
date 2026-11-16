@@ -17,17 +17,18 @@ diff --git a/app/api/payuni/create/route.ts b/app/api/payuni/create/route.ts
 index ae547d2..f1ea9bc 100644
 --- a/app/api/payuni/create/route.ts
 +++ b/app/api/payuni/create/route.ts
-@@ -1,5 +1,5 @@
+@@ -1,6 +1,6 @@
  import { AMOUNT,digest,validate } from '../../../../lib/payuni/core';
 -import { db,settings,json,orderBy } from '../../../../lib/payuni/server';
 +import { db,settings,json,orderBy,VERCEL_ORIGIN } from '../../../../lib/payuni/server';
+ import { ACTIVE_SESSION_CATALOG } from '../../../../lib/course-sessions';
  export async function POST(request:Request){
   const origin=request.headers.get('origin');if(!origin||origin!==new URL(request.url).origin)return json({error:'請從本頁送出報名。'},403);
   let c;try{c=settings()}catch{return json({error:'付款服務尚未開放，請稍後再試。'},503)}
-@@ -19,7 +19,7 @@ export async function POST(request:Request){
+@@ -20,7 +20,7 @@ export async function POST(request:Request){
   const id=crypto.randomUUID(),token=crypto.randomUUID(),application=crypto.randomUUID(),now=new Date().toISOString();const orderNo='WIN'+Date.now().toString(36).toUpperCase()+crypto.randomUUID().replaceAll('-','').slice(0,10).toUpperCase();
   await db().batch([
-  db().prepare('INSERT INTO applications (id,name,email,phone,profession,stage,topic,session_code,line_name,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)').bind(application,data.name,data.email,data.phone,data.profession,data.stage,data.topic,data.sessionCode,data.lineName,now),
+  db().prepare('INSERT INTO applications (id,name,email,phone,profession,stage,topic,session_code,line_name,session_catalog,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').bind(application,data.name,data.email,data.phone,data.profession,data.stage,data.topic,data.sessionCode,data.lineName,ACTIVE_SESSION_CATALOG,now),
 - db().prepare('INSERT INTO payment_orders (id,application_id,order_no,merchant,amount,token,request_id,status,created_at,consent_at,source) VALUES (?,?,?,?,?,?,?,\'pending\',?,?,?)').bind(id,application,orderNo,c.merchant,AMOUNT,token,requestKey,now,now,c.origin+'/#apply')]);
 + db().prepare('INSERT INTO payment_orders (id,application_id,order_no,merchant,amount,token,request_id,status,created_at,consent_at,source) VALUES (?,?,?,?,?,?,?,\'pending\',?,?,?)').bind(id,application,orderNo,c.merchant,AMOUNT,token,requestKey,now,now,(request.headers.get('x-win-public-origin')===VERCEL_ORIGIN?VERCEL_ORIGIN:c.origin)+'/#apply')]);
   return json({checkoutUrl:`/api/payuni/checkout?token=${token}`});
@@ -54,9 +55,7 @@ diff --git a/checks/payment.test.cjs b/checks/payment.test.cjs
 index 0f13dcf..e6641b5 100644
 --- a/checks/payment.test.cjs
 +++ b/checks/payment.test.cjs
-@@ -41,5 +41,15 @@ assert.equal((await notify.POST(callback(values))).status,200);assert.match(last
- assert.equal(sqlite.prepare("SELECT count(*) n FROM payment_orders WHERE source='win-test-1'").get().n,1);
- });
+@@ -98,3 +98,13 @@ await test('per-minute checkout rate limit enforced',async()=>{let limited=false;for(let i=0;i<6;i++){const r=await create.POST(request({...valid,requestId:crypto.randomUUID()}));if(r.status===429)limited=true}assert.ok(limited)});
  await test('per-minute checkout rate limit enforced',async()=>{let limited=false;for(let i=0;i<6;i++){const r=await create.POST(request({...valid,requestId:crypto.randomUUID()}));if(r.status===429)limited=true}assert.ok(limited)});
 +await test('Vercel orders use only the allowlisted origin for signed callbacks and browser return',async()=>{
 + const vercel='https://2027course.win-lin.com';

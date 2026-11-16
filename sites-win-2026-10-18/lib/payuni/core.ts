@@ -1,4 +1,4 @@
-import { COURSE_SESSIONS } from '../course-sessions';
+import { isSelectableSession } from '../course-sessions';
 import { createCipheriv, createDecipheriv, createHash, timingSafeEqual } from 'node:crypto';
 export const AMOUNT = 399;
 export const PRODUCT = 'WIN 講師班｜90分鐘線上前導課';
@@ -31,7 +31,7 @@ export function verifyOrder(data:Record<string,string>,order:{merchant:string;or
 export function validate(body:Record<string,unknown>){
  const keys=['name','email','phone','profession','stage','topic','sessionCode','lineName'] as const;
  const values=Object.fromEntries(keys.map(k=>[k,typeof body[k]==='string'?body[k].trim():''])) as Record<typeof keys[number],string>;
- if(body.website||body.consent!==true||keys.some(k=>values[k].length>1000)||['name','email','phone'].some(k=>!values[k as keyof typeof values])||!COURSE_SESSIONS.some(s=>s.code===values.sessionCode)||values.email.length>200||!/^\S+@\S+\.\S+$/.test(values.email)||typeof body.requestId!=='string'||! /^[0-9a-f-]{36}$/i.test(body.requestId))throw new Error('請完整填寫必填欄位、有效 Email 並勾選同意。');
+ if(body.website||body.consent!==true||keys.some(k=>values[k].length>1000)||['name','email','phone'].some(k=>!values[k as keyof typeof values])||!isSelectableSession(values.sessionCode)||values.email.length>200||!/^\S+@\S+\.\S+$/.test(values.email)||typeof body.requestId!=='string'||! /^[0-9a-f-]{36}$/i.test(body.requestId))throw new Error('請完整填寫必填欄位、有效 Email 並勾選同意。');
  return {...values,requestId:body.requestId};
 }
 export function digest(value:string){return createHash('sha256').update(value).digest('hex')}
