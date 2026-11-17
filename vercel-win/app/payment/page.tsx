@@ -9,7 +9,7 @@ const MAX_POLLS=30;
 function demoResult(kind:string):Result|null{
  const h=location.hostname;if(h==='2027course.win-lin.com'||h==='win-lecturer-20261018.vercel.app')return null;
  const base={amount:399,orderNo:'WIN-DEMO-0001',emailSent:true,session:null as string|null};
- const online='線上課（直播），2026 年 11 月 24 日（二）12:00–13:30（台灣時間）';
+ const online='線上課（直播），2026 年 11 月 30 日（一）12:00–13:30（台灣時間）';
  const place='實體課（台北場），2026 年 12 月 2 日（三）13:00–14:30（台灣時間）';
  if(kind==='paid')return{...base,status:'paid',session:online};if(kind==='inperson')return{...base,status:'paid',session:place};
  if(kind==='pending'||kind==='timeout')return{...base,status:'pending'};
