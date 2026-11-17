@@ -2,6 +2,8 @@
  * Online slots continue the previous live cadence: every 3 days, alternating
  * 20:00–21:30 and 12:00–13:30 (11/15 20:00, 11/18 12:00, 11/21 20:00, …).
  * The first payable slot on or after 2026-11-30 is 2026-11-30 12:00–13:30.
+ * Two later online slots fall in 2026-12-20–2026-12-31, keeping the same
+ * cadence and avoiding Christmas Eve and New Year's Eve evenings.
  * In-person dates are fixed. No venue address is stored in this project.
  */
 export const COURSE_SESSIONS = [
@@ -9,6 +11,8 @@ export const COURSE_SESSIONS = [
  {code:'線上課|2026-12-03（四）|20:00–21:30',format:'online',date:'12 月 3 日（四）',time:'20:00–21:30'},
  {code:'線上課|2026-12-06（日）|12:00–13:30',format:'online',date:'12 月 6 日（日）',time:'12:00–13:30'},
  {code:'線上課|2026-12-09（三）|20:00–21:30',format:'online',date:'12 月 9 日（三）',time:'20:00–21:30'},
+ {code:'線上課|2026-12-24（四）|12:00–13:30',format:'online',date:'12 月 24 日（四）',time:'12:00–13:30'},
+ {code:'線上課|2026-12-27（日）|20:00–21:30',format:'online',date:'12 月 27 日（日）',time:'20:00–21:30'},
  {code:'實體課（台北場），2026 年 12 月 2 日（三）13:00–14:30（台灣時間）',format:'inperson',iso:'2026-12-02',date:'12 月 2 日（三）',time:'13:00–14:30'},
  {code:'實體課（台北場），2026 年 12 月 16 日（三）13:00–14:30（台灣時間）',format:'inperson',iso:'2026-12-16',date:'12 月 16 日（三）',time:'13:00–14:30'},
 ] as const;
