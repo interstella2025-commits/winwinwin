@@ -205,9 +205,14 @@ await test('COPY: price is stated, donation only on the in-person payment page, 
  const price=fs.readFileSync(path.join(root,'components/price-facts.tsx'),'utf8');
  const sales=page+'\n'+info;
  assert.match(page,/線上課<span>限時免費<\/span>/);
- assert.match(price,/實體課（台北場）3 小時，/);
- assert.match(price,/NT\$399；線上課（直播）90 分鐘，/);
+ assert.match(price,/線上課（直播）90 分鐘，/);
  assert.match(price,/限時免費/);
+ assert.match(price,/實體課（台北場）3 小時，/);
+ assert.match(price,/NT\$399/);
+ assert.equal(price.includes('；'),false);
+ const registered=fs.readFileSync(path.join(root,'app/registered/page.tsx'),'utf8');
+ assert.match(registered,/線上課（直播）90 分鐘，/);
+ assert.equal(registered.includes('線上課（直播），'),false);
  assert.match(sales,/PriceFacts/);
  assert.equal(sales.includes('此費用將全數捐予'),false);
  assert.equal(sales.includes('12 月 2'),false);
