@@ -4,7 +4,7 @@ import Script from 'next/script';
 const PIXEL=process.env.NEXT_PUBLIC_META_PIXEL_ID||'';
 const GA=process.env.NEXT_PUBLIC_GA_ID||'';
 type W=Window&{fbq?:(...a:unknown[])=>void;gtag?:(...a:unknown[])=>void};
-export function track(meta:'Lead'|'InitiateCheckout'|'Purchase',ga:string,params:Record<string,unknown>={},eventId?:string){
+export function track(meta:'Lead'|'InitiateCheckout'|'CompleteRegistration'|'Purchase',ga:string,params:Record<string,unknown>={},eventId?:string){
  if(typeof window==='undefined')return;const w=window as W;
  try{if(PIXEL&&w.fbq)w.fbq('track',meta,params,eventId?{eventID:eventId}:undefined)}catch{}
  try{if(GA&&w.gtag)w.gtag('event',ga,params)}catch{}

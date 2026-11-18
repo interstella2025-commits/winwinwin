@@ -10,7 +10,7 @@ function demoResult(kind:string):Result|null{
  const h=location.hostname;if(h==='2027course.win-lin.com'||h==='win-lecturer-20261018.vercel.app')return null;
  const base={amount:399,orderNo:'WIN-DEMO-0001',emailSent:true,session:null as string|null};
  const online='線上課（直播），2026 年 11 月 30 日（一）12:00–13:30（台灣時間）';
- const place='實體課（台北場），2026 年 12 月 2 日（三）13:00–14:30（台灣時間）';
+ const place='實體課（台北場），2026 年 12 月 16 日（三）13:00–16:00（台灣時間）';
  if(kind==='paid')return{...base,status:'paid',session:online};if(kind==='inperson')return{...base,status:'paid',session:place};
  if(kind==='pending'||kind==='timeout')return{...base,status:'pending'};
  if(kind==='failed')return{...base,status:'failed'};if(kind==='test')return{...base,amount:1,status:'paid',isTest:true};return null}
@@ -33,7 +33,7 @@ export default function Payment(){
  <p className="pay-eyebrow">{test?'WIN · PAYMENT TEST':'WIN · PRE-COURSE'}</p>
  <div className={'pay-icon '+(paid?'ok':failed||error?'bad':'wait')} aria-hidden="true">{paid?'✓':failed||error?'!':<span className="pay-spin"/>}</div>
  <h1>{title}</h1>
- <p className="pay-product">{test?'WIN 金流驗收測試':<>Expert to Enterprise<br/>WIN講師班<br/><span className="pay-product-sub">{inPerson?'90 分鐘實體前導課（台北場）':'90 分鐘線上前導課'}</span></>}<br/><strong>NT${result?.amount??(test?1:399)}</strong></p>
+ <p className="pay-product">{test?'WIN 金流驗收測試':<>Expert to Enterprise<br/>WIN講師班<br/><span className="pay-product-sub">{inPerson?'3 小時實體前導課（台北場）':'90 分鐘線上前導課'}</span></>}<br/><strong>NT${result?.amount??(test?1:399)}</strong></p>
  {result&&<dl className="pay-meta"><div><dt>訂單編號</dt><dd>{result.orderNo}</dd></div>{!test&&result.session&&<div><dt>場次</dt><dd><SessionValue session={result.session}/></dd></div>}</dl>}
  {paid&&!test&&<section className="pay-next" aria-labelledby="next-title"><h2 id="next-title">下一步</h2><ol>
  <li><span className="pay-step">1</span><div><strong>加入 LINE 官方帳號</strong><LineButton label="加入 LINE 官方帳號"/></div></li>
@@ -45,6 +45,7 @@ export default function Payment(){
  {failed&&<><p className="pay-text">{result!.status==='expired'?'這筆付款連結已逾時。':'目前尚未確認付款成功。'}<br/>若已扣款，請勿重複付款，<br/>請保留訂單編號並透過 LINE 聯絡我們。</p><LineButton label="LINE 聯絡專人協助"/></>}
  {error&&<><p className="pay-text" role="alert">{error}</p><LineButton label="LINE 聯絡專人協助"/></>}
  <p className="pay-back"><a href="/#apply">返回課程報名頁</a></p>
+ {inPerson&&!test&&<p className="pay-donate"><span>此費用將全數捐予，</span><span>「國際青少年希望教育計劃」。</span></p>}
  <p className="pay-note">{test?'此為 NT$1 測試付款，不包含課程報名。':<>{inPerson?'此款項僅為實體前導課（台北場），':'此款項僅為線上前導課，'}<br/>不代表 Expert to Enterprise<br/>WIN講師班正式課程錄取或費用。</>}</p>
  </div></main></div>
 }

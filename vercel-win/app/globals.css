@@ -302,7 +302,7 @@ section.audience{padding:96px 7% 88px;text-align:center;background:radial-gradie
 .registration .form-heading-left{text-align:left}
 .registration .form-heading-left h2>span{display:inline;white-space:normal;background:none;padding:0}
 .registration .course-summary p.fee-row{display:grid;grid-template-columns:auto 1fr;column-gap:14px;row-gap:4px;align-items:baseline}.registration .course-summary p.fee-row>.fee-note{grid-column:2;min-width:0}.registration .fee-note .wrap-unit{display:inline-block;white-space:nowrap}
-@media(max-width:600px){.registration .course-summary p.fee-row{column-gap:8px}}
+@media(max-width:600px){.registration .course-summary p.fee-row{grid-template-columns:1fr;column-gap:8px}.registration .course-summary p.fee-row>.fee-note{grid-column:1}}
 .application.registration{background:#0d1f3c}
 .application.registration::before,.application.registration::after{display:none}
 .registration form{background:none;box-shadow:none;padding-left:0;padding-right:0}
@@ -311,3 +311,28 @@ section.audience{padding:96px 7% 88px;text-align:center;background:radial-gradie
 .registration .form-heading-left h2 span{background:none;padding-bottom:0}
 .floating{transition:opacity .2s,transform .2s}.floating.floating-hidden{opacity:0;transform:translateY(16px);pointer-events:none}
 .registration input,.registration select,.registration textarea{scroll-margin:96px 0 96px}
+.announce{margin:0;padding:11px 16px;background:#e7f4fc;color:#0d1f3c;text-align:center;font-size:15px;font-weight:800;line-height:1.4;letter-spacing:.12em}
+.announce span{color:#c82e35}
+.price-facts{display:inline}
+.price-facts .wrap-unit{white-space:nowrap}
+.price-free{color:#c82e35}
+.precourse-details .price-detail dd{font-size:clamp(15px,2.1vw,18px);font-weight:700;line-height:1.75}
+.enrolled{min-height:100vh;background:linear-gradient(160deg,#f0f9ff 0%,#e3f5ff 55%,#fafdff 100%);color:#102d52;font-family:'Noto Sans TC',Arial,'Microsoft JhengHei',sans-serif}
+.enrolled header{justify-content:center}
+.enrolled-main{max-width:560px;margin:0 auto;padding:48px 18px 120px;background:transparent;box-shadow:none}
+.enrolled-card{background:#fff;border-radius:16px;padding:40px 24px 32px;box-shadow:0 2px 4px #0b284a0f,0 24px 60px -20px #0b284a40;text-align:center}
+.enrolled-kicker{margin:0 0 10px;letter-spacing:.14em;font-size:13px;font-weight:800;color:#0d1f3c}
+.enrolled-card h1{margin:0 0 16px;font-size:clamp(26px,6vw,34px);line-height:1.4;font-weight:800;color:#102d52}
+.enrolled-price,.enrolled-session,.enrolled-card p{margin:0 0 14px;font-size:15px;line-height:1.8;color:#3e536b}
+.enrolled-price,.enrolled-session{font-weight:800;color:#0d1f3c}
+.enrolled-price span,.enrolled-session span{white-space:nowrap}
+.enrolled-free{color:#c82e35}
+.enrolled-session{margin:6px 0 18px;padding:14px 16px;border-radius:10px;background:#f0f8ff}
+.enrolled-back{margin:28px 0 0;font-size:14px}
+.enrolled-back a{color:#536d87;border-bottom:1px solid #bccbdd}
+@media(max-width:600px){
+ .announce{padding:10px 12px;font-size:14px;letter-spacing:.08em}
+ .price-facts{display:flex;flex-direction:column;align-items:flex-start;gap:2px}
+ .precourse-details .price-detail dd .price-facts{align-items:flex-start}
+ .enrolled-price span,.enrolled-session span{display:block}
+}
