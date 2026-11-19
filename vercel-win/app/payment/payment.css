@@ -8,7 +8,7 @@
 .pay-spin{width:28px;height:28px;border:3px solid #bcd6ec;border-top-color:#102d52;border-radius:50%;animation:payspin 1s linear infinite}
 @keyframes payspin{to{transform:rotate(360deg)}}
 .pay-card h1{font-size:clamp(26px,6vw,34px);line-height:1.4;font-weight:800;margin:0 0 12px;color:#102d52}
-.pay-product{font-size:15px;line-height:1.8;color:#3e536b;margin:0 0 20px}.pay-product strong{display:block;font-size:22px;font-weight:800;color:#bb2b34}
+.pay-product{font-size:15px;line-height:1.8;color:#3e536b;margin:0 0 20px}.pay-product strong{display:block;font-size:22px;font-weight:800;color:#bb2b34;white-space:nowrap}
 .pay-meta{margin:0 0 24px;background:#f0f8ff;border-radius:10px;padding:14px 18px;text-align:left}.pay-meta div{display:flex;justify-content:space-between;align-items:baseline;gap:16px;font-size:14px;line-height:1.8}.pay-meta dt{flex:0 0 4.5em;color:#536d87;font-weight:500;white-space:nowrap;text-align:left}.pay-meta dd{margin:0;min-width:0;font-weight:700;text-align:right;word-break:normal}.session-line{white-space:nowrap}.session-line:first-child:after{content:"，"}
 @media(max-width:600px){.pay-meta div{flex-direction:column;align-items:flex-start;gap:2px}.pay-meta dt,.pay-meta dd{flex-basis:auto;text-align:left}.session-line{display:block}.session-line:first-child:after{content:none}}
 .pay-next{text-align:left;margin-top:8px}.pay-next h2{font-size:20px;font-weight:800;color:#bb2b34;margin:0 0 14px;text-align:center}
@@ -19,6 +19,8 @@
 .pay-text{font-size:15px;line-height:1.9;color:#3e536b;margin:0 0 8px}
 .pay-secondary{display:inline-block;margin-top:18px;font-size:15px;font-weight:700;color:#102d52;border-bottom:1px solid #102d52;padding-bottom:2px}
 .pay-back{margin:28px 0 8px;font-size:14px}.pay-back a{color:#536d87;border-bottom:1px solid #bccbdd}
+.pay-donate{margin:8px 0 0;font-size:14px;line-height:1.8;font-weight:700;color:#102d52}.pay-donate span{white-space:nowrap}
+@media(max-width:600px){.pay-donate span{display:block}}
 .pay-note{font-size:12px;line-height:1.8;color:#7a8ba0;margin:0}
 @media(min-width:601px){.pay-main{padding:64px 24px 120px}.pay-card{padding:48px 48px 36px}}
 body:has(.pay-page) .line-support{display:none}.pay-next li{flex-wrap:wrap}.pay-next li .pay-line{margin-left:-44px}@media(max-width:600px){.pay-card{padding:32px 20px 28px}}

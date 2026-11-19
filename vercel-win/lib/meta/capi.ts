@@ -9,7 +9,7 @@ const APPLY_URL = `${PUBLIC_ORIGIN}/#apply`;
 const PAYMENT_URL = `${PUBLIC_ORIGIN}/payment`;
 const EVENT_ID = /^[A-Za-z0-9:_-]{8,80}$/;
 
-type EventName = 'Lead' | 'InitiateCheckout' | 'Purchase';
+type EventName = 'Lead' | 'InitiateCheckout' | 'CompleteRegistration' | 'Purchase';
 type Attribution = { ip?: string; userAgent?: string; fbp?: string; fbc?: string };
 type CustomData = Record<string, string | number>;
 type Outbound = {
@@ -73,6 +73,7 @@ export async function sendRegistrationEvents(request: Request, input: {
  phone: string;
  leadEventId?: string;
  checkoutEventId?: string;
+ completeEventId?: string;
  value: number;
  orderNo?: string;
 }) {
@@ -88,6 +89,10 @@ export async function sendRegistrationEvents(request: Request, input: {
   if (input.checkoutEventId) events.push({
    name: 'InitiateCheckout', eventId: input.checkoutEventId, sourceUrl: APPLY_URL, email: input.email, phone: input.phone, attribution,
    customData: { value: input.value, currency: 'TWD' },
+  });
+  if (input.completeEventId) events.push({
+   name: 'CompleteRegistration', eventId: input.completeEventId, sourceUrl: APPLY_URL, email: input.email, phone: input.phone, attribution,
+   customData: { content_name: CONTENT_NAME, value: input.value, currency: 'TWD' },
   });
   await deliver(events);
  } catch { /* registration must succeed even if CAPI is down */ }
