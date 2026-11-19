@@ -326,7 +326,8 @@ section.audience{padding:96px 7% 88px;text-align:center;background:radial-gradie
 .enrolled-card h1{margin:0 0 16px;font-size:clamp(26px,6vw,34px);line-height:1.4;font-weight:800;color:#102d52}
 .enrolled-price,.enrolled-session,.enrolled-card p{margin:0 0 14px;font-size:15px;line-height:1.8;color:#3e536b}
 .enrolled-price,.enrolled-session{font-weight:800;color:#0d1f3c}
-.enrolled-price span{display:block;white-space:nowrap}
+.enrolled-price > span{display:block;white-space:nowrap;word-break:keep-all}
+.enrolled-price .nobr{display:inline;white-space:nowrap}
 .enrolled-session span{white-space:nowrap}
 .enrolled-free{color:#c82e35}
 .enrolled-session{margin:6px 0 18px;padding:14px 16px;border-radius:10px;background:#f0f8ff}
