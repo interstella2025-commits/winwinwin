@@ -8,7 +8,7 @@
 .pay-spin{width:28px;height:28px;border:3px solid #bcd6ec;border-top-color:#102d52;border-radius:50%;animation:payspin 1s linear infinite}
 @keyframes payspin{to{transform:rotate(360deg)}}
 .pay-card h1{font-size:clamp(26px,6vw,34px);line-height:1.4;font-weight:800;margin:0 0 12px;color:#102d52}
-.pay-product{font-size:15px;line-height:1.8;color:#3e536b;margin:0 0 20px}.pay-product strong{display:block;font-size:22px;font-weight:800;color:#bb2b34}
+.pay-product{font-size:15px;line-height:1.8;color:#3e536b;margin:0 0 20px}.pay-product strong{display:block;font-size:22px;font-weight:800;color:#bb2b34;white-space:nowrap}
 .pay-meta{margin:0 0 24px;background:#f0f8ff;border-radius:10px;padding:14px 18px;text-align:left}.pay-meta div{display:flex;justify-content:space-between;align-items:baseline;gap:16px;font-size:14px;line-height:1.8}.pay-meta dt{flex:0 0 4.5em;color:#536d87;font-weight:500;white-space:nowrap;text-align:left}.pay-meta dd{margin:0;min-width:0;font-weight:700;text-align:right;word-break:normal}.session-line{white-space:nowrap}.session-line:first-child:after{content:"，"}
 @media(max-width:600px){.pay-meta div{flex-direction:column;align-items:flex-start;gap:2px}.pay-meta dt,.pay-meta dd{flex-basis:auto;text-align:left}.session-line{display:block}.session-line:first-child:after{content:none}}
 .pay-next{text-align:left;margin-top:8px}.pay-next h2{font-size:20px;font-weight:800;color:#bb2b34;margin:0 0 14px;text-align:center}

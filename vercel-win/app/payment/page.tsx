@@ -33,7 +33,7 @@ export default function Payment(){
  <p className="pay-eyebrow">{test?'WIN · PAYMENT TEST':'WIN · PRE-COURSE'}</p>
  <div className={'pay-icon '+(paid?'ok':failed||error?'bad':'wait')} aria-hidden="true">{paid?'✓':failed||error?'!':<span className="pay-spin"/>}</div>
  <h1>{title}</h1>
- <p className="pay-product">{test?'WIN 金流驗收測試':<>Expert to Enterprise<br/>WIN講師班<br/><span className="pay-product-sub">{inPerson?'3 小時實體前導課（台北場）':'90 分鐘線上前導課'}</span></>}<br/><strong>NT${result?.amount??(test?1:399)}</strong></p>
+ <p className="pay-product">{test?'WIN 金流驗收測試':<>Expert to Enterprise<br/>WIN講師班<br/><span className="pay-product-sub">{inPerson?<><span className="nobr">3 小時</span>實體前導課（台北場）</>:<><span className="nobr">90 分鐘</span>線上前導課</>}</span></>}<br/><strong className="nobr">NT${result?.amount??(test?1:399)}</strong></p>
  {result&&<dl className="pay-meta"><div><dt>訂單編號</dt><dd>{result.orderNo}</dd></div>{!test&&result.session&&<div><dt>場次</dt><dd><SessionValue session={result.session}/></dd></div>}</dl>}
  {paid&&!test&&<section className="pay-next" aria-labelledby="next-title"><h2 id="next-title">下一步</h2><ol>
  <li><span className="pay-step">1</span><div><strong>加入 LINE 官方帳號</strong><LineButton label="加入 LINE 官方帳號"/></div></li>

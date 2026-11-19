@@ -30,7 +30,7 @@ export default function Registered() {
    {done && view && <>
     <p className="enrolled-kicker">WIN · 線上課</p>
     <h1>報名完成</h1>
-    <p className="enrolled-price"><span>線上課（直播）90 分鐘，</span><span className="enrolled-free">限時免費</span></p>
+    <p className="enrolled-price"><span>線上課（直播）<span className="nobr">90 分鐘</span>，</span><span className="enrolled-free nobr">限時免費</span></p>
     <p className="enrolled-session"><span>{view.date}</span><span>{view.time}（台灣時間）</span></p>
     <p><FlowText parts={['上課連結將於開課前寄送至您的 Email，', '請留意信箱。']}/></p>
     <p><FlowText parts={['確認信已寄到你填寫的 Email，', '沒看到請查看垃圾郵件匣。']}/></p>
