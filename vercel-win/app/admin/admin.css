@@ -1,0 +1,123 @@
+.win-admin-root {
+  min-height: 100vh;
+  background: #f4f8fb;
+  color: #102d52;
+  font-family: 'Noto Sans TC', Arial, 'Microsoft JhengHei', sans-serif;
+  font-weight: 500;
+  font-synthesis: none;
+}
+.win-admin-root * { font-weight: inherit; }
+.win-admin-root h1,
+.win-admin-root h2,
+.win-admin-root strong,
+.win-admin-root .win-admin-number,
+.win-admin-root button,
+.win-admin-root th { font-weight: 700; }
+.win-admin-root main { max-width: none; margin: 0; background: transparent; box-shadow: none; }
+.win-admin-root header.win-admin-bar {
+  position: static;
+  height: auto;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.win-admin-root form { margin: 0; }
+.win-admin-root label { display: flex; flex-direction: column; gap: 8px; margin: 0 0 16px; color: #102d52; font-size: 14px; font-weight: 700; }
+.win-admin-root input {
+  width: 100%;
+  min-height: 48px;
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid #d3e3ef;
+  border-radius: 12px;
+  background: #f7fbfe;
+  color: #102d52;
+  font: inherit;
+  font-weight: 500;
+}
+.win-admin-root input:focus { outline: 0; border-color: #102d52; background: #fff; box-shadow: 0 0 0 4px #d7e8f6; }
+.win-admin-root button {
+  width: auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.win-admin-root .win-admin-submit {
+  width: 100%;
+  min-height: 52px;
+  padding: 0 18px;
+  background: #102d52;
+  color: #fff;
+}
+.win-admin-root .win-admin-submit:disabled { opacity: .6; cursor: default; }
+.win-admin-root .win-admin-text-button { min-height: 40px; padding: 0 14px; color: #102d52; }
+.win-admin-login { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px 16px; }
+.win-admin-login-card { width: min(100%, 420px); }
+.win-admin-page { width: min(1120px, 100%); margin: 0 auto; padding: 28px 24px 64px; }
+.win-admin-kicker { margin: 0 0 6px; color: #a3202c; font-size: 13px; font-weight: 700; letter-spacing: .08em; }
+.win-admin-root h1 { margin: 0; color: #102d52; font-size: 32px; line-height: 1.25; }
+.win-admin-root h2 { margin: 0 0 8px; color: #102d52; font-size: 18px; line-height: 1.4; }
+.win-admin-lead, .win-admin-kpi-note, .win-admin-detail, .win-admin-rate, .win-admin-explain, .win-admin-empty { margin: 0; color: #4d6278; font-size: 14px; line-height: 1.7; }
+.win-admin-explain { margin: 4px 0 18px; }
+.win-admin-card { padding: 20px; border: 1px solid #d7e6f2; border-radius: 16px; background: #fff; }
+.win-admin-login-card h1 { margin-bottom: 8px; }
+.win-admin-login-card .win-admin-lead { margin-bottom: 22px; }
+.win-admin-form-error { margin: 0 0 14px; color: #a3202c; font-size: 14px; line-height: 1.6; }
+.win-admin-accent { color: #a3202c; font-weight: 700; }
+.win-admin-bar-actions { display: flex; align-items: center; gap: 12px; }
+.win-admin-ranges { display: flex; gap: 8px; }
+.win-admin-chip { display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid #d7e6f2; border-radius: 999px; background: #fff; color: #102d52; font-weight: 700; }
+.win-admin-chip.is-on { border-color: #102d52; background: #102d52; color: #fff; }
+.win-admin-banner { margin: 16px 0 0; padding: 12px 14px; border-radius: 12px; background: #e7f3fb; color: #102d52; font-size: 14px; line-height: 1.7; }
+.win-admin-kpis, .win-admin-split { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+.win-admin-kpis { grid-template-columns: repeat(4, 1fr); }
+.win-admin-number { margin: 8px 0 4px; color: #102d52; font-size: 32px; line-height: 1.1; }
+.win-admin-funnel, .win-admin-meters { list-style: none; margin: 14px 0 0; padding: 0; }
+.win-admin-funnel li + li, .win-admin-meters li + li { margin-top: 14px; }
+.win-admin-funnel-row, .win-admin-meters li { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.win-admin-funnel-row span, .win-admin-meters li > span:first-child { color: #102d52; font-weight: 700; }
+.win-admin-bar, .win-admin-meter, .win-admin-mini-bar { display: block; overflow: hidden; height: 8px; border-radius: 999px; background: #e7f2fa; }
+.win-admin-bar { margin-top: 8px; }
+.win-admin-bar > span, .win-admin-meter > i, .win-admin-mini-bar > i { display: block; height: 100%; border-radius: inherit; background: #8eb4d4; }
+.win-admin-meter { flex: 1; }
+.win-admin-mini-bar { margin-top: 8px; }
+.win-admin-rate { margin-top: 6px; }
+.win-admin-rate.is-accent { color: #a3202c; }
+.win-admin-detail { margin-top: 2px; }
+.win-admin-table-wrap { overflow-x: auto; margin-top: 8px; }
+.win-admin-table { width: 100%; border-collapse: collapse; }
+.win-admin-table th, .win-admin-table td { padding: 12px 10px; border-bottom: 1px solid #e5eef5; text-align: left; vertical-align: top; font-size: 14px; line-height: 1.5; }
+.win-admin-table th { color: #4d6278; font-size: 13px; }
+.win-admin-table td strong, .win-admin-sub { display: block; }
+.win-admin-sub { color: #4d6278; font-size: 13px; font-weight: 500; }
+.win-admin-card + .win-admin-card, .win-admin-split + .win-admin-card, .win-admin-card + .win-admin-split { margin-top: 14px; }
+.win-admin-page > .win-admin-card { margin-top: 14px; }
+.win-admin-empty { margin-top: 8px; }
+
+@media (max-width: 900px) {
+  .win-admin-kpis { grid-template-columns: 1fr 1fr; }
+  .win-admin-split { grid-template-columns: 1fr; }
+}
+@media (max-width: 720px) {
+  .win-admin-page { padding: 20px 16px 48px; }
+  .win-admin-root header.win-admin-bar, .win-admin-bar-actions { align-items: stretch; flex-direction: column; }
+  .win-admin-root h1 { font-size: 28px; }
+  .win-admin-ranges { flex-wrap: wrap; }
+  .win-admin-table thead { display: none; }
+  .win-admin-table tr { display: block; padding: 8px 0 12px; border-bottom: 1px solid #e5eef5; }
+  .win-admin-table td { display: flex; justify-content: space-between; gap: 16px; padding: 6px 0; border: 0; }
+  .win-admin-table td::before { content: attr(data-label); color: #4d6278; font-weight: 700; }
+  .win-admin-table td:first-child { display: block; }
+  .win-admin-table td:first-child::before { display: none; }
+}
