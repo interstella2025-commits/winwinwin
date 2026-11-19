@@ -26,7 +26,7 @@ const FOOTER_TEXT='此封信件為系統自動發送，請勿直接回覆。如�
  const test=order.source==='win-test-1';
  const chosen=test?null:sessionByCode(person.session_code);
  const inPerson=!test&&isInPersonCode(person.session_code);
- const subject=test?'測試付款成功｜WIN NT$1 金流驗收':inPerson?'付款成功｜Expert to Enterprise WIN講師班 90分鐘實體前導課（台北場）':'付款成功｜Expert to Enterprise WIN講師班 90分鐘線上前導課';
+ const subject=test?'測試付款成功｜WIN NT$1 金流驗收':inPerson?'付款成功｜Expert to Enterprise WIN講師班 3小時實體前導課（台北場）':'付款成功｜Expert to Enterprise WIN講師班 90分鐘線上前導課';
  const message=test?'NT$1 金流測試款項已收到。此為系統驗收測試，不包含課程報名或席位。':inPerson?'已收到你的 NT$399 前導課款項。此付款僅為實體前導課，不代表正式講師班錄取或費用。':'已收到你的 NT$399 前導課款項。此付款僅為線上前導課，不代表正式講師班錄取或費用。';
  const product=test?'WIN NT$1 金流驗收測試':productFor(person.session_code);
  const session=chosen?sessionLabel(chosen.code):test?null:sessionLabel(person.session_code);
@@ -35,4 +35,29 @@ const FOOTER_TEXT='此封信件為系統自動發送，請勿直接回覆。如�
  if(!response.ok)throw new Error('Email rejected');const result=await response.json() as {id?:string};
  await db().query("UPDATE payment_orders SET email_status='sent',email_id=$1,email_lease=0 WHERE id=$2",[result.id||null,order.id]);return true;
  }catch{await db().query("UPDATE payment_orders SET email_status='failed',email_lease=0 WHERE id=$1 AND email_status='sending'",[order.id]);return false}
+}
+/** Confirmation for a free live-online signup. No payment amount and no PAYUNi wording. */
+export async function sendOnlineConfirmation(signupId:string){
+ const env=process.env;
+ const row=await first<{id:string;application_id:string;email_status:string}>('SELECT id,application_id,email_status FROM online_signups WHERE id=$1',[signupId]);
+ if(!row)return false;
+ if(row.email_status==='sent')return true;
+ const claimed=await first("UPDATE online_signups SET email_status='sending',email_lease=$1 WHERE id=$2 AND email_status!='sent' AND (email_status!='sending' OR email_lease<$3) RETURNING id",[Date.now()+60000,signupId,Date.now()]);
+ if(!claimed){const latest=await first<{email_status:string}>('SELECT email_status FROM online_signups WHERE id=$1',[signupId]);return latest?.email_status==='sent'}
+ const person=await first<{name:string;email:string;phone:string;session_code:string|null}>('SELECT name,email,phone,session_code FROM applications WHERE id=$1',[row.application_id]);
+ const LINE_URL='https://line.me/R/ti/p/@dmd9019a';
+ const FOOTER_TEXT='此封信件為系統自動發送，請勿直接回覆。如有任何問題，歡迎透過 LINE 官方帳號與我們聯繫。';
+ try{
+  if(!person||!env.RESEND_API_KEY)throw new Error('Email unavailable');
+  const session=sessionLabel(person.session_code);
+  const subject='報名成功｜Expert to Enterprise WIN講師班 90分鐘線上前導課';
+  const message='已收到你的線上前導課報名。此報名不代表正式講師班錄取。';
+  const schedule=session?`場次：${session}。上課連結將於開課前寄送至您的 Email，請留意信箱。`:'上課連結將於開課前寄送至您的 Email，請留意信箱。';
+  const product='Expert to Enterprise WIN講師班｜90分鐘線上前導課（直播）';
+  const response=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${env.RESEND_API_KEY}`,'Content-Type':'application/json','Idempotency-Key':`win-online/${row.id}`},body:JSON.stringify({from:EMAIL_FROM,to:[person.email],subject,text:`${person.name}，你好：\n\n${message}\n\n${schedule}\n\n項目：${product}\n費用：限時免費\n手機：${person.phone}\n\nWIN 課程團隊\n\n${FOOTER_TEXT}：${LINE_URL}`,html:`<div lang="zh-Hant" style="font-family:Arial,sans-serif;line-height:1.8;max-width:600px;margin:auto;padding:28px;color:#17243a"><p>${escape(person.name)}，你好：</p><h2>線上前導課報名完成</h2><p>${message}</p><p>${escape(schedule)}</p><p>項目：${escape(product)}<br>費用：限時免費<br>手機：${escape(person.phone)}</p><p>WIN 課程團隊</p><p style="margin-top:24px;padding-top:16px;border-top:1px solid #e3e7ee;font-size:14px;color:#5b6577">${FOOTER_TEXT.replace('LINE 官方帳號',`<a href="${LINE_URL}" style="color:#17243a;font-weight:inherit;text-decoration:underline">LINE 官方帳號</a>`)}</p></div>`}),signal:AbortSignal.timeout(10000)});
+  if(!response.ok)throw new Error('Email rejected');
+  const result=await response.json() as {id?:string};
+  await db().query("UPDATE online_signups SET email_status='sent',email_id=$1,email_lease=0 WHERE id=$2",[result.id||null,row.id]);
+  return true;
+ }catch{await db().query("UPDATE online_signups SET email_status='failed',email_lease=0 WHERE id=$1 AND email_status='sending'",[row.id]);return false}
 }

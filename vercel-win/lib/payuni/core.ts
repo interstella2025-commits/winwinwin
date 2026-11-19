@@ -1,10 +1,10 @@
-import { COURSE_SESSIONS, NOTIFY_CODE, isInPersonCode } from '../course-sessions';
+import { COURSE_SESSIONS, NOTIFY_CODE, isInPersonCode, isOnlineCode } from '../course-sessions';
 import { PHONE_ERROR, normalizePhone } from '../phone';
 export { PHONE_ERROR };
 import { createCipheriv, createDecipheriv, createHash, timingSafeEqual } from 'node:crypto';
 export const AMOUNT = 399;
 export const PRODUCT = 'Expert to Enterprise WIN講師班｜90分鐘線上前導課';
-export const PRODUCT_IN_PERSON = 'Expert to Enterprise WIN講師班｜90分鐘實體前導課（台北場）';
+export const PRODUCT_IN_PERSON = 'Expert to Enterprise WIN講師班｜3小時實體前導課（台北場）';
 export function productFor(code:string|null|undefined){return isInPersonCode(code)?PRODUCT_IN_PERSON:PRODUCT}
 /** Public sales site. All PAYUNi Return/Notify/Back URLs point here. */
 export const PUBLIC_ORIGIN = 'https://2027course.win-lin.com';
@@ -36,10 +36,11 @@ export function verifyOrder(data:Record<string,string>,order:{merchant:string;or
  if(data.MerTradeNo!==order.order_no||data.MerID!==order.merchant||order.merchant!==c.merchant||!/^\d+$/.test(data.TradeAmt||'')||Number(data.TradeAmt)!==order.amount||order.amount!==(order.source==='win-test-1'?1:AMOUNT))throw new Error('Order mismatch');
  return data.TradeStatus==='1'?'paid':data.TradeStatus==='0'?'pending':['2','3','4'].includes(data.TradeStatus)?'failed':'unknown';
 }
-export function validate(body:Record<string,unknown>,kind:'paid'|'notify'='paid'){
+export function validate(body:Record<string,unknown>,kind:'paid'|'notify'|'online'='paid'){
  const keys=['name','email','phone','profession','stage','topic','sessionCode','lineName'] as const;
  const values=Object.fromEntries(keys.map(k=>[k,typeof body[k]==='string'?body[k].trim():''])) as Record<typeof keys[number],string>;
- if(body.website||body.consent!==true||keys.some(k=>values[k].length>1000)||['name','email','phone'].some(k=>!values[k as keyof typeof values])||(kind==='notify'?values.sessionCode!==NOTIFY_CODE:!COURSE_SESSIONS.some(s=>s.code===values.sessionCode))||values.email.length>200||!/^\S+@\S+\.\S+$/.test(values.email)||typeof body.requestId!=='string'||! /^[0-9a-f-]{36}$/i.test(body.requestId))throw new Error('請完整填寫必填欄位、有效 Email 並勾選同意。');
+ const sessionOk=kind==='notify'?values.sessionCode===NOTIFY_CODE:kind==='online'?isOnlineCode(values.sessionCode):COURSE_SESSIONS.some(s=>s.code===values.sessionCode&&s.format==='inperson');
+ if(body.website||body.consent!==true||keys.some(k=>values[k].length>1000)||['name','email','phone'].some(k=>!values[k as keyof typeof values])||!sessionOk||values.email.length>200||!/^\S+@\S+\.\S+$/.test(values.email)||typeof body.requestId!=='string'||! /^[0-9a-f-]{36}$/i.test(body.requestId))throw new Error('請完整填寫必填欄位、有效 Email 並勾選同意。');
  const phone=normalizePhone(values.phone);if(!phone)throw new Error(PHONE_ERROR);
  return {...values,phone,requestId:body.requestId};
 }
