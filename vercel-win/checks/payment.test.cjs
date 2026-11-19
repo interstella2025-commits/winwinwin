@@ -220,7 +220,9 @@ await test('COPY: price is stated, donation only on the in-person payment page, 
  assert.match(info,/從專家到企業家/);
  assert.match(info,/立即報名前導課/);
  assert.equal(info.includes('先從'),false);
- assert.match(info,/90分鐘前導課/);
+ assert.match(info,/kicker-lead">Expert to Enterprise<\/span>/);
+ assert.match(info,/nobr">WIN講師班<\/span><span className="nobr"> · 前導課<\/span>/);
+ assert.equal(info.includes('90分鐘前導課"]'),false);
  assert.match(pay,/<span className="nobr">3 小時<\/span>/);
  assert.match(pay,/<strong className="nobr">NT\$/);
  assert.match(sales,/PriceFacts/);
