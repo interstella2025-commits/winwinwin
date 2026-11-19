@@ -1,6 +1,7 @@
 import { db } from '../payuni/db';
 import { classifyApplication, displaySession, isDecember16, isPaid399, isTestOrder, type OrderFact } from './offers';
 import { fixtureReport } from './fixture';
+import { ensureAnalyticsTables } from './schema';
 
 export type SessionRow = {
   id: string;
@@ -337,6 +338,7 @@ export async function loadReport(days: number, now = Date.now()): Promise<Dashbo
   let registrationsUnavailable = false;
   let applications: GroupedApplication[] = [];
   try {
+    await ensureAnalyticsTables();
     sessions = await db().query(
       `SELECT id, visitor_id, started_at, last_seen_at, referrer, device_type, utm_source, utm_medium, utm_campaign, utm_content, utm_term, max_scroll_depth, last_stage
        FROM site_sessions WHERE started_at >= $1 ORDER BY started_at DESC LIMIT 5000`,

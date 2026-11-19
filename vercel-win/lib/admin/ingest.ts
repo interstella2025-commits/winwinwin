@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { db } from '../payuni/db';
+import { ensureAnalyticsTables } from './schema';
 
 const EVENT_NAMES = new Set([
   'page_view',
@@ -186,6 +187,7 @@ export function hashIp(request: Request) {
 }
 
 export async function recordIngest(value: ParsedIngest, ipHash: string, now = Date.now()) {
+  await ensureAnalyticsTables();
   const bucket = `${ipHash.slice(0, 16)}:${Math.floor(now / 60000)}`;
   const rate = await db().query(
     'INSERT INTO site_ingest_limits (bucket, attempts) VALUES ($1, 1) ON CONFLICT(bucket) DO UPDATE SET attempts = site_ingest_limits.attempts + 1 RETURNING attempts',
