@@ -12,7 +12,7 @@ export default function Registered() {
  useEffect(() => {
   const demo = new URLSearchParams(location.search).get('demo');
   let code = '';
-  if (demo && previewHost()) code = '線上課|2026-11-24（二）|12:00–13:30';
+  if (demo && previewHost()) code = '線上課|2026-11-30（一）|12:00–13:30';
   else {
    try {
     const raw = sessionStorage.getItem('win-online-done');
