@@ -1,5 +1,5 @@
 import { db } from '../payuni/db';
-import { classifyApplication, displaySession, isDecember16, isPaid399, isTestOrder, type OrderFact } from './offers';
+import { classifyApplication, displaySession, isDecember16, isDecember23, isPaid399, isTestOrder, type OrderFact } from './offers';
 import { fixtureReport } from './fixture';
 import { ensureAnalyticsTables } from './schema';
 
@@ -79,6 +79,7 @@ export type DashboardReport = {
     inpersonPaid: number;
     inpersonPaidAmount: number;
     inpersonPaid1216: number;
+    inpersonPaid1223: number;
     inpersonStarted: number;
     notify: number;
     excludedTestOrders: number;
@@ -290,6 +291,7 @@ export function buildReport(input: {
       inpersonPaid,
       inpersonPaidAmount: sumPaid(item => item.outcome.inpersonPaid),
       inpersonPaid1216: countWhere(item => item.outcome.inpersonPaid && isDecember16(item.application.sessionCode)),
+      inpersonPaid1223: countWhere(item => item.outcome.inpersonPaid && isDecember23(item.application.sessionCode)),
       inpersonStarted,
       notify: countWhere(item => item.outcome.notify),
       excludedTestOrders: input.applications.reduce((sum, application) => sum + application.orders.filter(isTestOrder).length, 0),

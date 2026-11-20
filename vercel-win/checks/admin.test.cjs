@@ -58,6 +58,7 @@ const eventsRoute = load('app/api/analytics/events/route.ts');
 
 const ONLINE = '線上課|2026-12-06（日）|20:00–21:30';
 const DAY16 = '實體課（台北場），2026 年 12 月 16 日（三）13:00–14:30（台灣時間）';
+const DAY23 = '實體課（台北場），2026 年 12 月 23 日（三）13:00–16:00（台灣時間）';
 const DAY2 = '實體課（台北場），2026 年 12 月 2 日（三）13:00–14:30（台灣時間）';
 const order = (patch) => ({ orderNo: 'WIN1', amount: 399, status: 'paid', source: 'https://2027course.win-lin.com/#apply', paidAt: '2026-11-18T00:00:00.000Z', createdAt: '2026-11-18T00:00:00.000Z', ...patch });
 let passes = 0;
@@ -91,6 +92,10 @@ async function test(name, fn) {
     assert.equal(paid16.freeOnline, false);
     assert.equal(offers.isDecember16(DAY16), true);
     assert.equal(offers.isDecember16(DAY2), false);
+    assert.equal(offers.isDecember16(DAY23), false);
+    assert.equal(offers.isDecember23(DAY23), true);
+    assert.equal(offers.isDecember23(DAY16), false);
+    assert.equal(offers.classifyApplication(DAY23, [order()]).inpersonPaid, true);
     assert.equal(offers.classifyApplication(DAY16, [order({ status: 'pending', paidAt: null })]).inpersonStarted, true);
     assert.equal(offers.classifyApplication(DAY16, [order({ status: 'pending', paidAt: null })]).inpersonPaid, false);
     assert.equal(offers.classifyApplication(DAY16, [order({ amount: 1, source: 'win-test-1' })]).inpersonPaid, false);
@@ -132,17 +137,19 @@ async function test(name, fn) {
         { id: 'free', name: '免費', email: 'free@example.test', phone: '+886900000001', sessionCode: ONLINE, createdAt: now, orders: [] },
         { id: 'old', name: '舊線上', email: 'old@example.test', phone: '+886900000002', sessionCode: ONLINE, createdAt: now, orders: [order()] },
         { id: 'place', name: '實體', email: 'place@example.test', phone: '+886900000003', sessionCode: DAY16, createdAt: now, orders: [order({ orderNo: 'WIN1216' })] },
+        { id: 'place23', name: '實體二', email: 'place23@example.test', phone: '+886900000005', sessionCode: DAY23, createdAt: now, orders: [order({ orderNo: 'WIN1223' })] },
         { id: 'note', name: '通知', email: 'note@example.test', phone: '+886900000004', sessionCode: 'notify', createdAt: now, orders: [] },
       ],
     });
     assert.equal(built.kpis.freeOnline, 1);
     assert.equal(built.kpis.onlinePaid, 1);
-    assert.equal(built.kpis.inpersonPaid, 1);
+    assert.equal(built.kpis.inpersonPaid, 2);
     assert.equal(built.kpis.inpersonPaid1216, 1);
-    assert.equal(built.kpis.inpersonPaidAmount, 399);
+    assert.equal(built.kpis.inpersonPaid1223, 1);
+    assert.equal(built.kpis.inpersonPaidAmount, 798);
     assert.equal(built.kpis.notify, 1);
     assert.equal(built.funnels.online.at(-1).count, 1);
-    assert.equal(built.funnels.inperson.at(-1).count, 1);
+    assert.equal(built.funnels.inperson.at(-1).count, 2);
     assert.equal(built.sources[0].label, 'facebook / paid');
     assert.equal(built.sources.some(source => source.label === 'line.me'), true);
     assert.equal(built.kpis.averageDwellSeconds >= 45, true);

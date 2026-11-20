@@ -81,7 +81,7 @@ export default function DashboardView({ report }: { report: DashboardReport }) {
         <article className="win-admin-card">
           <h2>實體已付款</h2>
           <p className="win-admin-number">{report.kpis.inpersonPaid}</p>
-          <p className="win-admin-kpi-note"><span className="win-admin-accent">NT$399</span> 合計 {money(report.kpis.inpersonPaidAmount)} · 12/16 {report.kpis.inpersonPaid1216}</p>
+          <p className="win-admin-kpi-note"><span className="win-admin-accent">NT$399</span> 合計 {money(report.kpis.inpersonPaidAmount)} · 12/16 {report.kpis.inpersonPaid1216} · 12/23 {report.kpis.inpersonPaid1223}</p>
         </article>
       </section>
 
@@ -89,7 +89,7 @@ export default function DashboardView({ report }: { report: DashboardReport }) {
 
       <div className="win-admin-split">
         <Funnel title="線上免費" note="進站與點擊是全站工作階段。從開始填表起才只算線上。" steps={report.funnels.online} />
-        <Funnel title="實體課付款" note="前往付款與付款完成以訂單為準。12/16 與其他實體場次都算在內，12/16 另記在摘要。" steps={report.funnels.inperson} />
+        <Funnel title="實體課付款" note="前往付款與付款完成以訂單為準。所有實體場次都算在內，12/16 與 12/23 另記在摘要。" steps={report.funnels.inperson} />
       </div>
 
       <section className="win-admin-card" aria-labelledby="sources-title">

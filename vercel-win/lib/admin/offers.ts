@@ -35,6 +35,11 @@ export function isDecember16(code: string | null | undefined) {
   return code.includes('12 月 16') || code.includes('12/16') || code.includes('2026-12-16');
 }
 
+export function isDecember23(code: string | null | undefined) {
+  if (!code) return false;
+  return code.includes('12 月 23') || code.includes('12/23') || code.includes('2026-12-23');
+}
+
 export function isTestOrder(order: OrderFact) {
   return order.source === 'win-test-1';
 }

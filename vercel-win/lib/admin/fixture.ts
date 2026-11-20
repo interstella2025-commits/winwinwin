@@ -1,8 +1,8 @@
 import { buildReport, type EventRow, type GroupedApplication, type SessionRow } from './report';
 
 const ONLINE = '線上課|2026-12-06（日）|20:00–21:30';
-const DAY16 = '實體課（台北場），2026 年 12 月 16 日（三）13:00–14:30（台灣時間）';
-const DAY2 = '實體課（台北場），2026 年 12 月 2 日（三）13:00–14:30（台灣時間）';
+const DAY16 = '實體課（台北場），2026 年 12 月 16 日（三）13:00–16:00（台灣時間）';
+const DAY23 = '實體課（台北場），2026 年 12 月 23 日（三）13:00–16:00（台灣時間）';
 
 const SOURCES = [
   { utm_source: 'facebook', utm_medium: 'paid', utm_campaign: 'win-precourse', referrer: 'https://facebook.com', device_type: 'mobile' },
@@ -72,7 +72,7 @@ export function fixtureReport(days: number, now = Date.now()) {
     person(3, ONLINE, iso(now, 4), [{ orderNo: 'WINONLINEPEND', amount: 399, status: 'pending', source: 'https://2027course.win-lin.com/#apply', paidAt: null, createdAt: iso(now, 4) }]),
     person(4, ONLINE, iso(now, 30), [{ orderNo: 'WINONLINEPAID', amount: 399, status: 'paid', source: 'https://2027course.win-lin.com/#apply', paidAt: iso(now, 9), createdAt: iso(now, 30) }]),
     person(5, DAY16, iso(now, 3), [{ orderNo: 'WIN1216PAID', amount: 399, status: 'paid', source: 'https://2027course.win-lin.com/#apply', paidAt: iso(now, 3), createdAt: iso(now, 3) }]),
-    person(6, DAY2, iso(now, 7), [{ orderNo: 'WIN1202PAID', amount: 399, status: 'paid', source: 'https://2027course.win-lin.com/#apply', paidAt: iso(now, 7), createdAt: iso(now, 7) }]),
+    person(6, DAY23, iso(now, 7), [{ orderNo: 'WIN1223PAID', amount: 399, status: 'paid', source: 'https://2027course.win-lin.com/#apply', paidAt: iso(now, 7), createdAt: iso(now, 7) }]),
     person(7, DAY16, iso(now, 2), [{ orderNo: 'WIN1216PEND', amount: 399, status: 'pending', source: 'https://2027course.win-lin.com/#apply', paidAt: null, createdAt: iso(now, 2) }]),
     person(8, 'notify', iso(now, 10), []),
     person(9, ONLINE, iso(now, 1), [{ orderNo: 'WINTEST', amount: 1, status: 'paid', source: 'win-test-1', paidAt: iso(now, 1), createdAt: iso(now, 1) }]),
