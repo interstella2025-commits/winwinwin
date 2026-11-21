@@ -5,6 +5,7 @@ const noindex = [
   { key: "Referrer-Policy", value: "no-referrer" },
 ];
 const config: NextConfig = {
+  experimental: { agentUpgrade: "security" },
   async headers() {
     return [
       { source: "/admin", headers: noindex },
