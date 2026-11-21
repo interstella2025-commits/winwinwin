@@ -76,6 +76,33 @@ export function fixtureReport(days: number, now = Date.now()) {
     person(7, DAY16, iso(now, 2), [{ orderNo: 'WIN1216PEND', amount: 399, status: 'pending', source: 'https://2027course.win-lin.com/#apply', paidAt: null, createdAt: iso(now, 2) }]),
     person(8, 'notify', iso(now, 10), []),
     person(9, ONLINE, iso(now, 1), [{ orderNo: 'WINTEST', amount: 1, status: 'paid', source: 'win-test-1', paidAt: iso(now, 1), createdAt: iso(now, 1) }]),
+    {
+      id: 'fixture-app-elsa',
+      name: 'elsa測試',
+      email: 'elsa-test@example.test',
+      phone: '+886900000091',
+      sessionCode: ONLINE,
+      createdAt: iso(now, 2),
+      orders: [],
+    },
+    {
+      id: 'fixture-app-liao',
+      name: ' 廖子淇 ',
+      email: 'liao-test@example.test',
+      phone: '+886900000092',
+      sessionCode: DAY16,
+      createdAt: iso(now, 2.5),
+      orders: [{ orderNo: 'WINTESTNAME', amount: 399, status: 'paid', source: 'https://2027course.win-lin.com/#apply', paidAt: iso(now, 2.5), createdAt: iso(now, 2.5) }],
+    },
+    {
+      id: 'fixture-app-friend',
+      name: '廖子淇的朋友',
+      email: 'friend@example.test',
+      phone: '+886900000093',
+      sessionCode: ONLINE,
+      createdAt: iso(now, 3.5),
+      orders: [],
+    },
   ];
   const visibleSessions = sessions.filter(session => session.started_at >= since);
   const visibleIds = new Set(visibleSessions.map(session => session.id));

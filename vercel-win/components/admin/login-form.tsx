@@ -28,12 +28,13 @@ export default function LoginForm() {
   }
 
   return (
-    <main className="win-admin-login">
-      <form className="win-admin-card win-admin-login-card" onSubmit={submit}>
-        <p className="win-admin-kicker">WIN 講師班</p>
+    <main className="admin-login-page">
+      <form className="admin-login-card" onSubmit={submit}>
+        <div className="admin-brand-mark">W</div>
+        <p className="admin-eyebrow">WIN 講師班</p>
         <h1>流量與轉換後台</h1>
-        <p className="win-admin-lead">輸入管理密碼後查看報名、付款與進站。</p>
-        <label>
+        <p className="admin-muted">輸入管理密碼後查看報名、付款與進站。</p>
+        <label className="admin-field">
           <span>管理密碼</span>
           <input
             type="password"
@@ -44,8 +45,8 @@ export default function LoginForm() {
             required
           />
         </label>
-        {error ? <p className="win-admin-form-error" role="alert">{error}</p> : null}
-        <button className="win-admin-submit" type="submit" disabled={loading}>{loading ? '登入中' : '登入後台'}</button>
+        {error ? <p className="admin-alert error" role="alert">{error}</p> : null}
+        <button className="admin-primary-button" type="submit" disabled={loading}>{loading ? '登入中' : '登入後台'}</button>
       </form>
     </main>
   );
