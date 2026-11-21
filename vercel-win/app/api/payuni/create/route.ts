@@ -1,6 +1,7 @@
 import { metaEventId,sendRegistrationEvents } from '../../../../lib/meta/capi';
 import { AMOUNT,FORM_ORIGINS,digest,validate } from '../../../../lib/payuni/core';
 import { db,first,settings,json,orderBy,clientIp } from '../../../../lib/payuni/server';
+import { recordRegistrationAttribution } from '../../../../lib/admin/attribution';
 export const dynamic='force-dynamic';export const runtime='nodejs';
 export async function POST(request:Request){
  const origin=request.headers.get('origin');if(!origin||!(FORM_ORIGINS.includes(origin)||origin===new URL(request.url).origin))return json({error:'請從本頁送出報名。'},403);
@@ -26,6 +27,7 @@ export async function POST(request:Request){
  await db().transaction([
  {text:'INSERT INTO applications (id,name,email,phone,profession,stage,topic,session_code,line_name,created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)',params:[application,data.name,data.email,data.phone,data.profession,data.stage,data.topic,data.sessionCode,data.lineName,now]},
  {text:"INSERT INTO payment_orders (id,application_id,order_no,merchant,amount,token,request_id,status,created_at,consent_at,source) VALUES ($1,$2,$3,$4,$5,$6,$7,'pending',$8,$9,$10)",params:[id,application,orderNo,c.merchant,AMOUNT,token,requestKey,now,now,c.origin+'/#apply']}]);
+ await recordRegistrationAttribution(application,body);
  await trackSignup(orderNo);
  return json({checkoutUrl:`/api/payuni/checkout?token=${token}`});
  }catch{return json({error:'暫時無法建立付款，請保留資料稍後再試。'},503)}

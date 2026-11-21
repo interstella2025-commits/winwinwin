@@ -2,11 +2,15 @@
 
 import { useEffect } from 'react';
 import { offerFromForm, outcomeKind } from '../lib/admin/tracking';
-import { ANALYTICS_FLUSH_EVENT, ANALYTICS_OPT_OUT_KEY } from '../lib/admin/analytics-client';
-
-const SESSION_KEY = 'win_analytics_session_id';
-const VISITOR_KEY = 'win_analytics_visitor_id';
-const STARTED_KEY = 'win_analytics_started_at';
+import {
+  ANALYTICS_FLUSH_EVENT,
+  ANALYTICS_LAST_ACTIVE_KEY,
+  ANALYTICS_OPT_OUT_KEY,
+  ANALYTICS_SESSION_KEY as SESSION_KEY,
+  ANALYTICS_STARTED_KEY as STARTED_KEY,
+  ANALYTICS_VISITOR_KEY as VISITOR_KEY,
+  isSessionExpired,
+} from '../lib/admin/analytics-client';
 
 type TrackEvent = {
   name: string;
@@ -63,6 +67,11 @@ export default function SiteAnalytics() {
       visitorId = uuid();
       storageSet(window.localStorage, VISITOR_KEY, visitorId);
     }
+    const lastActive = Date.parse(storageGet(window.sessionStorage, ANALYTICS_LAST_ACTIVE_KEY) || '');
+    if (sessionId && isSessionExpired(lastActive, Date.now())) {
+      sessionId = '';
+      startedAt = '';
+    }
     if (!sessionId) {
       sessionId = uuid();
       storageSet(window.sessionStorage, SESSION_KEY, sessionId);
@@ -71,12 +80,15 @@ export default function SiteAnalytics() {
       startedAt = new Date().toISOString();
       storageSet(window.sessionStorage, STARTED_KEY, startedAt);
     }
-    const startedMs = Date.now();
+    let startedMs = Date.now();
+    let lastActiveMs = Date.now();
+    storageSet(window.sessionStorage, ANALYTICS_LAST_ACTIVE_KEY, new Date(lastActiveMs).toISOString());
     const queue: TrackEvent[] = [];
     let flushTimer = 0;
     let formStarted = false;
     const startedOffers = new Set<string>();
     let ended = false;
+    let rotated = false;
     const seenDepth = new Set<number>();
 
     const pagePath = () => `${window.location.pathname}`.slice(0, 300);
@@ -92,7 +104,7 @@ export default function SiteAnalytics() {
       sessionId,
       startedAt,
       landingUrl: window.location.href.slice(0, 2048),
-      referrer: document.referrer.slice(0, 2048) || undefined,
+      referrer: rotated ? undefined : document.referrer.slice(0, 2048) || undefined,
       viewportWidth: window.innerWidth,
       events: queue.splice(0, queue.length),
     });
@@ -109,7 +121,28 @@ export default function SiteAnalytics() {
       }
       void originalFetch('/api/analytics/events', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body, keepalive: true }).catch(() => undefined);
     };
+    /** Mark user activity; after 30 idle minutes the next activity starts a new visit. */
+    const touch = () => {
+      const now = Date.now();
+      if (isSessionExpired(lastActiveMs, now)) {
+        flush(true);
+        sessionId = uuid();
+        startedAt = new Date(now).toISOString();
+        startedMs = now;
+        rotated = true;
+        ended = false;
+        formStarted = false;
+        startedOffers.clear();
+        seenDepth.clear();
+        storageSet(window.sessionStorage, SESSION_KEY, sessionId);
+        storageSet(window.sessionStorage, STARTED_KEY, startedAt);
+        queue.push({ name: 'page_view', sectionId: 'page', pagePath: pagePath(), occurredAt: startedAt });
+      }
+      if (now - lastActiveMs > 5000 || rotated) storageSet(window.sessionStorage, ANALYTICS_LAST_ACTIVE_KEY, new Date(now).toISOString());
+      lastActiveMs = now;
+    };
     const enqueue = (event: Omit<TrackEvent, 'pagePath' | 'occurredAt'>, immediate = false) => {
+      if (event.name !== 'dwell_ping' && event.name !== 'session_end') touch();
       queue.push({ ...event, pagePath: pagePath(), occurredAt: new Date().toISOString() });
       if (immediate || queue.length >= 8) flush();
       else {
@@ -197,6 +230,7 @@ export default function SiteAnalytics() {
       }, true);
     };
     const ping = window.setInterval(() => {
+      if (document.visibilityState !== 'visible' || isSessionExpired(lastActiveMs, Date.now())) return;
       enqueue({ name: 'dwell_ping', sectionId: 'page', data: { durationSeconds: Math.max(0, Math.round((Date.now() - startedMs) / 1000)) } });
     }, 15000);
 
@@ -205,6 +239,9 @@ export default function SiteAnalytics() {
     document.addEventListener('change', onOfferChange, true);
     document.addEventListener('submit', onSubmit, true);
     window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('scroll', touch, { passive: true });
+    document.addEventListener('keydown', touch, true);
+    document.addEventListener('pointerdown', touch, true);
     window.addEventListener('pagehide', finish);
     const onFlush = () => flush(true);
     window.addEventListener(ANALYTICS_FLUSH_EVENT, onFlush);
@@ -218,6 +255,9 @@ export default function SiteAnalytics() {
       document.removeEventListener('change', onOfferChange, true);
       document.removeEventListener('submit', onSubmit, true);
       window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('scroll', touch);
+      document.removeEventListener('keydown', touch, true);
+      document.removeEventListener('pointerdown', touch, true);
       window.removeEventListener('pagehide', finish);
       window.removeEventListener(ANALYTICS_FLUSH_EVENT, onFlush);
       window.fetch = originalFetch;

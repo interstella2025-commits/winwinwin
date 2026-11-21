@@ -3,6 +3,7 @@ import { classifyApplication, displaySession, isDecember16, isDecember23, isPaid
 import { fixtureReport } from './fixture';
 import { ensureAnalyticsTables } from './schema';
 import { isExcludedTestName, type ExcludedTestRow } from './test-registrations';
+import { loadAttributionSources } from './attribution';
 
 export type SessionRow = {
   id: string;
@@ -52,6 +53,14 @@ export type GroupedApplication = {
   sessionCode: string | null;
   createdAt: string;
   orders: OrderFact[];
+  attribution?: { source: string | null; campaign: string | null; lastSource: string | null } | null;
+};
+
+export type EmailStatusRow = {
+  application_id: string;
+  kind: 'online' | 'order';
+  email_status: string;
+  email_lease: number | string | null;
 };
 
 export type FunnelStep = {
@@ -88,6 +97,9 @@ export type DashboardReport = {
     inpersonPaid1223: number;
     inpersonStarted: number;
     notify: number;
+    notifyRecords: number;
+    emailFailed: number;
+    emailPending: number;
     excludedTestOrders: number;
     excludedTestNames: number;
   };
@@ -104,7 +116,8 @@ export type DashboardReport = {
     paymentStart: number;
   }[];
   funnels: { online: FunnelStep[]; inperson: FunnelStep[] };
-  registrations: { createdAt: string; name: string; email: string; phone: string; session: string; result: string }[];
+  registrations: { createdAt: string; name: string; email: string; phone: string; session: string; result: string; source: string | null }[];
+  registrationSources: { label: string; count: number }[];
   payments: { at: string; orderNo: string; amount: number; status: string; session: string; name: string }[];
   periodCaption: string;
   trend: { label: string; visits: number; formStarts: number; completions: number }[];
@@ -115,6 +128,19 @@ export type DashboardReport = {
 };
 
 const DEVICE_LABELS: Record<string, string> = { mobile: '手機', tablet: '平板', desktop: '桌機', unknown: '未知' };
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const TAIPEI_OFFSET_MS = 8 * 60 * 60 * 1000;
+
+/** Start of a Taipei calendar-day window: today 00:00 (台北) minus days-1 days. Taipei has no DST. */
+export function windowStart(days: number, now = Date.now()) {
+  const todayStart = Math.floor((now + TAIPEI_OFFSET_MS) / DAY_MS) * DAY_MS - TAIPEI_OFFSET_MS;
+  return new Date(todayStart - (Math.max(1, days) - 1) * DAY_MS).toISOString();
+}
+
+export function rangeLabel(days: number) {
+  return days === 1 ? '今天（台北 00:00 起）' : `近 ${days} 天（台北日曆日，含今天）`;
+}
 
 export function rangeDays(value: string | undefined) {
   return value === '1' ? 1 : value === '30' ? 30 : 7;
@@ -149,48 +175,18 @@ export function formatTaipei(iso: string) {
   }).format(date);
 }
 
-const UTM_SOURCE_LABELS: Record<string, string> = {
-  fb: 'Facebook',
-  facebook: 'Facebook',
-  ig: 'Instagram',
-  instagram: 'Instagram',
-  th: 'Threads',
-  threads: 'Threads',
-};
+export { sourceLabel } from './source-label';
+import { sourceLabel } from './source-label';
 
-function referrerHost(referrer: string | null) {
-  if (!referrer) return '';
-  try {
-    return new URL(referrer).hostname.replace(/^www\./, '').toLowerCase();
-  } catch {
-    return '';
-  }
-}
-
-function isOwnHost(host: string) {
-  if (!host) return false;
-  if (host === '2027course.win-lin.com' || host === 'localhost') return true;
-  if (host.endsWith('.win-lin.com')) return true;
-  if (host.startsWith('win-lecturer-20261018') && host.endsWith('.vercel.app')) return true;
-  return false;
-}
-
-function isFacebookHost(host: string) {
-  return host === 'facebook.com' || host.endsWith('.facebook.com') || host === 'fb.com' || host.endsWith('.fb.com') || host === 'fb.me';
-}
-
-export function sourceLabel(session: { utm_source: string | null; utm_medium: string | null; referrer: string | null }) {
-  if (session.utm_source) {
-    const key = session.utm_source.trim().toLowerCase();
-    const mapped = UTM_SOURCE_LABELS[key] || session.utm_source;
-    return [mapped, session.utm_medium].filter(Boolean).join(' / ');
-  }
-  if (!session.referrer) return '直接進站';
-  const host = referrerHost(session.referrer);
-  if (!host) return '其他來源';
-  if (isOwnHost(host)) return '直接進站';
-  if (isFacebookHost(host)) return 'Facebook（自然）';
-  return host;
+/**
+ * 'failed': the last attempt failed, or a send claim expired without finishing.
+ * 'pending': not sent yet and no failure recorded. 'sent': delivered to Resend.
+ */
+export function emailState(row: { email_status: string; email_lease: number | string | null }, now = Date.now()) {
+  if (row.email_status === 'sent') return 'sent' as const;
+  if (row.email_status === 'failed') return 'failed' as const;
+  if (row.email_status === 'sending' && Number(row.email_lease || 0) < now) return 'failed' as const;
+  return 'pending' as const;
 }
 
 function readData(value: unknown) {
@@ -384,6 +380,8 @@ export function buildReport(input: {
   trackingStartedAt?: string | null;
   sessionsCapped?: boolean;
   eventsCapped?: boolean;
+  emailStatuses?: EmailStatusRow[];
+  now?: number;
 }): DashboardReport {
   const sessions = input.sessions;
   const events = input.events;
@@ -447,7 +445,7 @@ export function buildReport(input: {
     };
   }).sort((left, right) => right.sessions - left.sessions || left.label.localeCompare(right.label, 'zh-Hant'));
   const hourly = input.days === 1;
-  const trendKeys = enumerateBuckets(input.since, input.days);
+  const trendKeys = enumerateBuckets(input.since, input.days, input.now ?? Date.now());
   const trendMap = new Map(trendKeys.map(key => [key, { label: bucketLabel(key, hourly), visits: 0, formStarts: 0, completions: 0 }]));
   for (const session of sessions) {
     const current = trendMap.get(bucketKey(session.started_at, hourly));
@@ -508,7 +506,31 @@ export function buildReport(input: {
       phone: item.application.phone,
       session: displaySession(item.application.sessionCode),
       result: item.outcome.result,
+      source: item.application.attribution?.source || null,
     }));
+  const sourceCounts = new Map<string, number>();
+  for (const item of classified) {
+    if (item.outcome.result === '測試單') continue;
+    const label = item.application.attribution?.source || '未記錄（較早報名）';
+    sourceCounts.set(label, (sourceCounts.get(label) || 0) + 1);
+  }
+  const registrationSources = [...sourceCounts.entries()]
+    .map(([label, count]) => ({ label, count }))
+    .sort((left, right) => right.count - left.count || left.label.localeCompare(right.label));
+  // 其他場次通知: the same person (email, else phone) counts once.
+  const notifyItems = classified.filter(item => item.outcome.notify);
+  const notifyPeople = new Set(notifyItems.map(item => (item.application.email || '').trim().toLowerCase() || (item.application.phone || '').replace(/\D/g, '')));
+  // Confirmation email: one rule for free online signups and paid (non-test) orders.
+  const visibleIds = new Set(visibleApplications.map(application => application.id));
+  const reportNow = input.now ?? Date.now();
+  let emailFailed = 0;
+  let emailPending = 0;
+  for (const row of input.emailStatuses || []) {
+    if (!visibleIds.has(row.application_id)) continue;
+    const status = emailState(row, reportNow);
+    if (status === 'failed') emailFailed += 1;
+    else if (status === 'pending') emailPending += 1;
+  }
   return {
     days: input.days,
     since: input.since,
@@ -535,7 +557,10 @@ export function buildReport(input: {
       inpersonPaid1216: countWhere(item => item.outcome.inpersonPaid && isDecember16(item.application.sessionCode)),
       inpersonPaid1223: countWhere(item => item.outcome.inpersonPaid && isDecember23(item.application.sessionCode)),
       inpersonStarted,
-      notify: countWhere(item => item.outcome.notify),
+      notify: notifyPeople.size,
+      notifyRecords: notifyItems.length,
+      emailFailed,
+      emailPending,
       excludedTestOrders: visibleApplications.reduce((sum, application) => sum + application.orders.filter(isTestOrder).length, 0),
       excludedTestNames: excludedApplications.length,
     },
@@ -560,8 +585,9 @@ export function buildReport(input: {
       ]),
     },
     registrations: allRegistrations.slice(0, 20),
+    registrationSources,
     payments,
-    periodCaption: formatTaipeiRange(input.since),
+    periodCaption: formatTaipeiRange(input.since, input.now ?? Date.now()),
     trend,
     scrollBuckets,
     eventCounts,
@@ -577,7 +603,7 @@ export const EVENT_FETCH_LIMIT = 20000;
 
 export async function loadReport(days: number, now = Date.now()): Promise<DashboardReport> {
   if (process.env.NODE_ENV !== 'production' && process.env.ADMIN_DASHBOARD_FIXTURE === '1') return fixtureReport(days, now);
-  const since = new Date(now - days * 24 * 60 * 60 * 1000).toISOString();
+  const since = windowStart(days, now);
   let sessions: SessionRow[] = [];
   let events: EventRow[] = [];
   let analyticsUnavailable = false;
@@ -622,7 +648,25 @@ export async function loadReport(days: number, now = Date.now()): Promise<Dashbo
   } catch {
     registrationsUnavailable = true;
   }
-  return buildReport({ days, since, sessions, events, applications, analyticsUnavailable, registrationsUnavailable, fixture: false, trackingStartedAt, sessionsCapped, eventsCapped });
+  const sources = await loadAttributionSources(since);
+  for (const application of applications) application.attribution = sources.get(application.id) || null;
+  const emailStatuses: EmailStatusRow[] = [];
+  try {
+    const rows = await db().query(
+      `SELECT application_id, email_status, email_lease FROM payment_orders
+       WHERE status = 'paid' AND source <> 'win-test-1' AND paid_at >= $1`,
+      [since],
+    ) as Omit<EmailStatusRow, 'kind'>[];
+    for (const row of rows) emailStatuses.push({ ...row, kind: 'order' });
+  } catch { /* counted as zero */ }
+  try {
+    const rows = await db().query(
+      'SELECT application_id, email_status, email_lease FROM online_signups WHERE created_at >= $1',
+      [since],
+    ) as Omit<EmailStatusRow, 'kind'>[];
+    for (const row of rows) emailStatuses.push({ ...row, kind: 'online' });
+  } catch { /* table is created on first free signup */ }
+  return buildReport({ days, since, sessions, events, applications, analyticsUnavailable, registrationsUnavailable, fixture: false, trackingStartedAt, sessionsCapped, eventsCapped, emailStatuses, now });
 }
 
 export async function loadExcludedTestRegistrations(now = Date.now()): Promise<ExcludedTestRow[]> {
