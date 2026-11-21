@@ -245,6 +245,109 @@ async function test(name, fn) {
     assert.equal(fs.readFileSync(path.join(root, 'lib/admin/auth.ts'), 'utf8').includes('unit-test-admin-password'), false);
   });
 
+
+  await test('test names are excluded only with exact trimmed match', () => {
+    const names = load('lib/admin/test-registrations.ts');
+    assert.equal(names.isExcludedTestName('elsa測試'), true);
+    assert.equal(names.isExcludedTestName(' 廖子淇 '), true);
+    assert.equal(names.isExcludedTestName('廖子淇'), true);
+    assert.equal(names.isExcludedTestName('廖'), false);
+    assert.equal(names.isExcludedTestName('廖子淇的朋友'), false);
+    assert.equal(names.isExcludedTestName('elsa測試帳號'), false);
+    assert.equal(names.isExcludedTestName('陳安'), false);
+    process.env.ADMIN_EXCLUDED_TEST_NAMES = ' 王測試 ,李示範';
+    assert.equal(names.isExcludedTestName('王測試'), true);
+    assert.equal(names.isExcludedTestName('李示範'), true);
+    assert.equal(names.isExcludedTestName('elsa測試'), true);
+    delete process.env.ADMIN_EXCLUDED_TEST_NAMES;
+  });
+
+  await test('report subtracts exact test-name rows from stats and lists', () => {
+    const now = '2026-11-18T10:00:00.000Z';
+    const base = {
+      days: 7,
+      since: '2026-11-11T10:00:00.000Z',
+      analyticsUnavailable: false,
+      registrationsUnavailable: false,
+      fixture: false,
+      sessions: [
+        { id: 's1', visitor_id: 'v1', started_at: now, last_seen_at: '2026-11-18T10:01:30.000Z', referrer: null, device_type: 'mobile', utm_source: 'facebook', utm_medium: 'paid', utm_campaign: 'win', utm_content: null, utm_term: null, max_scroll_depth: 50, last_stage: 'page_view' },
+      ],
+      events: [
+        { session_id: 's1', event_name: 'page_view', offer: null, event_data: '{}', occurred_at: now },
+        { session_id: 's1', event_name: 'form_start', offer: 'online', event_data: '{}', occurred_at: now },
+      ],
+      applications: [
+        { id: 'free', name: '免費', email: 'free@example.test', phone: '+886900000001', sessionCode: ONLINE, createdAt: now, orders: [] },
+        { id: 'place', name: '實體', email: 'place@example.test', phone: '+886900000003', sessionCode: DAY16, createdAt: now, orders: [order({ orderNo: 'WIN1216' })] },
+      ],
+    };
+    const before = report.buildReport(base);
+    const after = report.buildReport({
+      ...base,
+      applications: [
+        ...base.applications,
+        { id: 'elsa', name: 'elsa測試', email: 'elsa@example.test', phone: '+886900000091', sessionCode: ONLINE, createdAt: now, orders: [] },
+        { id: 'liao', name: ' 廖子淇 ', email: 'liao@example.test', phone: '+886900000092', sessionCode: DAY16, createdAt: now, orders: [order({ orderNo: 'WINLIAO' })] },
+        { id: 'friend', name: '廖子淇的朋友', email: 'friend@example.test', phone: '+886900000093', sessionCode: ONLINE, createdAt: now, orders: [] },
+      ],
+    });
+    assert.equal(before.kpis.freeOnline, 1);
+    assert.equal(before.kpis.inpersonPaid, 1);
+    assert.equal(before.kpis.inpersonPaidAmount, 399);
+    assert.equal(after.kpis.freeOnline, 2);
+    assert.equal(after.kpis.inpersonPaid, 1);
+    assert.equal(after.kpis.inpersonPaidAmount, 399);
+    assert.equal(after.kpis.excludedTestNames, 2);
+    assert.equal(after.funnels.online.at(-1).count, 2);
+    assert.equal(after.funnels.inperson.at(-1).count, 1);
+    assert.equal(after.registrations.some(row => row.name === 'elsa測試' || row.name.trim() === '廖子淇'), false);
+    assert.equal(after.registrations.some(row => row.name === '廖子淇的朋友' && row.result === '免費登記'), true);
+    assert.equal(after.payments.some(row => row.orderNo === 'WINLIAO' || row.name.trim() === '廖子淇'), false);
+    assert.equal(after.payments.some(row => row.orderNo === 'WIN1216'), true);
+    assert.equal(after.excludedTests.map(row => row.name.trim()).sort().join(','), 'elsa測試,廖子淇');
+    const csv = load('lib/admin/test-registrations.ts').excludedTestRegistrationsCsv(after.excludedTests);
+    assert.match(csv, /elsa測試/);
+    assert.match(csv, /廖子淇/);
+    assert.equal(csv.includes('廖子淇的朋友'), false);
+  });
+
+  await test('fixture hides default test names and still counts a similar real name', () => {
+    const sample = load('lib/admin/fixture.ts').fixtureReport(7, Date.parse('2026-11-21T04:00:00.000Z'));
+    assert.equal(sample.fixture, true);
+    assert.equal(sample.kpis.excludedTestNames, 2);
+    assert.equal(sample.registrations.some(row => row.name.trim() === 'elsa測試' || row.name.trim() === '廖子淇'), false);
+    assert.equal(sample.registrations.some(row => row.name === '廖子淇的朋友'), true);
+    assert.equal(sample.payments.some(row => row.orderNo === 'WINTESTNAME'), false);
+    assert.equal(sample.kpis.freeOnline >= 4, true);
+    assert.equal(sample.kpis.inpersonPaid, 2);
+  });
+
+
+  await test('overview and csv hide or export test names only when logged in', async () => {
+    const created = new Date().toISOString();
+    sqlite.prepare('INSERT INTO applications (id,name,email,phone,profession,stage,topic,session_code,line_name,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)').run('app-elsa', 'elsa測試', 'elsa@example.test', '+886900000091', 'QA', 'QA', 'QA', ONLINE, '', created);
+    sqlite.prepare('INSERT INTO applications (id,name,email,phone,profession,stage,topic,session_code,line_name,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)').run('app-liao', ' 廖子淇 ', 'liao@example.test', '+886900000092', 'QA', 'QA', 'QA', DAY16, '', created);
+    sqlite.prepare('INSERT INTO payment_orders (id,application_id,order_no,merchant,amount,token,request_id,status,created_at,consent_at,source,paid_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)').run('order-liao', 'app-liao', 'WINLIAO', 'M', 399, 'token-liao', 'request-liao', 'paid', created, created, 'https://2027course.win-lin.com/#apply', created);
+    sqlite.prepare('INSERT INTO applications (id,name,email,phone,profession,stage,topic,session_code,line_name,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)').run('app-friend', '廖子淇的朋友', 'friend@example.test', '+886900000093', 'QA', 'QA', 'QA', ONLINE, '', created);
+    const csvRoute = load('app/api/admin/test-registrations/route.ts');
+    assert.equal((await csvRoute.GET(new Request('https://2027course.win-lin.com/api/admin/test-registrations'))).status, 401);
+    const token = auth.createAdminSessionToken();
+    const allowed = await overview.GET(new Request('https://2027course.win-lin.com/api/admin/overview', { headers: { cookie: `win_admin_session=${token}` } }));
+    assert.equal(allowed.status, 200);
+    const body = await allowed.json();
+    assert.equal(body.registrations.some(row => row.email === 'elsa@example.test' || row.email === 'liao@example.test'), false);
+    assert.equal(body.registrations.some(row => row.email === 'friend@example.test' && row.result === '免費登記'), true);
+    assert.equal(body.kpis.excludedTestNames >= 2, true);
+    const csvResponse = await csvRoute.GET(new Request('https://2027course.win-lin.com/api/admin/test-registrations', { headers: { cookie: `win_admin_session=${token}` } }));
+    assert.equal(csvResponse.status, 200);
+    const csv = await csvResponse.text();
+    assert.match(csv, /elsa測試/);
+    assert.match(csv, /廖子淇/);
+    assert.equal(csv.includes('friend@example.test'), false);
+    assert.equal(csv.includes('unit-test-admin-password'), false);
+  });
+
   await test('dev fixture is ignored in production', async () => {
     process.env.ADMIN_DASHBOARD_FIXTURE = '1';
     process.env.NODE_ENV = 'production';
