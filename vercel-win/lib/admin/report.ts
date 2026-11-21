@@ -2,7 +2,7 @@ import { db } from '../payuni/db';
 import { classifyApplication, displaySession, isDecember16, isDecember23, isPaid399, isTestOrder, type OrderFact } from './offers';
 import { fixtureReport } from './fixture';
 import { ensureAnalyticsTables } from './schema';
-import { excludedTestNameList, isExcludedTestName, type ExcludedTestRow } from './test-registrations';
+import { isExcludedTestName, type ExcludedTestRow } from './test-registrations';
 
 export type SessionRow = {
   id: string;
@@ -67,6 +67,11 @@ export type DashboardReport = {
   fixture: boolean;
   analyticsUnavailable: boolean;
   registrationsUnavailable: boolean;
+  trackingStartedAt: string | null;
+  sessionsCapped: boolean;
+  eventsCapped: boolean;
+  registrationsTotal: number;
+  paymentsTotal: number;
   kpis: {
     sessions: number;
     visitors: number;
@@ -144,14 +149,48 @@ export function formatTaipei(iso: string) {
   }).format(date);
 }
 
-export function sourceLabel(session: { utm_source: string | null; utm_medium: string | null; referrer: string | null }) {
-  if (session.utm_source) return [session.utm_source, session.utm_medium].filter(Boolean).join(' / ');
-  if (!session.referrer) return '直接進站';
+const UTM_SOURCE_LABELS: Record<string, string> = {
+  fb: 'Facebook',
+  facebook: 'Facebook',
+  ig: 'Instagram',
+  instagram: 'Instagram',
+  th: 'Threads',
+  threads: 'Threads',
+};
+
+function referrerHost(referrer: string | null) {
+  if (!referrer) return '';
   try {
-    return new URL(session.referrer).hostname.replace(/^www\./, '');
+    return new URL(referrer).hostname.replace(/^www\./, '').toLowerCase();
   } catch {
-    return '其他來源';
+    return '';
   }
+}
+
+function isOwnHost(host: string) {
+  if (!host) return false;
+  if (host === '2027course.win-lin.com' || host === 'localhost') return true;
+  if (host.endsWith('.win-lin.com')) return true;
+  if (host.startsWith('win-lecturer-20261018') && host.endsWith('.vercel.app')) return true;
+  return false;
+}
+
+function isFacebookHost(host: string) {
+  return host === 'facebook.com' || host.endsWith('.facebook.com') || host === 'fb.com' || host.endsWith('.fb.com') || host === 'fb.me';
+}
+
+export function sourceLabel(session: { utm_source: string | null; utm_medium: string | null; referrer: string | null }) {
+  if (session.utm_source) {
+    const key = session.utm_source.trim().toLowerCase();
+    const mapped = UTM_SOURCE_LABELS[key] || session.utm_source;
+    return [mapped, session.utm_medium].filter(Boolean).join(' / ');
+  }
+  if (!session.referrer) return '直接進站';
+  const host = referrerHost(session.referrer);
+  if (!host) return '其他來源';
+  if (isOwnHost(host)) return '直接進站';
+  if (isFacebookHost(host)) return 'Facebook（自然）';
+  return host;
 }
 
 function readData(value: unknown) {
@@ -212,6 +251,55 @@ function hasEvent(events: EventRow[], sessionId: string, name: string, offer?: s
 
 function countSessions(ids: string[], events: EventRow[], name: string, offer?: string) {
   return ids.filter(id => hasEvent(events, id, name, offer)).length;
+}
+
+const SUBMIT_EVENTS = new Set(['form_submit', 'form_submit_ok', 'payment_start', 'registered']);
+const FORM_EVENTS = new Set(['form_start', 'form_submit', 'form_submit_ok', 'payment_start', 'registered']);
+
+function sessionHasPathEvent(events: EventRow[], sessionId: string, names: Set<string>, offer: string) {
+  return events.some(event => event.session_id === sessionId && names.has(event.event_name) && event.offer === offer);
+}
+
+/** Last non-unknown offer among a session's form events (start/submit/outcome). */
+export function sessionResolvedOffer(events: EventRow[], sessionId: string) {
+  const rows = events
+    .filter(event => event.session_id === sessionId && FORM_EVENTS.has(event.event_name))
+    .sort((left, right) => left.occurred_at.localeCompare(right.occurred_at));
+  let offer: string | undefined;
+  for (const row of rows) {
+    if (row.offer && row.offer !== 'unknown') offer = row.offer;
+  }
+  return offer;
+}
+
+/** Form start for a path: an event tagged with that offer, or a later path event after an untagged start. */
+function sessionStartedForm(events: EventRow[], sessionId: string, offer: string) {
+  const rows = events.filter(event => event.session_id === sessionId);
+  if (rows.some(event => event.event_name === 'form_start' && event.offer === offer)) return true;
+  if (sessionHasPathEvent(rows, sessionId, SUBMIT_EVENTS, offer)) return true;
+  if (!rows.some(event => event.event_name === 'form_start')) return false;
+  return sessionResolvedOffer(rows, sessionId) === offer;
+}
+
+function sessionSubmittedForm(events: EventRow[], sessionId: string, offer: string) {
+  return sessionHasPathEvent(events, sessionId, SUBMIT_EVENTS, offer);
+}
+
+function countPathSessions(ids: string[], events: EventRow[], offer: string, kind: 'start' | 'submit') {
+  const check = kind === 'start' ? sessionStartedForm : sessionSubmittedForm;
+  return ids.filter(id => check(events, id, offer)).length;
+}
+
+function atLeast(value: number, floor: number) {
+  return Math.max(value, floor);
+}
+
+function raiseToDownstream<T extends { count: number }>(steps: T[]): T[] {
+  const counts = steps.map(step => step.count);
+  for (let index = counts.length - 2; index >= 0; index -= 1) {
+    counts[index] = Math.max(counts[index], counts[index + 1]);
+  }
+  return steps.map((step, index) => ({ ...step, count: counts[index] }));
 }
 
 
@@ -293,6 +381,9 @@ export function buildReport(input: {
   analyticsUnavailable: boolean;
   registrationsUnavailable: boolean;
   fixture: boolean;
+  trackingStartedAt?: string | null;
+  sessionsCapped?: boolean;
+  eventsCapped?: boolean;
 }): DashboardReport {
   const sessions = input.sessions;
   const events = input.events;
@@ -309,16 +400,18 @@ export function buildReport(input: {
   const countWhere = (pick: (item: typeof classified[number]) => boolean) => classified.filter(pick).length;
   const sessionIds = sessions.map(session => session.id);
   const cta = countSessions(sessionIds, events, 'cta_click');
-  const onlineForm = countSessions(sessionIds, events, 'form_start', 'online');
-  const onlineSubmit = countSessions(sessionIds, events, 'form_submit_ok', 'online');
-  const inpersonForm = countSessions(sessionIds, events, 'form_start', 'inperson');
-  const inpersonSubmit = countSessions(sessionIds, events, 'form_submit_ok', 'inperson');
-  const inpersonPaymentEvents = countSessions(sessionIds, events, 'payment_start', 'inperson');
   const freeOnline = countWhere(item => item.outcome.freeOnline);
   const onlineAbandoned = countWhere(item => item.outcome.onlineAbandoned);
   const onlinePaid = countWhere(item => item.outcome.onlinePaid);
   const inpersonPaid = countWhere(item => item.outcome.inpersonPaid);
   const inpersonStarted = countWhere(item => item.outcome.inpersonStarted);
+  const onlineCompleted = freeOnline + onlinePaid;
+  const onlineStartedRecords = onlineCompleted + onlineAbandoned;
+  const onlineForm = atLeast(countPathSessions(sessionIds, events, 'online', 'start'), onlineStartedRecords);
+  const onlineSubmit = atLeast(countPathSessions(sessionIds, events, 'online', 'submit'), onlineStartedRecords);
+  const inpersonForm = atLeast(countPathSessions(sessionIds, events, 'inperson', 'start'), inpersonStarted);
+  const inpersonSubmit = atLeast(countPathSessions(sessionIds, events, 'inperson', 'submit'), inpersonStarted);
+  const inpersonPaymentEvents = countSessions(sessionIds, events, 'payment_start', 'inperson');
   const devices = ['mobile', 'tablet', 'desktop', 'unknown'].map(key => ({
     key,
     label: DEVICE_LABELS[key],
@@ -349,7 +442,7 @@ export function buildReport(input: {
       averageDwellSeconds: group.rows.length ? Math.round(totalDwell / group.rows.length) : 0,
       cta: countSessions(ids, events, 'cta_click'),
       formStart: countSessions(ids, events, 'form_start'),
-      submit: countSessions(ids, events, 'form_submit_ok'),
+      submit: ids.filter(id => events.some(event => event.session_id === id && SUBMIT_EVENTS.has(event.event_name))).length,
       paymentStart: countSessions(ids, events, 'payment_start'),
     };
   }).sort((left, right) => right.sessions - left.sessions || left.label.localeCompare(right.label, 'zh-Hant'));
@@ -384,7 +477,8 @@ export function buildReport(input: {
     page_view: '頁面瀏覽',
     cta_click: '點擊報名',
     form_start: '開始填表',
-    form_submit_ok: '送出表單',
+    form_submit: '送出表單',
+    form_submit_ok: '送出成功',
     payment_start: '前往付款',
   };
   const eventCounts = Object.entries(eventLabels).map(([key, label]) => ({
@@ -396,21 +490,36 @@ export function buildReport(input: {
     { key: 'online', name: '線上前導課', starts: onlineForm, submits: onlineSubmit, completions: freeOnline + onlinePaid },
     { key: 'inperson', name: '實體課（台北）', starts: inpersonForm, submits: inpersonSubmit, completions: inpersonPaid },
   ];
-  const payments = classified.flatMap(item => item.application.orders.filter(order => !isTestOrder(order)).map(order => ({
-
+  const allPayments = classified.flatMap(item => item.application.orders.filter(order => !isTestOrder(order)).map(order => ({
     at: order.paidAt || order.createdAt,
     orderNo: order.orderNo,
     amount: order.amount,
     status: order.status === 'paid' ? '已付款' : '未完成',
     session: displaySession(item.application.sessionCode),
     name: item.application.name,
-  }))).sort((left, right) => right.at.localeCompare(left.at)).slice(0, 20);
+  }))).sort((left, right) => right.at.localeCompare(left.at));
+  const payments = allPayments.slice(0, 20);
+  const allRegistrations = classified
+    .sort((left, right) => right.application.createdAt.localeCompare(left.application.createdAt))
+    .map(item => ({
+      createdAt: item.application.createdAt,
+      name: item.application.name,
+      email: item.application.email,
+      phone: item.application.phone,
+      session: displaySession(item.application.sessionCode),
+      result: item.outcome.result,
+    }));
   return {
     days: input.days,
     since: input.since,
     fixture: input.fixture,
     analyticsUnavailable: input.analyticsUnavailable,
     registrationsUnavailable: input.registrationsUnavailable,
+    trackingStartedAt: input.trackingStartedAt || null,
+    sessionsCapped: Boolean(input.sessionsCapped),
+    eventsCapped: Boolean(input.eventsCapped),
+    registrationsTotal: allRegistrations.length,
+    paymentsTotal: allPayments.length,
     kpis: {
       sessions: sessions.length,
       visitors: new Set(sessions.map(session => session.visitor_id)).size,
@@ -434,33 +543,23 @@ export function buildReport(input: {
     dwellBuckets: buckets,
     sources,
     funnels: {
-      online: [
+      online: raiseToDownstream([
         { label: '進站', count: sessions.length, basis: 'sessions' },
         { label: '點擊報名', count: cta, basis: 'sessions' },
         { label: '開始填寫線上', count: onlineForm, basis: 'sessions' },
         { label: '送出線上表單', count: onlineSubmit, basis: 'sessions' },
         { label: '完成免費登記', count: freeOnline, basis: 'records', detail: `另有線上未完成付款 ${onlineAbandoned}、線上已付款 ${onlinePaid}` },
-      ],
-      inperson: [
+      ]),
+      inperson: raiseToDownstream([
         { label: '進站', count: sessions.length, basis: 'sessions' },
         { label: '點擊報名', count: cta, basis: 'sessions' },
         { label: '開始填寫實體', count: inpersonForm, basis: 'sessions' },
         { label: '送出實體表單', count: inpersonSubmit, basis: 'sessions' },
         { label: '前往付款', count: inpersonStarted, basis: 'records', detail: `瀏覽器記錄到 ${inpersonPaymentEvents} 個工作階段前往付款` },
         { label: '付款完成', count: inpersonPaid, basis: 'records', detail: '以訂單狀態為準，含這段期間才付完的較早報名' },
-      ],
+      ]),
     },
-    registrations: classified
-      .sort((left, right) => right.application.createdAt.localeCompare(left.application.createdAt))
-      .slice(0, 20)
-      .map(item => ({
-        createdAt: item.application.createdAt,
-        name: item.application.name,
-        email: item.application.email,
-        phone: item.application.phone,
-        session: displaySession(item.application.sessionCode),
-        result: item.outcome.result,
-      })),
+    registrations: allRegistrations.slice(0, 20),
     payments,
     periodCaption: formatTaipeiRange(input.since),
     trend,
@@ -473,6 +572,9 @@ export function buildReport(input: {
   };
 }
 
+export const SESSION_FETCH_LIMIT = 5000;
+export const EVENT_FETCH_LIMIT = 20000;
+
 export async function loadReport(days: number, now = Date.now()): Promise<DashboardReport> {
   if (process.env.NODE_ENV !== 'production' && process.env.ADMIN_DASHBOARD_FIXTURE === '1') return fixtureReport(days, now);
   const since = new Date(now - days * 24 * 60 * 60 * 1000).toISOString();
@@ -481,17 +583,27 @@ export async function loadReport(days: number, now = Date.now()): Promise<Dashbo
   let analyticsUnavailable = false;
   let registrationsUnavailable = false;
   let applications: GroupedApplication[] = [];
+  let trackingStartedAt: string | null = null;
+  let sessionsCapped = false;
+  let eventsCapped = false;
   try {
     await ensureAnalyticsTables();
+    const earliest = await db().query(
+      'SELECT MIN(started_at) AS started_at FROM site_sessions',
+    ) as { started_at: string | null }[];
+    const firstStarted = earliest[0]?.started_at || null;
+    if (firstStarted && Date.parse(since) < Date.parse(firstStarted)) trackingStartedAt = firstStarted;
     sessions = await db().query(
       `SELECT id, visitor_id, started_at, last_seen_at, referrer, device_type, utm_source, utm_medium, utm_campaign, utm_content, utm_term, max_scroll_depth, last_stage
-       FROM site_sessions WHERE started_at >= $1 ORDER BY started_at DESC LIMIT 5000`,
+       FROM site_sessions WHERE started_at >= $1 ORDER BY started_at DESC LIMIT ${SESSION_FETCH_LIMIT}`,
       [since],
     ) as SessionRow[];
     events = await db().query(
-      `SELECT session_id, event_name, offer, event_data, occurred_at FROM site_events WHERE occurred_at >= $1 ORDER BY occurred_at DESC LIMIT 20000`,
+      `SELECT session_id, event_name, offer, event_data, occurred_at FROM site_events WHERE occurred_at >= $1 AND event_name <> 'dwell_ping' ORDER BY occurred_at DESC LIMIT ${EVENT_FETCH_LIMIT}`,
       [since],
     ) as EventRow[];
+    sessionsCapped = sessions.length >= SESSION_FETCH_LIMIT;
+    eventsCapped = events.length >= EVENT_FETCH_LIMIT;
   } catch {
     analyticsUnavailable = true;
   }
@@ -510,31 +622,28 @@ export async function loadReport(days: number, now = Date.now()): Promise<Dashbo
   } catch {
     registrationsUnavailable = true;
   }
-  return buildReport({ days, since, sessions, events, applications, analyticsUnavailable, registrationsUnavailable, fixture: false });
+  return buildReport({ days, since, sessions, events, applications, analyticsUnavailable, registrationsUnavailable, fixture: false, trackingStartedAt, sessionsCapped, eventsCapped });
 }
 
 export async function loadExcludedTestRegistrations(now = Date.now()): Promise<ExcludedTestRow[]> {
   if (process.env.NODE_ENV !== 'production' && process.env.ADMIN_DASHBOARD_FIXTURE === '1') {
     return fixtureReport(30, now).excludedTests;
   }
-  const names = excludedTestNameList();
-  if (!names.length) return [];
   try {
-    const placeholders = names.map((_, index) => `$${index + 1}`).join(', ');
     const rows = await db().query(
       `SELECT a.id, a.name, a.email, a.phone, a.session_code, a.created_at,
               o.id AS order_id, o.order_no, o.amount, o.status, o.source, o.paid_at, o.created_at AS order_created_at
        FROM applications a
        LEFT JOIN payment_orders o ON o.application_id = a.id
-       WHERE trim(a.name) IN (${placeholders})
        ORDER BY a.created_at DESC
-       LIMIT 2000`,
-      names,
+       LIMIT 5000`,
     ) as JoinRow[];
-    return groupApplications(rows).map(application => {
-      const outcome = classifyApplication(application.sessionCode, application.orders);
-      return toExcludedRow(application, outcome.result);
-    });
+    return groupApplications(rows)
+      .filter(application => isExcludedTestName(application.name))
+      .map(application => {
+        const outcome = classifyApplication(application.sessionCode, application.orders);
+        return toExcludedRow(application, outcome.result);
+      });
   } catch {
     return [];
   }

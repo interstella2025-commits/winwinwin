@@ -2,6 +2,7 @@ export const OUTCOME_PATHS = [
   '/api/payuni/create',
   '/api/apply',
   '/api/notify-signup',
+  '/api/online-signup',
   '/api/enroll',
   '/api/register',
   '/api/signup',

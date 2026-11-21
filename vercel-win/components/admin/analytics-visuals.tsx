@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import { offerBarPercent } from '../../lib/admin/offer-bars';
 
 type TrendPoint = {
   label: string;
@@ -241,7 +242,6 @@ export function ScrollDepthVisual({ items, total }: { items: LabeledValue[]; tot
 
 export function OfferPerformanceVisual({ offers }: { offers: OfferVisual[] }) {
   if (!offers.length) return <p className="analytics-inline-empty">有人開始填表後，這裡會出現比較圖。</p>;
-  const maximum = Math.max(1, ...offers.map(offer => offer.starts));
   return (
     <div className="analytics-service-visual">
       <div className="analytics-service-legend" aria-label="圖例">
@@ -258,7 +258,7 @@ export function OfferPerformanceVisual({ offers }: { offers: OfferVisual[] }) {
               ['videos', offer.submits],
               ['purchases', offer.completions],
             ] as const).map(([tone, value]) => (
-              <div className={tone} key={tone} style={{ width: `${Math.max(value ? 2 : 0, value / maximum * 100)}%` }}>
+              <div className={tone} key={tone} style={{ width: `${offerBarPercent(value, offer.starts, offer.submits, offer.completions)}%` }}>
                 {value ? <span>{value}</span> : null}
               </div>
             ))}

@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { offerFromForm, outcomeKind } from '../lib/admin/tracking';
+import { ANALYTICS_FLUSH_EVENT, ANALYTICS_OPT_OUT_KEY } from '../lib/admin/analytics-client';
 
 const SESSION_KEY = 'win_analytics_session_id';
 const VISITOR_KEY = 'win_analytics_visitor_id';
@@ -50,6 +51,11 @@ function requestUrl(input: RequestInfo | URL) {
 export default function SiteAnalytics() {
   useEffect(() => {
     if (window.location.pathname.startsWith('/admin')) return undefined;
+    try {
+      if (window.localStorage.getItem(ANALYTICS_OPT_OUT_KEY) === '1') return undefined;
+    } catch {
+      // Keep collecting if storage is unavailable.
+    }
     let visitorId = storageGet(window.localStorage, VISITOR_KEY) || '';
     let sessionId = storageGet(window.sessionStorage, SESSION_KEY) || '';
     let startedAt = storageGet(window.sessionStorage, STARTED_KEY) || '';
@@ -69,6 +75,7 @@ export default function SiteAnalytics() {
     const queue: TrackEvent[] = [];
     let flushTimer = 0;
     let formStarted = false;
+    const startedOffers = new Set<string>();
     let ended = false;
     const seenDepth = new Set<number>();
 
@@ -148,12 +155,26 @@ export default function SiteAnalytics() {
       const target = event.target;
       if (!(target instanceof Element) || !target.closest('#apply form')) return;
       formStarted = true;
-      enqueue({ name: 'form_start', offer: currentOffer(), sectionId: 'form' });
+      const offer = currentOffer();
+      startedOffers.add(offer);
+      enqueue({ name: 'form_start', offer, sectionId: 'form' });
+    };
+    const onOfferChange = (event: Event) => {
+      const target = event.target;
+      if (!(target instanceof Element) || !target.closest('#apply form')) return;
+      const field = target instanceof HTMLSelectElement || target instanceof HTMLInputElement ? target : null;
+      if (!field || (field.name !== 'courseFormat' && field.name !== 'sessionCode')) return;
+      const offer = currentOffer();
+      if (offer === 'unknown') return;
+      if (!formStarted) formStarted = true;
+      if (startedOffers.has(offer)) return;
+      startedOffers.add(offer);
+      enqueue({ name: 'form_start', offer, sectionId: 'form' });
     };
     const onSubmit = (event: Event) => {
       const form = event.target;
       if (!(form instanceof HTMLFormElement) || !form.closest('#apply')) return;
-      enqueue({ name: 'form_submit', offer: currentOffer(), sectionId: 'form' });
+      enqueue({ name: 'form_submit', offer: currentOffer(), sectionId: 'form' }, true);
     };
     const onScroll = () => {
       const height = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
@@ -181,9 +202,12 @@ export default function SiteAnalytics() {
 
     document.addEventListener('click', onClick, true);
     document.addEventListener('focusin', onFocus, true);
+    document.addEventListener('change', onOfferChange, true);
     document.addEventListener('submit', onSubmit, true);
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('pagehide', finish);
+    const onFlush = () => flush(true);
+    window.addEventListener(ANALYTICS_FLUSH_EVENT, onFlush);
     enqueue({ name: window.location.pathname === '/payment' ? 'payment_return' : 'page_view', sectionId: 'page' }, true);
 
     return () => {
@@ -191,9 +215,11 @@ export default function SiteAnalytics() {
       window.clearTimeout(flushTimer);
       document.removeEventListener('click', onClick, true);
       document.removeEventListener('focusin', onFocus, true);
+      document.removeEventListener('change', onOfferChange, true);
       document.removeEventListener('submit', onSubmit, true);
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('pagehide', finish);
+      window.removeEventListener(ANALYTICS_FLUSH_EVENT, onFlush);
       window.fetch = originalFetch;
       flush(true);
     };

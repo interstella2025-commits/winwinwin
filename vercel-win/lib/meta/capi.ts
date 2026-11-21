@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { PUBLIC_ORIGIN } from '../payuni/core';
 import { db, first } from '../payuni/db';
+import { isMetaFbc } from './fbc';
 
 /** Graph version still inside the Conversions API two-year support window. */
 const GRAPH_VERSION = 'v25.0';
@@ -76,10 +77,11 @@ export async function sendRegistrationEvents(request: Request, input: {
  completeEventId?: string;
  value: number;
  orderNo?: string;
+ fbc?: string;
 }) {
  try {
   if (!configured()) return;
-  const attribution = attributionFrom(request);
+  const attribution = attributionFrom(request, input.fbc);
   if (input.orderNo) await rememberAttribution(input.orderNo, attribution);
   const events: Outbound[] = [];
   if (input.leadEventId) events.push({
@@ -112,13 +114,52 @@ export async function sendPurchaseEvent(order: { order_no: string; amount: numbe
   try {
    const person = await first<{ email: string; phone: string }>('SELECT email,phone FROM applications WHERE id=$1', [order.application_id]);
    const attribution = await loadAttribution(order.order_no);
-   await post([{
+   const events: Outbound[] = [{
     name: 'Purchase', eventId: order.order_no, sourceUrl: PAYMENT_URL, email: person?.email, phone: person?.phone, attribution,
     customData: { currency: 'TWD', value: order.amount, order_id: order.order_no, content_name: CONTENT_NAME },
-   }]);
-   await markPurchase(key, 'sent');
+   }];
+   const completeId = `${order.order_no}:cr`;
+   let completeClaim: 'owned' | 'ephemeral' | 'skip' = 'skip';
+   if (metaEventId(completeId)) {
+    completeClaim = await take(`CompleteRegistration:${completeId}`, 'CompleteRegistration');
+    if (completeClaim !== 'skip') {
+     events.push({
+      name: 'CompleteRegistration', eventId: completeId, sourceUrl: PAYMENT_URL, email: person?.email, phone: person?.phone, attribution,
+      customData: { content_name: CONTENT_NAME, value: order.amount, currency: 'TWD' },
+     });
+    }
+   }
+   try {
+    await post(events);
+    await markPurchase(key, 'sent');
+    if (completeClaim === 'owned') await markEventDetail([`CompleteRegistration:${completeId}`], 'sent');
+   } catch (error) {
+    const status = capiStatus(error);
+    await markPurchase(key, failedDetail(status));
+    if (completeClaim === 'ephemeral') seen.delete(`CompleteRegistration:${completeId}`);
+    if (completeClaim === 'owned') await release(`CompleteRegistration:${completeId}`, status);
+   }
   } catch { await markPurchase(key, 'failed'); }
  } catch { /* notify must succeed even if CAPI is down */ }
+}
+
+function capiStatus(error: unknown) {
+ const status = Number((error as { status?: unknown } | null)?.status);
+ return Number.isFinite(status) && status > 0 ? Math.trunc(status) : 0;
+}
+
+function failedDetail(status: number) {
+ return status ? `failed:${status}` : 'failed';
+}
+
+async function markEventDetail(keys: string[], detail: string) {
+ if (!keys.length) return;
+ try {
+  await Promise.all(keys.map(key => db().query(
+   'UPDATE capi_events SET detail=$2, sent_at=$3 WHERE event_key=$1',
+   [key, detail, new Date().toISOString()],
+  )));
+ } catch { /* retries can still be deduped by Meta event_id */ }
 }
 
 async function deliver(events: Outbound[]) {
@@ -137,9 +178,10 @@ async function deliver(events: Outbound[]) {
  if (!batch.length) return;
  try {
   await post(batch);
- } catch {
+  await markEventDetail(owned, 'sent');
+ } catch (error) {
   for (const key of ephemeral) seen.delete(key);
-  await Promise.all(owned.map(key => release(key)));
+  await markEventDetail(owned, failedDetail(capiStatus(error)));
  }
 }
 
@@ -148,7 +190,10 @@ async function take(key: string, name: string): Promise<'owned' | 'ephemeral' | 
  try {
   await ensure();
   const rows = await db().query(
-   'INSERT INTO capi_events (event_key,event_name,sent_at) VALUES ($1,$2,$3) ON CONFLICT(event_key) DO NOTHING RETURNING event_key',
+   `INSERT INTO capi_events (event_key,event_name,sent_at,detail) VALUES ($1,$2,$3,'pending')
+    ON CONFLICT(event_key) DO UPDATE SET detail='pending', sent_at=excluded.sent_at
+    WHERE capi_events.detail LIKE 'failed%'
+    RETURNING event_key`,
    [key, name, new Date().toISOString()],
   );
   return rows.length > 0 ? 'owned' : 'skip';
@@ -159,9 +204,12 @@ async function take(key: string, name: string): Promise<'owned' | 'ephemeral' | 
  }
 }
 
-async function release(key: string) {
+async function release(key: string, status = 0) {
  try {
-  await db().query('DELETE FROM capi_events WHERE event_key=$1', [key]);
+  await db().query(
+   'UPDATE capi_events SET detail=$2, sent_at=$3 WHERE event_key=$1',
+   [key, failedDetail(status), new Date().toISOString()],
+  );
  } catch { /* a later notify can still be deduped by Meta event_id */ }
 }
 
@@ -179,7 +227,7 @@ async function claimPurchase(key: string, firstTransition: boolean) {
   const now = new Date().toISOString();
   const stale = new Date(Date.now() - 15_000).toISOString();
   const rows = await db().query(
-   `UPDATE capi_events SET detail='pending', sent_at=$2 WHERE event_key=$1 AND event_name='Purchase' AND (detail='failed' OR (detail='pending' AND sent_at < $3)) RETURNING event_key`,
+   `UPDATE capi_events SET detail='pending', sent_at=$2 WHERE event_key=$1 AND event_name='Purchase' AND (detail='failed' OR detail LIKE 'failed:%' OR (detail='pending' AND sent_at < $3)) RETURNING event_key`,
    [key, now, stale],
   );
   return rows.length > 0;
@@ -190,12 +238,12 @@ async function claimPurchase(key: string, firstTransition: boolean) {
  }
 }
 
-async function markPurchase(key: string, detail: 'sent' | 'failed') {
+async function markPurchase(key: string, detail: string) {
  try {
   const rows = await db().query('UPDATE capi_events SET detail=$2, sent_at=$3 WHERE event_key=$1 RETURNING event_key', [key, detail, new Date().toISOString()]);
   if (rows.length > 0) return;
  } catch { /* claim table unavailable; fall through to the process-local guard */ }
- if (detail === 'failed') seen.delete(key);
+ if (detail === 'failed' || detail.startsWith('failed:')) seen.delete(key);
 }
 
 function ensure() {
@@ -232,13 +280,13 @@ async function loadAttribution(orderNo: string): Promise<Attribution> {
  } catch { return {}; }
 }
 
-function attributionFrom(request: Request): Attribution {
+function attributionFrom(request: Request, bodyFbc?: string): Attribution {
  const headerIp = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || '';
  const ip = headerIp && headerIp !== 'unknown' && headerIp.length <= 64 ? headerIp : undefined;
  const agent = request.headers.get('user-agent')?.trim();
  const userAgent = agent && agent.length <= 512 ? agent : undefined;
  const fbp = cookie(request, '_fbp');
- const fbc = cookie(request, '_fbc');
+ const fbc = cookie(request, '_fbc') || (isMetaFbc(bodyFbc) ? bodyFbc : undefined);
  return cleanAttribution({ ip, userAgent, fbp, fbc });
 }
 
@@ -264,21 +312,46 @@ function cookie(request: Request, name: '_fbp' | '_fbc') {
  }
 }
 
+function previewTestEventCode() {
+ if (process.env.VERCEL_ENV !== 'preview') return;
+ const code = process.env.META_TEST_EVENT_CODE?.trim();
+ if (code && /^[A-Za-z0-9_]{1,100}$/.test(code)) return code;
+}
+
+function readTraceId(value: unknown) {
+ if (!value || typeof value !== 'object') return;
+ const id = (value as { fbtrace_id?: unknown }).fbtrace_id;
+ return typeof id === 'string' && id.length > 0 && id.length <= 128 ? id : undefined;
+}
+
+function logCapi(ok: boolean, status: number, events: Outbound[], fbtraceId?: string) {
+ const payload = { ok, status, event_name: events.map(event => event.name).join(','), fbtrace_id: fbtraceId || null };
+ if (ok) console.info('meta_capi', payload);
+ else console.error('meta_capi', payload);
+}
+
 async function post(events: Outbound[]) {
  const pixel = pixelId();
  const token = accessToken();
+ const body: { data: ReturnType<typeof toPayload>[]; test_event_code?: string } = { data: events.map(toPayload) };
+ const testCode = previewTestEventCode();
+ if (testCode) body.test_event_code = testCode;
  // Token stays in the query string, matching the Conversions API contract. Never log this URL.
  const response = await fetch(`https://graph.facebook.com/${GRAPH_VERSION}/${pixel}/events?access_token=${encodeURIComponent(token)}`, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ data: events.map(toPayload) }),
+  body: JSON.stringify(body),
   signal: AbortSignal.timeout(5000),
  });
+ let parsed: unknown;
+ try { parsed = await response.json(); } catch { parsed = undefined; }
+ const fbtraceId = readTraceId(parsed);
+ logCapi(response.ok, response.status, events, fbtraceId);
  if (!response.ok) {
-  await response.arrayBuffer().catch(() => undefined);
-  throw new Error('Meta CAPI request failed');
+  const error = new Error('Meta CAPI request failed') as Error & { status: number };
+  error.status = response.status;
+  throw error;
  }
- await response.arrayBuffer().catch(() => undefined);
 }
 
 function toPayload(event: Outbound) {

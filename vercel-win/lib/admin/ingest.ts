@@ -20,6 +20,12 @@ const OFFERS = new Set(['online', 'inperson', 'notify', 'unknown']);
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const INGEST_LIMIT = 60;
 
+const IGNORED_UA = /bot|crawler|crawl|spider|slurp|headless|HeadlessChrome|playwright|puppeteer|lighthouse|wget|curl\/|python-requests|Go-http-client|axios\/|facebookexternalhit|preview\//i;
+
+export function isIgnoredAnalyticsUa(userAgent: string) {
+  return IGNORED_UA.test(userAgent);
+}
+
 export type ParsedEvent = {
   name: string;
   offer: string | null;

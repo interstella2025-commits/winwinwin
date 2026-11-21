@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { hashIp, parseIngest, recordIngest } from '../../../../lib/admin/ingest';
+import { hashIp, isIgnoredAnalyticsUa, parseIngest, recordIngest } from '../../../../lib/admin/ingest';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -15,7 +15,9 @@ export async function POST(request: Request) {
   } catch {
     return json({ error: 'Invalid payload' }, 400);
   }
-  const parsed = parseIngest(raw, request.headers.get('user-agent') || '');
+  const userAgent = request.headers.get('user-agent') || '';
+  if (isIgnoredAnalyticsUa(userAgent)) return json({ ok: true }, 200);
+  const parsed = parseIngest(raw, userAgent);
   if (!parsed.ok) return json({ error: parsed.error }, parsed.status);
   try {
     const saved = await recordIngest(parsed.value, hashIp(request));
