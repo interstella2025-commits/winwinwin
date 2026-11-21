@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { offerFromForm, outcomeKind } from '../lib/admin/tracking';
+import { ANALYTICS_FLUSH_EVENT, ANALYTICS_OPT_OUT_KEY } from '../lib/admin/analytics-client';
 
 const SESSION_KEY = 'win_analytics_session_id';
 const VISITOR_KEY = 'win_analytics_visitor_id';
@@ -50,6 +51,11 @@ function requestUrl(input: RequestInfo | URL) {
 export default function SiteAnalytics() {
   useEffect(() => {
     if (window.location.pathname.startsWith('/admin')) return undefined;
+    try {
+      if (window.localStorage.getItem(ANALYTICS_OPT_OUT_KEY) === '1') return undefined;
+    } catch {
+      // Keep collecting if storage is unavailable.
+    }
     let visitorId = storageGet(window.localStorage, VISITOR_KEY) || '';
     let sessionId = storageGet(window.sessionStorage, SESSION_KEY) || '';
     let startedAt = storageGet(window.sessionStorage, STARTED_KEY) || '';
@@ -200,6 +206,8 @@ export default function SiteAnalytics() {
     document.addEventListener('submit', onSubmit, true);
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('pagehide', finish);
+    const onFlush = () => flush(true);
+    window.addEventListener(ANALYTICS_FLUSH_EVENT, onFlush);
     enqueue({ name: window.location.pathname === '/payment' ? 'payment_return' : 'page_view', sectionId: 'page' }, true);
 
     return () => {
@@ -211,6 +219,7 @@ export default function SiteAnalytics() {
       document.removeEventListener('submit', onSubmit, true);
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('pagehide', finish);
+      window.removeEventListener(ANALYTICS_FLUSH_EVENT, onFlush);
       window.fetch = originalFetch;
       flush(true);
     };

@@ -736,7 +736,7 @@
 
 .analytics-service-name span { color: var(--admin-muted); font-size: var(--admin-type-meta); }
 
-.analytics-service-bars { min-width: 0; display: grid; gap: 3px; }
+.analytics-service-bars { min-width: 0; display: grid; gap: 3px; overflow: hidden; }
 
 .analytics-service-bars > div { min-height: 14px; border-radius: 0 4px 4px 0; }
 

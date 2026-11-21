@@ -1,7 +1,7 @@
 export const DEFAULT_EXCLUDED_TEST_NAMES = ['elsa測試', 'Elsa', '廖子淇'] as const;
 
 export function normalizeExcludedTestName(name: string) {
-  return name.replace(/[\s\u00a0\u3000]+/g, ' ').trim().toLowerCase();
+  return name.replace(/[\s\u00a0\u3000]+/g, '').toLowerCase();
 }
 
 export function excludedTestNameList(env: NodeJS.ProcessEnv = process.env): string[] {

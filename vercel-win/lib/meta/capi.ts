@@ -132,14 +132,34 @@ export async function sendPurchaseEvent(order: { order_no: string; amount: numbe
    try {
     await post(events);
     await markPurchase(key, 'sent');
-   } catch {
-    await markPurchase(key, 'failed');
+    if (completeClaim === 'owned') await markEventDetail([`CompleteRegistration:${completeId}`], 'sent');
+   } catch (error) {
+    const status = capiStatus(error);
+    await markPurchase(key, failedDetail(status));
     if (completeClaim === 'ephemeral') seen.delete(`CompleteRegistration:${completeId}`);
-    if (completeClaim === 'owned') await release(`CompleteRegistration:${completeId}`);
-    throw new Error('Meta CAPI request failed');
+    if (completeClaim === 'owned') await release(`CompleteRegistration:${completeId}`, status);
    }
   } catch { await markPurchase(key, 'failed'); }
  } catch { /* notify must succeed even if CAPI is down */ }
+}
+
+function capiStatus(error: unknown) {
+ const status = Number((error as { status?: unknown } | null)?.status);
+ return Number.isFinite(status) && status > 0 ? Math.trunc(status) : 0;
+}
+
+function failedDetail(status: number) {
+ return status ? `failed:${status}` : 'failed';
+}
+
+async function markEventDetail(keys: string[], detail: string) {
+ if (!keys.length) return;
+ try {
+  await Promise.all(keys.map(key => db().query(
+   'UPDATE capi_events SET detail=$2, sent_at=$3 WHERE event_key=$1',
+   [key, detail, new Date().toISOString()],
+  )));
+ } catch { /* retries can still be deduped by Meta event_id */ }
 }
 
 async function deliver(events: Outbound[]) {
@@ -158,9 +178,10 @@ async function deliver(events: Outbound[]) {
  if (!batch.length) return;
  try {
   await post(batch);
- } catch {
+  await markEventDetail(owned, 'sent');
+ } catch (error) {
   for (const key of ephemeral) seen.delete(key);
-  await Promise.all(owned.map(key => release(key)));
+  await markEventDetail(owned, failedDetail(capiStatus(error)));
  }
 }
 
@@ -169,7 +190,10 @@ async function take(key: string, name: string): Promise<'owned' | 'ephemeral' | 
  try {
   await ensure();
   const rows = await db().query(
-   'INSERT INTO capi_events (event_key,event_name,sent_at) VALUES ($1,$2,$3) ON CONFLICT(event_key) DO NOTHING RETURNING event_key',
+   `INSERT INTO capi_events (event_key,event_name,sent_at,detail) VALUES ($1,$2,$3,'pending')
+    ON CONFLICT(event_key) DO UPDATE SET detail='pending', sent_at=excluded.sent_at
+    WHERE capi_events.detail LIKE 'failed%'
+    RETURNING event_key`,
    [key, name, new Date().toISOString()],
   );
   return rows.length > 0 ? 'owned' : 'skip';
@@ -180,9 +204,12 @@ async function take(key: string, name: string): Promise<'owned' | 'ephemeral' | 
  }
 }
 
-async function release(key: string) {
+async function release(key: string, status = 0) {
  try {
-  await db().query('DELETE FROM capi_events WHERE event_key=$1', [key]);
+  await db().query(
+   'UPDATE capi_events SET detail=$2, sent_at=$3 WHERE event_key=$1',
+   [key, failedDetail(status), new Date().toISOString()],
+  );
  } catch { /* a later notify can still be deduped by Meta event_id */ }
 }
 
@@ -200,7 +227,7 @@ async function claimPurchase(key: string, firstTransition: boolean) {
   const now = new Date().toISOString();
   const stale = new Date(Date.now() - 15_000).toISOString();
   const rows = await db().query(
-   `UPDATE capi_events SET detail='pending', sent_at=$2 WHERE event_key=$1 AND event_name='Purchase' AND (detail='failed' OR (detail='pending' AND sent_at < $3)) RETURNING event_key`,
+   `UPDATE capi_events SET detail='pending', sent_at=$2 WHERE event_key=$1 AND event_name='Purchase' AND (detail='failed' OR detail LIKE 'failed:%' OR (detail='pending' AND sent_at < $3)) RETURNING event_key`,
    [key, now, stale],
   );
   return rows.length > 0;
@@ -211,12 +238,12 @@ async function claimPurchase(key: string, firstTransition: boolean) {
  }
 }
 
-async function markPurchase(key: string, detail: 'sent' | 'failed') {
+async function markPurchase(key: string, detail: string) {
  try {
   const rows = await db().query('UPDATE capi_events SET detail=$2, sent_at=$3 WHERE event_key=$1 RETURNING event_key', [key, detail, new Date().toISOString()]);
   if (rows.length > 0) return;
  } catch { /* claim table unavailable; fall through to the process-local guard */ }
- if (detail === 'failed') seen.delete(key);
+ if (detail === 'failed' || detail.startsWith('failed:')) seen.delete(key);
 }
 
 function ensure() {
@@ -320,7 +347,11 @@ async function post(events: Outbound[]) {
  try { parsed = await response.json(); } catch { parsed = undefined; }
  const fbtraceId = readTraceId(parsed);
  logCapi(response.ok, response.status, events, fbtraceId);
- if (!response.ok) throw new Error('Meta CAPI request failed');
+ if (!response.ok) {
+  const error = new Error('Meta CAPI request failed') as Error & { status: number };
+  error.status = response.status;
+  throw error;
+ }
 }
 
 function toPayload(event: Outbound) {

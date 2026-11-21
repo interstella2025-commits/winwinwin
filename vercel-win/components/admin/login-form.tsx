@@ -1,6 +1,7 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
+import { ANALYTICS_OPT_OUT_KEY } from '../../lib/admin/analytics-client';
 
 export default function LoginForm() {
   const [password, setPassword] = useState('');
@@ -19,6 +20,7 @@ export default function LoginForm() {
       });
       const body = await response.json() as { error?: string; ok?: boolean };
       if (!response.ok || !body.ok) throw new Error(body.error || '登入失敗');
+      try { window.localStorage.setItem(ANALYTICS_OPT_OUT_KEY, '1'); } catch { /* still go to the dashboard */ }
       window.location.assign('/admin/dashboard');
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : '登入失敗');

@@ -110,6 +110,7 @@ async function test(name, fn) {
     assert.equal(tracking.outcomeKind('/api/payuni/create', { checkoutUrl: 'https://2027course.win-lin.com/api/payuni/checkout?token=abc' }), 'payment_start');
     assert.equal(tracking.outcomeKind('/api/apply', { ok: true }), 'registered');
     assert.equal(tracking.outcomeKind('/api/notify-signup', { ok: true }), 'registered');
+    assert.equal(tracking.outcomeKind('/api/online-signup', { ok: true }), 'registered');
     assert.equal(tracking.outcomeKind('/api/free-signup', { ok: true }), 'registered');
     assert.equal(tracking.outcomeKind('/api/payuni/status', { status: 'paid' }), null);
     assert.equal(tracking.outcomeKind('/api/payuni/create', { error: '暫時無法建立付款' }), null);
@@ -150,7 +151,7 @@ async function test(name, fn) {
     assert.equal(built.kpis.notify, 1);
     assert.equal(built.funnels.online.at(-1).count, 1);
     assert.equal(built.funnels.inperson.at(-1).count, 2);
-    assert.equal(built.sources[0].label, 'facebook / paid');
+    assert.equal(built.sources[0].label, 'Facebook / paid');
     assert.equal(built.sources.some(source => source.label === 'line.me'), true);
     assert.equal(built.kpis.averageDwellSeconds >= 45, true);
   });
@@ -293,6 +294,8 @@ async function test(name, fn) {
     assert.equal(names.isExcludedTestName('廖子淇'), true);
     assert.equal(names.isExcludedTestName('Elsa'), true);
     assert.equal(names.isExcludedTestName(' elsa '), true);
+    assert.equal(names.isExcludedTestName('E lsa'), true);
+    assert.equal(names.isExcludedTestName('廖\u3000子淇'), true);
     assert.equal(names.isExcludedTestName('ELSA'), true);
     assert.equal(names.isExcludedTestName('Elsa的朋友'), false);
     assert.equal(names.isExcludedTestName('廖'), false);
@@ -407,6 +410,147 @@ async function test(name, fn) {
     assert.equal(sample.kpis.inpersonPaid >= 1, true);
     delete process.env.ADMIN_DASHBOARD_FIXTURE;
     process.env.NODE_ENV = 'test';
+  });
+
+  await test('form start with unknown offer uses the last non-unknown form offer', () => {
+    const now = '2026-11-18T10:00:00.000Z';
+    const later = '2026-11-18T10:00:05.000Z';
+    const session = (id) => ({ id, visitor_id: id, started_at: now, last_seen_at: later, referrer: null, device_type: 'mobile', utm_source: null, utm_medium: null, utm_campaign: null, utm_content: null, utm_term: null, max_scroll_depth: 40, last_stage: 'form_start' });
+    const ev = (session_id, event_name, offer, occurred_at = now) => ({ session_id, event_name, offer, event_data: '{}', occurred_at });
+    const built = report.buildReport({
+      days: 7,
+      since: '2026-11-11T10:00:00.000Z',
+      analyticsUnavailable: false,
+      registrationsUnavailable: false,
+      fixture: false,
+      sessions: [session('s-unknown'), session('s-tagged')],
+      events: [
+        ev('s-unknown', 'form_start', 'unknown'),
+        ev('s-unknown', 'form_start', 'online', later),
+        ev('s-tagged', 'form_start', 'online'),
+      ],
+      applications: [],
+    });
+    assert.equal(report.sessionResolvedOffer(built ? [
+      ev('s-unknown', 'form_start', 'unknown'),
+      ev('s-unknown', 'form_start', 'online', later),
+    ] : [], 's-unknown'), 'online');
+    assert.equal(built.funnels.online[2].count, 2);
+    assert.equal(built.offerPerformance.find(row => row.key === 'online').starts, 2);
+  });
+
+  await test('course performance bars use the row max and stay at or under 100%', () => {
+    const bars = load('lib/admin/offer-bars.ts');
+    assert.equal(bars.offerBarPercent(5, 5, 4, 3), 100);
+    assert.equal(bars.offerBarPercent(4, 5, 4, 3), 80);
+    assert.equal(bars.offerBarPercent(0, 5, 4, 3), 0);
+    assert.equal(bars.offerBarPercent(4, 0, 0, 4), 100);
+    assert.equal(bars.offerBarPercent(400, 1, 1, 1) <= 100, true);
+    const css = fs.readFileSync(path.join(root, 'app/admin/admin.css'), 'utf8');
+    assert.match(css, /\.analytics-service-bars[\s\S]*overflow:\s*hidden/);
+  });
+
+  await test('source labels merge Facebook hosts, map utm_source, and treat same-site as direct', () => {
+    const session = (patch) => ({ utm_source: null, utm_medium: null, referrer: null, ...patch });
+    assert.equal(report.sourceLabel(session({ utm_source: 'fb', utm_medium: 'cpc' })), 'Facebook / cpc');
+    assert.equal(report.sourceLabel(session({ utm_source: 'facebook', utm_medium: 'paid' })), 'Facebook / paid');
+    assert.equal(report.sourceLabel(session({ utm_source: 'ig' })), 'Instagram');
+    assert.equal(report.sourceLabel(session({ utm_source: 'th', utm_medium: 'bio' })), 'Threads / bio');
+    assert.equal(report.sourceLabel(session({ referrer: 'https://l.facebook.com/l.php?u=1' })), 'Facebook（自然）');
+    assert.equal(report.sourceLabel(session({ referrer: 'https://m.facebook.com/' })), 'Facebook（自然）');
+    assert.equal(report.sourceLabel(session({ referrer: 'https://www.facebook.com/posts/1' })), 'Facebook（自然）');
+    assert.equal(report.sourceLabel(session({ referrer: 'https://2027course.win-lin.com/registered' })), '直接進站');
+    assert.equal(report.sourceLabel(session({ referrer: 'https://win-lecturer-20261018-prb2r91qo-interstellas-projects.vercel.app/' })), '直接進站');
+    assert.equal(report.sourceLabel(session({ referrer: null })), '直接進站');
+  });
+
+  await test('capped lists expose the total count and tracking start banner data', () => {
+    const now = '2026-11-18T10:00:00.000Z';
+    const applications = Array.from({ length: 21 }, (_, index) => ({
+      id: `app-${index}`,
+      name: `學員${index}`,
+      email: `user${index}@example.test`,
+      phone: '+886900000000',
+      sessionCode: ONLINE,
+      createdAt: now,
+      orders: index < 21 ? [order({ orderNo: `WINCAP${index}`, status: index < 3 ? 'paid' : 'pending', paidAt: index < 3 ? now : null })] : [],
+    }));
+    const built = report.buildReport({
+      days: 7,
+      since: '2026-11-11T10:00:00.000Z',
+      analyticsUnavailable: false,
+      registrationsUnavailable: false,
+      fixture: false,
+      trackingStartedAt: '2026-11-19T15:37:00.000Z',
+      sessionsCapped: true,
+      eventsCapped: true,
+      sessions: [],
+      events: [],
+      applications,
+    });
+    assert.equal(built.registrationsTotal, 21);
+    assert.equal(built.registrations.length, 20);
+    assert.equal(built.paymentsTotal, 21);
+    assert.equal(built.payments.length, 20);
+    assert.equal(built.trackingStartedAt, '2026-11-19T15:37:00.000Z');
+    assert.equal(built.sessionsCapped, true);
+    assert.equal(built.eventsCapped, true);
+    const view = fs.readFileSync(path.join(root, 'components/admin/dashboard-view.tsx'), 'utf8');
+    assert.match(view, /流量資料自 \{formatTaipei\(report\.trackingStartedAt\)\} 起/);
+    assert.match(view, /共 \{report\.registrationsTotal\} 筆/);
+    assert.match(view, /共 \{report\.paymentsTotal\} 筆/);
+  });
+
+  await test('exclusion uses the same whitespace-stripping rules in the report and the test-name list', async () => {
+    const created = new Date().toISOString();
+    sqlite.prepare('INSERT INTO applications (id,name,email,phone,profession,stage,topic,session_code,line_name,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)').run('app-elsa-space', 'E lsa', 'elsa.space@example.test', '+886900000094', 'QA', 'QA', 'QA', ONLINE, '', created);
+    sqlite.prepare('INSERT INTO applications (id,name,email,phone,profession,stage,topic,session_code,line_name,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)').run('app-liao-full', '廖\u3000子淇', 'liao.full@example.test', '+886900000095', 'QA', 'QA', 'QA', DAY16, '', created);
+    sqlite.prepare('INSERT INTO applications (id,name,email,phone,profession,stage,topic,session_code,line_name,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)').run('app-real', '陳安', 'real@example.test', '+886900000096', 'QA', 'QA', 'QA', ONLINE, '', created);
+    const names = load('lib/admin/test-registrations.ts');
+    assert.equal(names.isExcludedTestName('E lsa'), true);
+    assert.equal(names.isExcludedTestName('廖\u3000子淇'), true);
+    const rows = await report.loadExcludedTestRegistrations();
+    assert.equal(rows.some(row => row.email === 'elsa.space@example.test'), true);
+    assert.equal(rows.some(row => row.email === 'liao.full@example.test'), true);
+    assert.equal(rows.some(row => row.email === 'real@example.test'), false);
+    const built = await report.loadReport(7);
+    assert.equal(built.registrations.some(row => row.email === 'elsa.space@example.test' || row.email === 'liao.full@example.test'), false);
+    assert.equal(built.excludedTests.some(row => row.email === 'elsa.space@example.test'), true);
+    assert.equal(built.kpis.excludedTestNames >= 2, true);
+  });
+
+  await test('ingest ignores obvious bot and headless user agents', async () => {
+    const now = new Date().toISOString();
+    const before = sqlite.prepare('SELECT COUNT(*) AS n FROM site_sessions').get().n;
+    const body = {
+      visitorId: '33333333-3333-4333-8333-333333333333',
+      sessionId: '44444444-4444-4444-8444-444444444444',
+      startedAt: now,
+      landingUrl: 'https://2027course.win-lin.com/',
+      referrer: null,
+      viewportWidth: 1440,
+      events: [{ name: 'page_view', occurredAt: now, pagePath: '/', sectionId: 'page' }],
+    };
+    const response = await eventsRoute.POST(new Request('https://2027course.win-lin.com/api/analytics/events', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) HeadlessChrome/120.0.0.0 Playwright' },
+      body: JSON.stringify(body),
+    }));
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).ok, true);
+    assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM site_sessions').get().n, before);
+    assert.equal(ingest.isIgnoredAnalyticsUa('Mozilla/5.0 HeadlessChrome/10'), true);
+    assert.equal(ingest.isIgnoredAnalyticsUa('Mozilla/5.0 (iPhone)'), false);
+  });
+
+  await test('home page flushes analytics before leaving for /registered, and login opts the browser out', () => {
+    const home = fs.readFileSync(path.join(root, 'app/page.tsx'), 'utf8');
+    assert.match(home, /flushWinAnalytics\(\);\s*location\.assign\('\/registered'\)/);
+    const loginForm = fs.readFileSync(path.join(root, 'components/admin/login-form.tsx'), 'utf8');
+    assert.match(loginForm, /ANALYTICS_OPT_OUT_KEY/);
+    const analytics = fs.readFileSync(path.join(root, 'components/site-analytics.tsx'), 'utf8');
+    assert.match(analytics, /localStorage\.getItem\(ANALYTICS_OPT_OUT_KEY\) === '1'/);
+    assert.match(analytics, /sendBeacon/);
   });
 
   console.log(`${passes} admin checks passed`);

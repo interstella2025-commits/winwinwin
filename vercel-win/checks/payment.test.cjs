@@ -128,9 +128,11 @@ await test('CAPI: hashes contact data, dedupes Lead / InitiateCheckout / Purchas
  global.fetch=async(url,options)=>{if(String(url).startsWith('https://graph.facebook.com/')){failed++;return new Response('no',{status:500})}return saved(url,options)};
  const downId=crypto.randomUUID();
  assert.equal((await create.POST(posted({...fields,requestId:downId,leadEventId:downId,checkoutEventId:downId+':ic'}))).status,200);assert.equal(failed,1);
+ assert.equal(sqlite.prepare('SELECT detail FROM capi_events WHERE event_key=?').get('Lead:'+downId).detail,'failed:500');
  global.fetch=saved;const beforeRecover=capiCalls.length;
  assert.equal((await create.POST(posted({...fields,requestId:downId,leadEventId:downId,checkoutEventId:downId+':ic'}))).status,200);
  assert.equal(capiCalls.length,beforeRecover+1);
+ assert.equal(sqlite.prepare('SELECT detail FROM capi_events WHERE event_key=?').get('Lead:'+downId).detail,'sent');
  const noteId=crypto.randomUUID();const beforeNote=capiCalls.length;
  assert.equal((await notifySignup.POST(posted({...valid,sessionCode:'notify',requestId:noteId,leadEventId:noteId}))).status,200);
  assert.equal(capiCalls.length,beforeNote+1);assert.deepEqual(capiCalls.at(-1).body.data.map(e=>e.event_name),['Lead']);
@@ -147,9 +149,12 @@ await test('CAPI: hashes contact data, dedupes Lead / InitiateCheckout / Purchas
  const savedFetch=global.fetch;let purchaseTries=0;
  global.fetch=async(url,options)=>{if(String(url).startsWith('https://graph.facebook.com/')){const body=JSON.parse(options.body);if(body.data.some(e=>e.event_name==='Purchase')){purchaseTries++;return new Response('no',{status:500})}return savedFetch(url,options)}return savedFetch(url,options)};
  assert.equal((await notify.POST(callback(failPay))).status,200);assert.equal(purchaseTries,1);
+ assert.equal(sqlite.prepare('SELECT detail FROM capi_events WHERE event_key=?').get('Purchase:'+failOrder.order_no).detail,'failed:500');
+ assert.equal(sqlite.prepare('SELECT detail FROM capi_events WHERE event_key=?').get('CompleteRegistration:'+failOrder.order_no+':cr').detail,'failed:500');
  assert.equal((await notify.POST(callback(failPay))).status,200);assert.equal(purchaseTries,2);
  global.fetch=savedFetch;const beforeRecovered=capiCalls.length;
  assert.equal((await notify.POST(callback(failPay))).status,200);assert.equal(capiCalls.length,beforeRecovered+1);
+ assert.equal(sqlite.prepare('SELECT detail FROM capi_events WHERE event_key=?').get('Purchase:'+failOrder.order_no).detail,'sent');
  assert.deepEqual(capiCalls.at(-1).body.data.map(e=>e.event_name),['Purchase','CompleteRegistration']);
  assert.equal(capiCalls.at(-1).body.data[0].event_id,failOrder.order_no);
  assert.equal(capiCalls.at(-1).body.data[1].event_id,failOrder.order_no+':cr');

@@ -74,10 +74,22 @@ export default function DashboardView({ report }: { report: DashboardReport }) {
           <span>資料庫連線恢復後，名單與統計會重新出現。</span>
         </div>
       ) : null}
+      {report.trackingStartedAt ? (
+        <div className="admin-setup-banner">
+          <strong>流量資料自 {formatTaipei(report.trackingStartedAt)} 起</strong>
+          <span>這段期間的開頭早於開始記錄流量的時間，因此進站、漏斗與來源只涵蓋有資料的區間。</span>
+        </div>
+      ) : null}
+      {report.sessionsCapped || report.eventsCapped ? (
+        <div className="admin-setup-banner analytics-warning">
+          <strong>這段期間的流量資料已達讀取上限</strong>
+          <span>{[report.sessionsCapped ? '造訪次數' : '', report.eventsCapped ? '事件筆數' : ''].filter(Boolean).join('、')}已截取最新一頁，數字可能低於實際。停留時間以各次造訪的開始／最後活動時間計算，不含 dwell_ping。</span>
+        </div>
+      ) : null}
       {report.kpis.excludedTestNames ? (
         <div className="admin-setup-banner">
           <strong>已自列表與統計排除 {report.kpis.excludedTestNames} 筆測試姓名資料</strong>
-          <span>姓名去掉前後空白後，完全等於「elsa測試」、「Elsa」（大小寫不拘）或「廖子淇」的報名與訂單不會顯示、也不計入數字。資料仍留在資料庫。<a href="/admin/test-registrations">查看並匯出這些資料</a></span>
+          <span>姓名去掉所有空白（含全形空白）後，完全等於「elsa測試」、「Elsa」（大小寫不拘）或「廖子淇」的報名與訂單不會顯示、也不計入數字。資料仍留在資料庫。<a href="/admin/test-registrations">查看並匯出這些資料</a></span>
         </div>
       ) : null}
 
@@ -232,7 +244,7 @@ export default function DashboardView({ report }: { report: DashboardReport }) {
               <h2>近期報名</h2>
               <p>顯示前 {Math.min(report.registrations.length, 20)} 筆。測試姓名不會出現在這裡。</p>
             </div>
-            <span className="analytics-ad-period">最多顯示 20 筆</span>
+            <span className="analytics-ad-period">共 {report.registrationsTotal} 筆{report.registrationsTotal > report.registrations.length ? '，最多顯示 20 筆' : ''}</span>
             <span className="analytics-ad-toggle" aria-hidden="true" />
           </summary>
           {report.registrations.length ? (
@@ -265,7 +277,7 @@ export default function DashboardView({ report }: { report: DashboardReport }) {
               <h2>近期付款</h2>
               <p>線上既有 NT$399 與實體訂單都列在這裡。NT$1 測試單與測試姓名不列入。</p>
             </div>
-            <span className="analytics-ad-period">最多顯示 20 筆</span>
+            <span className="analytics-ad-period">共 {report.paymentsTotal} 筆{report.paymentsTotal > report.payments.length ? '，最多顯示 20 筆' : ''}</span>
             <span className="analytics-ad-toggle" aria-hidden="true" />
           </summary>
           {report.payments.length ? (
