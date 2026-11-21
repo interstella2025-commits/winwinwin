@@ -246,11 +246,55 @@ async function test(name, fn) {
   });
 
 
-  await test('test names are excluded only with exact trimmed match', () => {
+
+  await test('funnel maps real events and stays monotonically non-increasing', () => {
+    const now = '2026-11-18T10:00:00.000Z';
+    const session = (id, visitor) => ({ id, visitor_id: visitor, started_at: now, last_seen_at: now, referrer: null, device_type: 'mobile', utm_source: null, utm_medium: null, utm_campaign: null, utm_content: null, utm_term: null, max_scroll_depth: 40, last_stage: 'page_view' });
+    const ev = (session_id, event_name, offer) => ({ session_id, event_name, offer, event_data: '{}', occurred_at: now });
+    const built = report.buildReport({
+      days: 7,
+      since: '2026-11-11T10:00:00.000Z',
+      analyticsUnavailable: false,
+      registrationsUnavailable: false,
+      fixture: false,
+      sessions: [session('s1', 'v1'), session('s2', 'v2'), session('s3', 'v3')],
+      events: [
+        ev('s1', 'cta_click', null),
+        ev('s1', 'form_start', 'unknown'),
+        ev('s1', 'form_submit', 'online'),
+        ev('s2', 'form_start', 'inperson'),
+        ev('s2', 'form_submit', 'inperson'),
+        ev('s2', 'payment_start', 'inperson'),
+      ],
+      applications: [
+        { id: 'free1', name: '完成一', email: 'a@example.test', phone: '+886900000001', sessionCode: ONLINE, createdAt: now, orders: [] },
+        { id: 'free2', name: '完成二', email: 'b@example.test', phone: '+886900000002', sessionCode: ONLINE, createdAt: now, orders: [] },
+        { id: 'free3', name: '完成三', email: 'c@example.test', phone: '+886900000003', sessionCode: ONLINE, createdAt: now, orders: [] },
+        { id: 'place', name: '實體', email: 'd@example.test', phone: '+886900000004', sessionCode: DAY16, createdAt: now, orders: [order({ orderNo: 'WIN1216' })] },
+        { id: 'hidden', name: 'Elsa', email: 'hidden@example.test', phone: '+886900000005', sessionCode: ONLINE, createdAt: now, orders: [] },
+      ],
+    });
+    const online = built.funnels.online.map(step => step.count);
+    const inperson = built.funnels.inperson.map(step => step.count);
+    assert.equal(built.kpis.freeOnline, 3);
+    assert.equal(built.funnels.online.at(-1).count, 3);
+    assert.equal(built.funnels.online[2].count >= 3, true);
+    assert.equal(built.funnels.online[3].count >= 3, true);
+    for (let i = 1; i < online.length; i++) assert.equal(online[i] <= online[i - 1], true, 'online step '+i);
+    for (let i = 1; i < inperson.length; i++) assert.equal(inperson[i] <= inperson[i - 1], true, 'inperson step '+i);
+    assert.equal(built.eventCounts.some(row => row.key === 'form_submit' && row.count === 2), true);
+    assert.equal(built.registrations.some(row => row.name === 'Elsa'), false);
+  });
+
+  await test('test names are excluded for Elsa and 廖子淇 with any case or spacing', () => {
     const names = load('lib/admin/test-registrations.ts');
     assert.equal(names.isExcludedTestName('elsa測試'), true);
     assert.equal(names.isExcludedTestName(' 廖子淇 '), true);
     assert.equal(names.isExcludedTestName('廖子淇'), true);
+    assert.equal(names.isExcludedTestName('Elsa'), true);
+    assert.equal(names.isExcludedTestName(' elsa '), true);
+    assert.equal(names.isExcludedTestName('ELSA'), true);
+    assert.equal(names.isExcludedTestName('Elsa的朋友'), false);
     assert.equal(names.isExcludedTestName('廖'), false);
     assert.equal(names.isExcludedTestName('廖子淇的朋友'), false);
     assert.equal(names.isExcludedTestName('elsa測試帳號'), false);
@@ -288,6 +332,7 @@ async function test(name, fn) {
       applications: [
         ...base.applications,
         { id: 'elsa', name: 'elsa測試', email: 'elsa@example.test', phone: '+886900000091', sessionCode: ONLINE, createdAt: now, orders: [] },
+        { id: 'elsa2', name: ' Elsa ', email: 'elsa.case@example.test', phone: '+886900000094', sessionCode: DAY16, createdAt: now, orders: [order({ orderNo: 'WINMWL2WRYP316798C958', status: 'pending', paidAt: null })] },
         { id: 'liao', name: ' 廖子淇 ', email: 'liao@example.test', phone: '+886900000092', sessionCode: DAY16, createdAt: now, orders: [order({ orderNo: 'WINLIAO' })] },
         { id: 'friend', name: '廖子淇的朋友', email: 'friend@example.test', phone: '+886900000093', sessionCode: ONLINE, createdAt: now, orders: [] },
       ],
@@ -298,14 +343,16 @@ async function test(name, fn) {
     assert.equal(after.kpis.freeOnline, 2);
     assert.equal(after.kpis.inpersonPaid, 1);
     assert.equal(after.kpis.inpersonPaidAmount, 399);
-    assert.equal(after.kpis.excludedTestNames, 2);
+    assert.equal(after.kpis.inpersonStarted, 1);
+    assert.equal(after.kpis.excludedTestNames, 3);
     assert.equal(after.funnels.online.at(-1).count, 2);
     assert.equal(after.funnels.inperson.at(-1).count, 1);
-    assert.equal(after.registrations.some(row => row.name === 'elsa測試' || row.name.trim() === '廖子淇'), false);
+    assert.equal(after.registrations.some(row => /elsa/i.test(row.name.trim()) || row.name.trim() === '廖子淇'), false);
     assert.equal(after.registrations.some(row => row.name === '廖子淇的朋友' && row.result === '免費登記'), true);
-    assert.equal(after.payments.some(row => row.orderNo === 'WINLIAO' || row.name.trim() === '廖子淇'), false);
+    assert.equal(after.payments.some(row => row.orderNo === 'WINLIAO' || row.orderNo === 'WINMWL2WRYP316798C958' || row.name.trim() === '廖子淇' || row.name.trim() === 'Elsa'), false);
     assert.equal(after.payments.some(row => row.orderNo === 'WIN1216'), true);
-    assert.equal(after.excludedTests.map(row => row.name.trim()).sort().join(','), 'elsa測試,廖子淇');
+    assert.equal(after.excludedTests.some(row => row.name.trim() === 'Elsa' && row.orders.some(order => order.orderNo === 'WINMWL2WRYP316798C958')), true);
+    assert.equal(after.excludedTests.map(row => row.name.trim()).sort().join(','), 'Elsa,elsa測試,廖子淇');
     const csv = load('lib/admin/test-registrations.ts').excludedTestRegistrationsCsv(after.excludedTests);
     assert.match(csv, /elsa測試/);
     assert.match(csv, /廖子淇/);

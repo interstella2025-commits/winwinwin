@@ -10,7 +10,8 @@ export async function POST(request:Request){
  try{
  const requestKey=digest(data.requestId+c.key);const old=await orderBy('request_id',requestKey);
  const leadEventId=metaEventId(body.leadEventId),checkoutEventId=metaEventId(body.checkoutEventId);
- const trackSignup=(orderNo:string)=>sendRegistrationEvents(request,{email:data.email,phone:data.phone,leadEventId,checkoutEventId,value:AMOUNT,orderNo});
+ const fbc=typeof body.fbc==='string'?body.fbc:undefined;
+ const trackSignup=(orderNo:string)=>sendRegistrationEvents(request,{email:data.email,phone:data.phone,leadEventId,checkoutEventId,value:AMOUNT,orderNo,fbc});
  if(old){
  if(old.status!=='paid'&&(old.status!=='pending'||Date.now()-Date.parse(old.created_at)>20*60000))return json({error:'原付款連結已失效，請再次點選付款建立新訂單。',resetRequest:true},409);
  const existing=await first<Record<string,string>>('SELECT name,email,phone,profession,stage,topic,session_code AS "sessionCode",line_name AS "lineName" FROM applications WHERE id=$1',[old.application_id]);

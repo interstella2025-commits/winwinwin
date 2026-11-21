@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { PUBLIC_ORIGIN } from '../payuni/core';
 import { db, first } from '../payuni/db';
+import { isMetaFbc } from './fbc';
 
 /** Graph version still inside the Conversions API two-year support window. */
 const GRAPH_VERSION = 'v25.0';
@@ -76,10 +77,11 @@ export async function sendRegistrationEvents(request: Request, input: {
  completeEventId?: string;
  value: number;
  orderNo?: string;
+ fbc?: string;
 }) {
  try {
   if (!configured()) return;
-  const attribution = attributionFrom(request);
+  const attribution = attributionFrom(request, input.fbc);
   if (input.orderNo) await rememberAttribution(input.orderNo, attribution);
   const events: Outbound[] = [];
   if (input.leadEventId) events.push({
@@ -112,11 +114,30 @@ export async function sendPurchaseEvent(order: { order_no: string; amount: numbe
   try {
    const person = await first<{ email: string; phone: string }>('SELECT email,phone FROM applications WHERE id=$1', [order.application_id]);
    const attribution = await loadAttribution(order.order_no);
-   await post([{
+   const events: Outbound[] = [{
     name: 'Purchase', eventId: order.order_no, sourceUrl: PAYMENT_URL, email: person?.email, phone: person?.phone, attribution,
     customData: { currency: 'TWD', value: order.amount, order_id: order.order_no, content_name: CONTENT_NAME },
-   }]);
-   await markPurchase(key, 'sent');
+   }];
+   const completeId = `${order.order_no}:cr`;
+   let completeClaim: 'owned' | 'ephemeral' | 'skip' = 'skip';
+   if (metaEventId(completeId)) {
+    completeClaim = await take(`CompleteRegistration:${completeId}`, 'CompleteRegistration');
+    if (completeClaim !== 'skip') {
+     events.push({
+      name: 'CompleteRegistration', eventId: completeId, sourceUrl: PAYMENT_URL, email: person?.email, phone: person?.phone, attribution,
+      customData: { content_name: CONTENT_NAME, value: order.amount, currency: 'TWD' },
+     });
+    }
+   }
+   try {
+    await post(events);
+    await markPurchase(key, 'sent');
+   } catch {
+    await markPurchase(key, 'failed');
+    if (completeClaim === 'ephemeral') seen.delete(`CompleteRegistration:${completeId}`);
+    if (completeClaim === 'owned') await release(`CompleteRegistration:${completeId}`);
+    throw new Error('Meta CAPI request failed');
+   }
   } catch { await markPurchase(key, 'failed'); }
  } catch { /* notify must succeed even if CAPI is down */ }
 }
@@ -232,13 +253,13 @@ async function loadAttribution(orderNo: string): Promise<Attribution> {
  } catch { return {}; }
 }
 
-function attributionFrom(request: Request): Attribution {
+function attributionFrom(request: Request, bodyFbc?: string): Attribution {
  const headerIp = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || '';
  const ip = headerIp && headerIp !== 'unknown' && headerIp.length <= 64 ? headerIp : undefined;
  const agent = request.headers.get('user-agent')?.trim();
  const userAgent = agent && agent.length <= 512 ? agent : undefined;
  const fbp = cookie(request, '_fbp');
- const fbc = cookie(request, '_fbc');
+ const fbc = cookie(request, '_fbc') || (isMetaFbc(bodyFbc) ? bodyFbc : undefined);
  return cleanAttribution({ ip, userAgent, fbp, fbc });
 }
 
@@ -264,21 +285,42 @@ function cookie(request: Request, name: '_fbp' | '_fbc') {
  }
 }
 
+function previewTestEventCode() {
+ if (process.env.VERCEL_ENV !== 'preview') return;
+ const code = process.env.META_TEST_EVENT_CODE?.trim();
+ if (code && /^[A-Za-z0-9_]{1,100}$/.test(code)) return code;
+}
+
+function readTraceId(value: unknown) {
+ if (!value || typeof value !== 'object') return;
+ const id = (value as { fbtrace_id?: unknown }).fbtrace_id;
+ return typeof id === 'string' && id.length > 0 && id.length <= 128 ? id : undefined;
+}
+
+function logCapi(ok: boolean, status: number, events: Outbound[], fbtraceId?: string) {
+ const payload = { ok, status, event_name: events.map(event => event.name).join(','), fbtrace_id: fbtraceId || null };
+ if (ok) console.info('meta_capi', payload);
+ else console.error('meta_capi', payload);
+}
+
 async function post(events: Outbound[]) {
  const pixel = pixelId();
  const token = accessToken();
+ const body: { data: ReturnType<typeof toPayload>[]; test_event_code?: string } = { data: events.map(toPayload) };
+ const testCode = previewTestEventCode();
+ if (testCode) body.test_event_code = testCode;
  // Token stays in the query string, matching the Conversions API contract. Never log this URL.
  const response = await fetch(`https://graph.facebook.com/${GRAPH_VERSION}/${pixel}/events?access_token=${encodeURIComponent(token)}`, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ data: events.map(toPayload) }),
+  body: JSON.stringify(body),
   signal: AbortSignal.timeout(5000),
  });
- if (!response.ok) {
-  await response.arrayBuffer().catch(() => undefined);
-  throw new Error('Meta CAPI request failed');
- }
- await response.arrayBuffer().catch(() => undefined);
+ let parsed: unknown;
+ try { parsed = await response.json(); } catch { parsed = undefined; }
+ const fbtraceId = readTraceId(parsed);
+ logCapi(response.ok, response.status, events, fbtraceId);
+ if (!response.ok) throw new Error('Meta CAPI request failed');
 }
 
 function toPayload(event: Outbound) {

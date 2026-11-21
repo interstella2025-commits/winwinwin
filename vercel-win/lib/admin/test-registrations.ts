@@ -1,4 +1,8 @@
-export const DEFAULT_EXCLUDED_TEST_NAMES = ['elsa測試', '廖子淇'] as const;
+export const DEFAULT_EXCLUDED_TEST_NAMES = ['elsa測試', 'Elsa', '廖子淇'] as const;
+
+export function normalizeExcludedTestName(name: string) {
+  return name.replace(/[\s\u00a0\u3000]+/g, ' ').trim().toLowerCase();
+}
 
 export function excludedTestNameList(env: NodeJS.ProcessEnv = process.env): string[] {
   const extras = (env.ADMIN_EXCLUDED_TEST_NAMES || '')
@@ -10,7 +14,9 @@ export function excludedTestNameList(env: NodeJS.ProcessEnv = process.env): stri
 
 export function isExcludedTestName(name: string | null | undefined, env: NodeJS.ProcessEnv = process.env): boolean {
   if (typeof name !== 'string') return false;
-  return excludedTestNameList(env).includes(name.trim());
+  const needle = normalizeExcludedTestName(name);
+  if (!needle) return false;
+  return excludedTestNameList(env).some(item => normalizeExcludedTestName(item) === needle);
 }
 
 export type ExcludedTestRow = {

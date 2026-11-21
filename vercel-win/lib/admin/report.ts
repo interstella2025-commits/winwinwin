@@ -214,6 +214,42 @@ function countSessions(ids: string[], events: EventRow[], name: string, offer?: 
   return ids.filter(id => hasEvent(events, id, name, offer)).length;
 }
 
+const SUBMIT_EVENTS = new Set(['form_submit', 'form_submit_ok', 'payment_start', 'registered']);
+
+function sessionHasPathEvent(events: EventRow[], sessionId: string, names: Set<string>, offer: string) {
+  return events.some(event => event.session_id === sessionId && names.has(event.event_name) && event.offer === offer);
+}
+
+/** Form start for a path: an event tagged with that offer, or a later path event after an untagged start. */
+function sessionStartedForm(events: EventRow[], sessionId: string, offer: string) {
+  const rows = events.filter(event => event.session_id === sessionId);
+  if (rows.some(event => event.event_name === 'form_start' && event.offer === offer)) return true;
+  if (sessionHasPathEvent(rows, sessionId, SUBMIT_EVENTS, offer)) return true;
+  const startedUnknown = rows.some(event => event.event_name === 'form_start' && (!event.offer || event.offer === 'unknown'));
+  return startedUnknown && rows.some(event => event.offer === offer);
+}
+
+function sessionSubmittedForm(events: EventRow[], sessionId: string, offer: string) {
+  return sessionHasPathEvent(events, sessionId, SUBMIT_EVENTS, offer);
+}
+
+function countPathSessions(ids: string[], events: EventRow[], offer: string, kind: 'start' | 'submit') {
+  const check = kind === 'start' ? sessionStartedForm : sessionSubmittedForm;
+  return ids.filter(id => check(events, id, offer)).length;
+}
+
+function atLeast(value: number, floor: number) {
+  return Math.max(value, floor);
+}
+
+function raiseToDownstream<T extends { count: number }>(steps: T[]): T[] {
+  const counts = steps.map(step => step.count);
+  for (let index = counts.length - 2; index >= 0; index -= 1) {
+    counts[index] = Math.max(counts[index], counts[index + 1]);
+  }
+  return steps.map((step, index) => ({ ...step, count: counts[index] }));
+}
+
 
 function taipeiParts(iso: string) {
   const parts = new Intl.DateTimeFormat('en-US', {
@@ -309,16 +345,18 @@ export function buildReport(input: {
   const countWhere = (pick: (item: typeof classified[number]) => boolean) => classified.filter(pick).length;
   const sessionIds = sessions.map(session => session.id);
   const cta = countSessions(sessionIds, events, 'cta_click');
-  const onlineForm = countSessions(sessionIds, events, 'form_start', 'online');
-  const onlineSubmit = countSessions(sessionIds, events, 'form_submit_ok', 'online');
-  const inpersonForm = countSessions(sessionIds, events, 'form_start', 'inperson');
-  const inpersonSubmit = countSessions(sessionIds, events, 'form_submit_ok', 'inperson');
-  const inpersonPaymentEvents = countSessions(sessionIds, events, 'payment_start', 'inperson');
   const freeOnline = countWhere(item => item.outcome.freeOnline);
   const onlineAbandoned = countWhere(item => item.outcome.onlineAbandoned);
   const onlinePaid = countWhere(item => item.outcome.onlinePaid);
   const inpersonPaid = countWhere(item => item.outcome.inpersonPaid);
   const inpersonStarted = countWhere(item => item.outcome.inpersonStarted);
+  const onlineCompleted = freeOnline + onlinePaid;
+  const onlineStartedRecords = onlineCompleted + onlineAbandoned;
+  const onlineForm = atLeast(countPathSessions(sessionIds, events, 'online', 'start'), onlineStartedRecords);
+  const onlineSubmit = atLeast(countPathSessions(sessionIds, events, 'online', 'submit'), onlineStartedRecords);
+  const inpersonForm = atLeast(countPathSessions(sessionIds, events, 'inperson', 'start'), inpersonStarted);
+  const inpersonSubmit = atLeast(countPathSessions(sessionIds, events, 'inperson', 'submit'), inpersonStarted);
+  const inpersonPaymentEvents = countSessions(sessionIds, events, 'payment_start', 'inperson');
   const devices = ['mobile', 'tablet', 'desktop', 'unknown'].map(key => ({
     key,
     label: DEVICE_LABELS[key],
@@ -349,7 +387,7 @@ export function buildReport(input: {
       averageDwellSeconds: group.rows.length ? Math.round(totalDwell / group.rows.length) : 0,
       cta: countSessions(ids, events, 'cta_click'),
       formStart: countSessions(ids, events, 'form_start'),
-      submit: countSessions(ids, events, 'form_submit_ok'),
+      submit: ids.filter(id => events.some(event => event.session_id === id && SUBMIT_EVENTS.has(event.event_name))).length,
       paymentStart: countSessions(ids, events, 'payment_start'),
     };
   }).sort((left, right) => right.sessions - left.sessions || left.label.localeCompare(right.label, 'zh-Hant'));
@@ -384,7 +422,8 @@ export function buildReport(input: {
     page_view: '頁面瀏覽',
     cta_click: '點擊報名',
     form_start: '開始填表',
-    form_submit_ok: '送出表單',
+    form_submit: '送出表單',
+    form_submit_ok: '送出成功',
     payment_start: '前往付款',
   };
   const eventCounts = Object.entries(eventLabels).map(([key, label]) => ({
@@ -434,21 +473,21 @@ export function buildReport(input: {
     dwellBuckets: buckets,
     sources,
     funnels: {
-      online: [
+      online: raiseToDownstream([
         { label: '進站', count: sessions.length, basis: 'sessions' },
         { label: '點擊報名', count: cta, basis: 'sessions' },
         { label: '開始填寫線上', count: onlineForm, basis: 'sessions' },
         { label: '送出線上表單', count: onlineSubmit, basis: 'sessions' },
         { label: '完成免費登記', count: freeOnline, basis: 'records', detail: `另有線上未完成付款 ${onlineAbandoned}、線上已付款 ${onlinePaid}` },
-      ],
-      inperson: [
+      ]),
+      inperson: raiseToDownstream([
         { label: '進站', count: sessions.length, basis: 'sessions' },
         { label: '點擊報名', count: cta, basis: 'sessions' },
         { label: '開始填寫實體', count: inpersonForm, basis: 'sessions' },
         { label: '送出實體表單', count: inpersonSubmit, basis: 'sessions' },
         { label: '前往付款', count: inpersonStarted, basis: 'records', detail: `瀏覽器記錄到 ${inpersonPaymentEvents} 個工作階段前往付款` },
         { label: '付款完成', count: inpersonPaid, basis: 'records', detail: '以訂單狀態為準，含這段期間才付完的較早報名' },
-      ],
+      ]),
     },
     registrations: classified
       .sort((left, right) => right.application.createdAt.localeCompare(left.application.createdAt))
@@ -517,7 +556,7 @@ export async function loadExcludedTestRegistrations(now = Date.now()): Promise<E
   if (process.env.NODE_ENV !== 'production' && process.env.ADMIN_DASHBOARD_FIXTURE === '1') {
     return fixtureReport(30, now).excludedTests;
   }
-  const names = excludedTestNameList();
+  const names = [...new Set(excludedTestNameList().map(name => name.trim().toLowerCase()))];
   if (!names.length) return [];
   try {
     const placeholders = names.map((_, index) => `$${index + 1}`).join(', ');
@@ -526,7 +565,7 @@ export async function loadExcludedTestRegistrations(now = Date.now()): Promise<E
               o.id AS order_id, o.order_no, o.amount, o.status, o.source, o.paid_at, o.created_at AS order_created_at
        FROM applications a
        LEFT JOIN payment_orders o ON o.application_id = a.id
-       WHERE trim(a.name) IN (${placeholders})
+       WHERE lower(trim(a.name)) IN (${placeholders})
        ORDER BY a.created_at DESC
        LIMIT 2000`,
       names,

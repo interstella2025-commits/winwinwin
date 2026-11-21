@@ -37,7 +37,8 @@ export async function POST(request: Request) {
   await ensure();
   const requestKey = digest(data.requestId + salt);
   const leadEventId = metaEventId(body.leadEventId), completeEventId = metaEventId(body.completeEventId);
-  const track = () => sendRegistrationEvents(request, { email: data.email, phone: data.phone, leadEventId, completeEventId, value: 0 });
+  const fbc = typeof body.fbc === 'string' ? body.fbc : undefined;
+  const track = () => sendRegistrationEvents(request, { email: data.email, phone: data.phone, leadEventId, completeEventId, value: 0, fbc });
   const finish = async (signupId: string) => {
    await track();
    if (!await sendOnlineConfirmation(signupId)) return json({ error: '確認信暫時無法寄出，請再試一次。' }, 503);

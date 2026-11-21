@@ -69,6 +69,7 @@ export default function SiteAnalytics() {
     const queue: TrackEvent[] = [];
     let flushTimer = 0;
     let formStarted = false;
+    const startedOffers = new Set<string>();
     let ended = false;
     const seenDepth = new Set<number>();
 
@@ -148,12 +149,26 @@ export default function SiteAnalytics() {
       const target = event.target;
       if (!(target instanceof Element) || !target.closest('#apply form')) return;
       formStarted = true;
-      enqueue({ name: 'form_start', offer: currentOffer(), sectionId: 'form' });
+      const offer = currentOffer();
+      startedOffers.add(offer);
+      enqueue({ name: 'form_start', offer, sectionId: 'form' });
+    };
+    const onOfferChange = (event: Event) => {
+      const target = event.target;
+      if (!(target instanceof Element) || !target.closest('#apply form')) return;
+      const field = target instanceof HTMLSelectElement || target instanceof HTMLInputElement ? target : null;
+      if (!field || (field.name !== 'courseFormat' && field.name !== 'sessionCode')) return;
+      const offer = currentOffer();
+      if (offer === 'unknown') return;
+      if (!formStarted) formStarted = true;
+      if (startedOffers.has(offer)) return;
+      startedOffers.add(offer);
+      enqueue({ name: 'form_start', offer, sectionId: 'form' });
     };
     const onSubmit = (event: Event) => {
       const form = event.target;
       if (!(form instanceof HTMLFormElement) || !form.closest('#apply')) return;
-      enqueue({ name: 'form_submit', offer: currentOffer(), sectionId: 'form' });
+      enqueue({ name: 'form_submit', offer: currentOffer(), sectionId: 'form' }, true);
     };
     const onScroll = () => {
       const height = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
@@ -181,6 +196,7 @@ export default function SiteAnalytics() {
 
     document.addEventListener('click', onClick, true);
     document.addEventListener('focusin', onFocus, true);
+    document.addEventListener('change', onOfferChange, true);
     document.addEventListener('submit', onSubmit, true);
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('pagehide', finish);
@@ -191,6 +207,7 @@ export default function SiteAnalytics() {
       window.clearTimeout(flushTimer);
       document.removeEventListener('click', onClick, true);
       document.removeEventListener('focusin', onFocus, true);
+      document.removeEventListener('change', onOfferChange, true);
       document.removeEventListener('submit', onSubmit, true);
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('pagehide', finish);

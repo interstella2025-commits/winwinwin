@@ -77,7 +77,7 @@ export default function DashboardView({ report }: { report: DashboardReport }) {
       {report.kpis.excludedTestNames ? (
         <div className="admin-setup-banner">
           <strong>已自列表與統計排除 {report.kpis.excludedTestNames} 筆測試姓名資料</strong>
-          <span>姓名完全符合「elsa測試」或「廖子淇」的報名不會顯示、也不計入數字。資料仍留在資料庫。<a href="/admin/test-registrations">查看並匯出這些資料</a></span>
+          <span>姓名去掉前後空白後，完全等於「elsa測試」、「Elsa」（大小寫不拘）或「廖子淇」的報名與訂單不會顯示、也不計入數字。資料仍留在資料庫。<a href="/admin/test-registrations">查看並匯出這些資料</a></span>
         </div>
       ) : null}
 

@@ -15,7 +15,7 @@ export async function POST(request:Request){
  const rate=await first<{attempts:number}>('INSERT INTO payment_rate_limits (bucket,attempts) VALUES ($1,1) ON CONFLICT(bucket) DO UPDATE SET attempts=payment_rate_limits.attempts+1 RETURNING attempts',[bucket]);
  if(!rate||Number(rate.attempts)>5)return json({error:'送出次數較多，請稍候一分鐘再試。'},429);
  await db().transaction([{text:'INSERT INTO applications (id,name,email,phone,profession,stage,topic,session_code,line_name,created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)',params:[crypto.randomUUID(),data.name,data.email,data.phone,data.profession,data.stage,data.topic,NOTIFY_CODE,data.lineName,new Date().toISOString()]}]);
- await sendRegistrationEvents(request,{email:data.email,phone:data.phone,leadEventId:metaEventId(body.leadEventId),value:0});
+ await sendRegistrationEvents(request,{email:data.email,phone:data.phone,leadEventId:metaEventId(body.leadEventId),value:0,fbc:typeof body.fbc==='string'?body.fbc:undefined});
  return json({ok:true});
  }catch{return json({error:'暫時無法完成登記，請稍後再試。'},503)}
 }
