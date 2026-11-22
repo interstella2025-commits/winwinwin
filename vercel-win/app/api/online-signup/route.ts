@@ -1,6 +1,7 @@
 import { metaEventId, sendRegistrationEvents } from '../../../lib/meta/capi';
 import { FORM_ORIGINS, digest, validate } from '../../../lib/payuni/core';
 import { db, first, settings, json, clientIp, sendOnlineConfirmation } from '../../../lib/payuni/server';
+import { recordRegistrationAttribution } from '../../../lib/admin/attribution';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 let ready: Promise<void> | undefined;
@@ -59,6 +60,7 @@ export async function POST(request: Request) {
    { text: 'INSERT INTO applications (id,name,email,phone,profession,stage,topic,session_code,line_name,created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)', params: [application, data.name, data.email, data.phone, data.profession, data.stage, data.topic, data.sessionCode, data.lineName, now] },
    { text: "INSERT INTO online_signups (id,request_id,application_id,email_status,email_lease,created_at) VALUES ($1,$2,$3,'pending',0,$4)", params: [signup, requestKey, application, now] },
   ]);
+  await recordRegistrationAttribution(application, body);
   return finish(signup);
  } catch { return json({ error: '暫時無法完成報名，請稍後再試。' }, 503); }
 }

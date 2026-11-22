@@ -11,6 +11,7 @@ type TrendPoint = {
 type LabeledValue = {
   label: string;
   value: number;
+  detail?: string | null;
 };
 
 type JourneyStep = LabeledValue & {
@@ -117,9 +118,15 @@ export function HorizontalBreakdown({ items, total, emptyLabel }: { items: Label
   return (
     <div className="analytics-breakdown">
       {items.map(item => (
-        <div className="analytics-breakdown-row" key={item.label}>
-          <div><strong>{item.label}</strong><span>{Math.round(item.value / total * 100)}%</span></div>
-          <div className="analytics-mini-bar" aria-label={`${item.label} ${item.value} 次`}>
+        <div className="analytics-breakdown-row" key={`${item.label}|${item.detail || ''}`}>
+          <div>
+            <div className="analytics-breakdown-label">
+              <strong title={item.label}>{item.label}</strong>
+              {item.detail ? <small title={item.detail}>{item.detail}</small> : null}
+            </div>
+            <span>{Math.round(item.value / total * 100)}%</span>
+          </div>
+          <div className="analytics-mini-bar" aria-label={`${item.label}${item.detail ? `（${item.detail}）` : ''} ${item.value} 次`}>
             <i style={{ width: `${Math.max(3, item.value / maximum * 100)}%` }} />
           </div>
           <b>{item.value}</b>
@@ -251,7 +258,7 @@ export function OfferPerformanceVisual({ offers }: { offers: OfferVisual[] }) {
       </div>
       {offers.map(offer => (
         <div className="analytics-service-row" key={offer.key}>
-          <div className="analytics-service-name"><strong>{offer.name}</strong><span>{offer.starts} 次開始填表</span></div>
+          <div className="analytics-service-name"><strong title={offer.name}>{offer.name}</strong><span>{offer.starts} 次開始填表</span></div>
           <div className="analytics-service-bars">
             {([
               ['views', offer.starts],

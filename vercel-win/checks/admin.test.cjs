@@ -9,7 +9,7 @@ const root = path.resolve(__dirname, '..');
 const sqlite = new DatabaseSync(':memory:');
 sqlite.exec(fs.readFileSync(path.join(root, 'db/migrations/0001_init.sql'), 'utf8'));
 sqlite.exec(fs.readFileSync(path.join(root, 'db/migrations/0003_site_analytics.sql'), 'utf8'));
-const conv = text => text.replace(/\$(\d+)/g, '?$1');
+const conv = text => text.replace(/\$(\d+)/g, '?$1').replace(/ADD COLUMN IF NOT EXISTS/g, 'ADD COLUMN');
 const run = (text, params = []) => {
   const statement = sqlite.prepare(conv(text));
   return /^\s*(SELECT|INSERT[\s\S]*RETURNING|UPDATE[\s\S]*RETURNING)/i.test(text) ? statement.all(...params) : (statement.run(...params), []);
@@ -551,6 +551,207 @@ async function test(name, fn) {
     const analytics = fs.readFileSync(path.join(root, 'components/site-analytics.tsx'), 'utf8');
     assert.match(analytics, /localStorage\.getItem\(ANALYTICS_OPT_OUT_KEY\) === '1'/);
     assert.match(analytics, /sendBeacon/);
+  });
+
+  await test('ranges are Taipei calendar-day windows', () => {
+    const now = Date.parse('2026-11-23T03:30:00.000Z'); // 11:30 台北
+    assert.equal(report.windowStart(1, now), '2026-11-22T16:00:00.000Z');
+    assert.equal(report.windowStart(7, now), '2026-11-16T16:00:00.000Z');
+    assert.equal(report.windowStart(30, now), '2026-10-24T16:00:00.000Z');
+    const lateNight = Date.parse('2026-11-22T15:59:00.000Z'); // 23:59 台北
+    assert.equal(report.windowStart(1, lateNight), '2026-11-21T16:00:00.000Z');
+    assert.match(report.rangeLabel(1), /今天/);
+    assert.match(report.rangeLabel(7), /台北日曆日/);
+    const built = report.buildReport({ days: 7, since: report.windowStart(7, now), now, analyticsUnavailable: false, registrationsUnavailable: false, fixture: false, sessions: [], events: [], applications: [] });
+    assert.equal(built.trend.length, 7);
+    const route = fs.readFileSync(path.join(root, 'lib/admin/report.ts'), 'utf8');
+    assert.match(route, /const since = windowStart\(days, now\)/);
+  });
+
+  await test('a visit splits after 30 idle minutes', () => {
+    const client = load('lib/admin/analytics-client.ts');
+    const t0 = Date.parse('2026-11-22T00:00:00.000Z');
+    assert.equal(client.SESSION_IDLE_MS, 30 * 60 * 1000);
+    assert.equal(client.isSessionExpired(t0, t0 + 29 * 60 * 1000), false);
+    assert.equal(client.isSessionExpired(t0, t0 + 31 * 60 * 1000), true);
+    assert.equal(client.isSessionExpired(NaN, t0), false);
+    const analytics = fs.readFileSync(path.join(root, 'components/site-analytics.tsx'), 'utf8');
+    assert.match(analytics, /isSessionExpired/);
+    assert.match(analytics, /ANALYTICS_LAST_ACTIVE_KEY/);
+    assert.match(analytics, /visibilityState/);
+  });
+
+  await test('notify counts people once and email failures use one rule', () => {
+    const now = Date.parse('2026-11-22T04:00:00.000Z');
+    const at = '2026-11-22T03:00:00.000Z';
+    const app = (id, patch) => ({ id, name: id, email: `${id}@example.test`, phone: '+886900000000', sessionCode: 'notify', createdAt: at, orders: [], ...patch });
+    const built = report.buildReport({
+      days: 1, since: report.windowStart(1, now), now, analyticsUnavailable: false, registrationsUnavailable: false, fixture: false, sessions: [], events: [],
+      applications: [
+        app('n1', { email: 'Same@Example.test' }), app('n2', { email: ' same@example.test ' }), app('n3', { email: '', phone: '+886 911-111-111' }), app('n4', { email: '', phone: '+886911111111' }), app('n5'),
+        app('elsa', { name: 'Elsa' }),
+        app('on1', { sessionCode: ONLINE }), app('on2', { sessionCode: ONLINE }), app('on3', { sessionCode: ONLINE }),
+      ],
+      emailStatuses: [
+        { application_id: 'on1', kind: 'online', email_status: 'failed', email_lease: 0 },
+        { application_id: 'on2', kind: 'online', email_status: 'sending', email_lease: now - 1000 },
+        { application_id: 'on3', kind: 'online', email_status: 'pending', email_lease: 0 },
+        { application_id: 'n5', kind: 'order', email_status: 'sent', email_lease: 0 },
+        { application_id: 'elsa', kind: 'order', email_status: 'failed', email_lease: 0 },
+      ],
+    });
+    assert.equal(built.kpis.notify, 3);
+    assert.equal(built.kpis.notifyRecords, 5);
+    assert.equal(built.kpis.emailFailed, 2);
+    assert.equal(built.kpis.emailPending, 1);
+    assert.equal(report.emailState({ email_status: 'sending', email_lease: now + 60000 }, now), 'pending');
+  });
+
+  await test('registration attribution is additive, preview-safe and shown in admin', async () => {
+    const attribution = load('lib/admin/attribution.ts');
+    const sql = fs.readFileSync(path.join(root, 'db/migrations/0004_registration_attribution.sql'), 'utf8');
+    const statements = sql.split('\n').filter(line => line.trim() && !line.trim().startsWith('--'));
+    assert.equal(statements.length, 8);
+    for (const line of statements) assert.match(line, /^ALTER TABLE applications ADD COLUMN IF NOT EXISTS attribution_[a-z_]+ TEXT;$/);
+    assert.equal(/\b(DROP|DELETE|UPDATE|TRUNCATE|NOT NULL|DEFAULT)\b/i.test(statements.join('\n')), false);
+    // Existing row before the migration.
+    sqlite.prepare('INSERT INTO applications (id,name,email,phone,profession,stage,topic,session_code,line_name,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)').run('attr-old', '舊報名', 'old-attr@example.test', '+886900000101', 'QA', 'QA', 'QA', ONLINE, '', new Date().toISOString());
+    // Preview (no VERCEL_ENV=production): nothing is altered.
+    delete process.env.VERCEL_ENV;
+    delete process.env.ATTRIBUTION_AUTO_MIGRATE;
+    assert.equal(await attribution.ensureAttributionColumns(), false);
+    await attribution.recordRegistrationAttribution('attr-old', { fbc: 'fb.1.1.abc' });
+    assert.equal(sqlite.prepare("SELECT COUNT(*) AS n FROM pragma_table_info('applications') WHERE name LIKE 'attribution_%'").get().n, 0);
+    // Production: columns are added as nullable TEXT with no default.
+    process.env.VERCEL_ENV = 'production';
+    assert.equal(await attribution.ensureAttributionColumns(), true);
+    const cols = sqlite.prepare("SELECT name, \"notnull\" AS nn, dflt_value AS d FROM pragma_table_info('applications') WHERE name LIKE 'attribution_%'").all();
+    assert.equal(cols.length, 8);
+    for (const col of cols) { assert.equal(col.nn, 0); assert.equal(col.d, null); }
+    const visitor = 'a1111111-1111-4111-8111-111111111111';
+    const first = 'a2222222-2222-4222-8222-222222222222';
+    const current = 'a3333333-3333-4333-8333-333333333333';
+    const insertSession = sqlite.prepare('INSERT INTO site_sessions (id,visitor_id,visitor_key,ip_hash,started_at,last_seen_at,landing_path,landing_url,last_page_path,referrer,device_type,utm_source,utm_medium,utm_campaign,max_scroll_depth,last_stage,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
+    const t1 = new Date(Date.now() - 3600000).toISOString();
+    const t2 = new Date().toISOString();
+    insertSession.run(first, visitor, 'K', 'h', t1, t1, '/', 'https://2027course.win-lin.com/?utm_source=facebook', '/', null, 'mobile', 'facebook', 'paid', '1206-live', 0, 'page_view', t1);
+    insertSession.run(current, visitor, 'K', 'h', t2, t2, '/', 'https://2027course.win-lin.com/', '/', 'https://line.me/', 'mobile', null, null, null, 0, 'page_view', t2);
+    sqlite.prepare('INSERT INTO applications (id,name,email,phone,profession,stage,topic,session_code,line_name,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)').run('attr-new', '新報名', 'new-attr@example.test', '+886900000102', 'QA', 'QA', 'QA', ONLINE, '', t2);
+    await attribution.recordRegistrationAttribution('attr-new', { analyticsVisitorId: visitor.toUpperCase(), analyticsSessionId: current, fbc: '' });
+    const row = sqlite.prepare('SELECT * FROM applications WHERE id=?').get('attr-new');
+    assert.equal(row.attribution_source, 'Facebook / paid');
+    assert.equal(row.attribution_campaign, '1206-live');
+    assert.equal(row.attribution_last_source, 'line.me');
+    assert.equal(row.attribution_first_seen_at, t1);
+    assert.equal(row.attribution_has_fbclid, null);
+    // Second call never overwrites.
+    await attribution.recordRegistrationAttribution('attr-new', { fbc: 'fb.1.1.zzz' });
+    assert.equal(sqlite.prepare('SELECT attribution_source AS s FROM applications WHERE id=?').get('attr-new').s, 'Facebook / paid');
+    const old = sqlite.prepare('SELECT * FROM applications WHERE id=?').get('attr-old');
+    for (const col of cols) assert.equal(old[col.name], null);
+    assert.equal(attribution.buildAttribution(null, null, true).attribution_source, 'Facebook（廣告點擊）');
+    const loaded = await report.loadReport(7);
+    const listed = loaded.registrations.find(item => item.email === 'new-attr@example.test');
+    assert.equal(listed.source, 'Facebook / paid');
+    assert.equal(loaded.registrationSources.some(item => item.label === 'Facebook / paid'), true);
+    assert.equal(loaded.registrationSources.some(item => item.label === '未記錄（較早報名）'), true);
+    for (const file of ['app/api/online-signup/route.ts', 'app/api/notify-signup/route.ts', 'app/api/payuni/create/route.ts']) {
+      assert.match(fs.readFileSync(path.join(root, file), 'utf8'), /recordRegistrationAttribution\(application, ?body\)/);
+    }
+    const home = fs.readFileSync(path.join(root, 'app/page.tsx'), 'utf8');
+    assert.equal((home.match(/\.\.\.analyticsIdsForRequest\(\)/g) || []).length, 3);
+    delete process.env.VERCEL_ENV;
+  });
+
+  await test('reconciliation returns counts only and needs admin', async () => {
+    const recon = load('lib/admin/reconciliation.ts');
+    const route = load('app/api/admin/reconciliation/route.ts');
+    const now = Date.now();
+    const iso = ms => new Date(ms).toISOString();
+    const addApp = (id, name) => sqlite.prepare('INSERT INTO applications (id,name,email,phone,profession,stage,topic,session_code,line_name,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)').run(id, name, `${id}@example.test`, '+886900000200', 'QA', 'QA', 'QA', DAY16, '', iso(now));
+    const addOrder = (id, app, orderNo, status, patch = {}) => sqlite.prepare('INSERT INTO payment_orders (id,application_id,order_no,merchant,amount,token,request_id,status,created_at,consent_at,source,paid_at,provider_trade_no,email_status,email_lease) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
+      .run(id, app, orderNo, 'M', patch.amount ?? 399, `tok-${id}`, `req-${id}`, status, patch.created ?? iso(now - 60000), iso(now), patch.source ?? 'https://2027course.win-lin.com/#apply', status === 'paid' ? iso(now) : null, patch.trade ?? null, patch.email ?? 'sent', patch.lease ?? 0);
+    const since = iso(now - 3600000);
+    const base = (await recon.reconcile(since, { now })).local;
+    addApp('rc-a', '對帳甲'); addApp('rc-b', '對帳乙'); addApp('rc-c', '對帳丙'); addApp('rc-t', '廖子淇'); addApp('rc-d', '對帳丁');
+    addOrder('rc1', 'rc-a', 'TRADEONE', 'paid', { trade: 'PT-1' });
+    addOrder('rc2', 'rc-b', 'TRADETWO', 'paid', { email: 'failed' });
+    addOrder('rc3', 'rc-c', 'TRADETHREE', 'pending', { created: iso(now - 40 * 60000) });
+    addOrder('rc4', 'rc-t', 'TRADEFOUR', 'paid', { trade: 'PT-4' });
+    addOrder('rc5', 'rc-d', 'TRADEFIVE', 'pending', { amount: 1, source: 'win-test-1' });
+    const local = await recon.reconcile(since, { now });
+    for (const key of Object.keys(local.local)) local.local[key] -= base[key];
+    assert.equal(local.local.orders, 3);
+    assert.equal(local.local.paid, 2);
+    assert.equal(local.local.pending, 1);
+    assert.equal(local.local.pendingOver30Minutes, 1);
+    assert.equal(local.local.testOrders, 1);
+    assert.equal(local.local.testNameOrders, 1);
+    assert.equal(local.local.paidMissingProviderTradeNo, 1);
+    assert.equal(local.local.paidEmailFailed, 1);
+    assert.equal(local.provider, null);
+    const env = { PAYUNI_MER_ID: 'MERTEST', PAYUNI_HASH_KEY: '12345678901234567890123456789012', PAYUNI_HASH_IV: '1234567890123456' };
+    const core = load('lib/payuni/core.ts');
+    const c = core.config(env);
+    const states = { TRADEONE: '1', TRADETWO: '0', TRADETHREE: '1' };
+    const fetcher = async (url, init) => {
+      assert.match(url, /\/api\/trade\/query$/);
+      const sent = Object.fromEntries(new URLSearchParams(init.body));
+      const asked = core.decode({ MerID: 'MERTEST', Version: '2.0', EncryptInfo: sent.EncryptInfo, HashInfo: sent.HashInfo }, c);
+      const fields = { MerID: 'MERTEST' };
+      if (states[asked.MerTradeNo]) Object.assign(fields, { 'Result[0][MerTradeNo]': asked.MerTradeNo, 'Result[0][TradeStatus]': states[asked.MerTradeNo] });
+      const enc = core.encrypt(fields, c);
+      return new Response(JSON.stringify({ Status: 'SUCCESS', MerID: 'MERTEST', Version: '2.0', EncryptInfo: enc, HashInfo: core.hash(enc, c) }), { status: 200 });
+    };
+    const withProvider = await recon.reconcile(since, { now, provider: true, fetcher, env });
+    assert.equal(withProvider.provider.available, true);
+    assert.equal(withProvider.provider.checked, 3 + base.orders);
+    assert.equal(withProvider.provider.matched, 1);
+    assert.equal(withProvider.provider.notFound, base.orders);
+    assert.equal(withProvider.provider.localPaidProviderNotPaid, 1);
+    assert.equal(withProvider.provider.providerPaidLocalNotPaid, 1);
+    const text = JSON.stringify(withProvider);
+    for (const secret of ['TRADEONE', 'TRADEFIVE', 'PT-1', '對帳甲', '廖子淇', '@example.test', env.PAYUNI_HASH_KEY, env.PAYUNI_HASH_IV, 'MERTEST']) assert.equal(text.includes(secret), false, secret);
+    const denied = await route.GET(new Request('https://2027course.win-lin.com/api/admin/reconciliation'));
+    assert.equal(denied.status, 401);
+    const token = auth.createAdminSessionToken();
+    const allowed = await route.GET(new Request('https://2027course.win-lin.com/api/admin/reconciliation?range=1', { headers: { cookie: `win_admin_session=${token}` } }));
+    assert.equal(allowed.status, 200);
+    assert.match(allowed.headers.get('cache-control') || '', /no-store/);
+    const body = await allowed.json();
+    assert.equal(typeof body.local.orders, 'number');
+    assert.equal(JSON.stringify(body).includes('TRADEONE'), false);
+  });
+
+  await test('long source and course labels wrap to two lines instead of truncating', () => {
+    const css = fs.readFileSync(path.join(root, 'app/admin/admin.css'), 'utf8');
+    const rule = selector => (css.match(new RegExp(`${selector.replace(/[.*]/g, '\\$&')} \\{([^}]*)\\}`)) || [])[1] || '';
+    for (const selector of ['.analytics-breakdown-row strong', '.analytics-service-name strong', '.analytics-breakdown-label small']) {
+      const body = rule(selector);
+      assert.match(body, /-webkit-line-clamp: 2/, selector);
+      assert.equal(/white-space: nowrap/.test(body), false, selector);
+    }
+    const visuals = fs.readFileSync(path.join(root, 'components/admin/analytics-visuals.tsx'), 'utf8');
+    assert.match(visuals, /analytics-breakdown-label/);
+  });
+
+
+  await test('admin chrome hides the test-data tab but keeps the direct route and exclusion', () => {
+    const shell = fs.readFileSync(path.join(root, 'components/admin/admin-shell.tsx'), 'utf8');
+    assert.equal(shell.includes('/admin/test-registrations'), false);
+    assert.equal(shell.includes('測試資料'), false);
+    assert.equal(/<nav[\s>]/.test(shell), false);
+    const dash = fs.readFileSync(path.join(root, 'components/admin/dashboard-view.tsx'), 'utf8');
+    assert.equal(dash.includes('/admin/test-registrations'), false);
+    assert.equal(dash.includes('查看並匯出這些資料'), false);
+    assert.match(dash, /已自列表與統計排除 \{report\.kpis\.excludedTestNames\} 筆測試姓名資料/);
+    assert.match(dash, /資料仍留在資料庫/);
+    const css = fs.readFileSync(path.join(root, 'app/admin/admin.css'), 'utf8');
+    assert.equal(/padding-bottom:\s*calc\(70px \+ env\(safe-area-inset-bottom\)\)/.test(css), false);
+    const page = fs.readFileSync(path.join(root, 'app/admin/test-registrations/page.tsx'), 'utf8');
+    assert.match(page, /已排除的測試資料/);
+    assert.match(page, /href="\/api\/admin\/test-registrations"/);
+    assert.equal(fs.existsSync(path.join(root, 'app/api/admin/test-registrations/route.ts')), true);
   });
 
   console.log(`${passes} admin checks passed`);

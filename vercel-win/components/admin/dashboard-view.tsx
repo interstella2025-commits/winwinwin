@@ -1,4 +1,4 @@
-import { formatDuration, formatDurationCompact, formatTaipei, type DashboardReport, type FunnelStep } from '../../lib/admin/report';
+import { formatDuration, formatDurationCompact, formatTaipei, rangeLabel as describeRange, type DashboardReport, type FunnelStep } from '../../lib/admin/report';
 import {
   DeviceRing,
   HorizontalBreakdown,
@@ -37,7 +37,7 @@ function FunnelBlock({ title, note, steps, outcomes }: {
 }
 
 export default function DashboardView({ report }: { report: DashboardReport }) {
-  const rangeLabel = report.days === 1 ? '最近 24 小時' : `最近 ${report.days} 天`;
+  const rangeLabel = describeRange(report.days);
   return (
     <main className="admin-page analytics-page">
       <header className="admin-page-header split">
@@ -50,7 +50,7 @@ export default function DashboardView({ report }: { report: DashboardReport }) {
         <nav className="analytics-range" aria-label="統計區間">
           {([1, 7, 30] as const).map(days => (
             <a key={days} className={report.days === days ? 'active' : ''} href={`/admin/dashboard?range=${days}`}>
-              {days === 1 ? '24 小時' : `${days} 天`}
+              {days === 1 ? '今天' : `${days} 天`}
             </a>
           ))}
         </nav>
@@ -89,7 +89,7 @@ export default function DashboardView({ report }: { report: DashboardReport }) {
       {report.kpis.excludedTestNames ? (
         <div className="admin-setup-banner">
           <strong>已自列表與統計排除 {report.kpis.excludedTestNames} 筆測試姓名資料</strong>
-          <span>姓名去掉所有空白（含全形空白）後，完全等於「elsa測試」、「Elsa」（大小寫不拘）或「廖子淇」的報名與訂單不會顯示、也不計入數字。資料仍留在資料庫。<a href="/admin/test-registrations">查看並匯出這些資料</a></span>
+          <span>姓名去掉所有空白（含全形空白）後，完全等於「elsa測試」、「Elsa」（大小寫不拘）或「廖子淇」的報名與訂單不會顯示、也不計入數字。資料仍留在資料庫。</span>
         </div>
       ) : null}
 
@@ -129,13 +129,18 @@ export default function DashboardView({ report }: { report: DashboardReport }) {
           <strong>{report.kpis.onlinePaid}</strong>
           <small>既有 {money(report.kpis.onlinePaidAmount)}</small>
         </article>
+        <article>
+          <span>確認信寄送失敗</span>
+          <strong>{report.kpis.emailFailed}</strong>
+          <small>尚未寄出 {report.kpis.emailPending} 筆</small>
+        </article>
       </section>
 
       <section className="admin-panel" aria-labelledby="signup-result-title">
         <div className="admin-section-heading">
           <div>
             <h2 id="signup-result-title">報名結果</h2>
-            <p>線上沒有付款訂單，才算免費登記。實體課以已付款、金額 399、且不是 NT$1 測試單計算。姓名完全符合測試名單的報名已從這裡扣除。</p>
+            <p>線上沒有付款訂單，才算免費登記。實體課以已付款、金額 399、且不是 NT$1 測試單計算。姓名完全符合測試名單的報名已從這裡扣除。其他場次通知以人數計，同一 Email（沒有 Email 時用電話）只算一次。上方「確認信寄送失敗」＝最後一次寄送失敗，或寄送中斷超過 1 分鐘；線上免費登記與已付款訂單用同一規則。</p>
           </div>
           <span>{rangeLabel}</span>
         </div>
@@ -145,7 +150,7 @@ export default function DashboardView({ report }: { report: DashboardReport }) {
           <article><span>線上已付款</span><strong>{report.kpis.onlinePaid} 筆</strong></article>
           <article><span>實體已付款</span><strong>{report.kpis.inpersonPaid} 筆</strong></article>
           <article><span>實體未完成付款</span><strong>{Math.max(0, report.kpis.inpersonStarted - report.kpis.inpersonPaid)} 筆</strong></article>
-          <article><span>其他場次通知</span><strong>{report.kpis.notify} 筆</strong></article>
+          <article><span>其他場次通知</span><strong>{report.kpis.notify} 人</strong><small>共 {report.kpis.notifyRecords} 筆，同一 Email／電話只算一次</small></article>
           <article><span>NT$1 測試單</span><strong>{report.kpis.excludedTestOrders} 筆</strong></article>
           <article><span>已排除測試姓名</span><strong>{report.kpis.excludedTestNames} 筆</strong></article>
         </div>
@@ -177,12 +182,18 @@ export default function DashboardView({ report }: { report: DashboardReport }) {
         <div className="admin-panel analytics-breakdown-panel">
           <div className="admin-section-heading"><div><h2>流量來源</h2><p>有 UTM 時用來源與媒介，否則用來路網域</p></div></div>
           <HorizontalBreakdown
-            items={report.sources.map(source => ({ label: source.campaign ? `${source.label}｜${source.campaign}` : source.label, value: source.sessions }))}
+            items={report.sources.map(source => ({ label: source.label, detail: source.campaign, value: source.sessions }))}
             total={report.kpis.sessions}
             emptyLabel="這段時間還沒有進站紀錄。"
           />
           <div className="analytics-subsection-heading"><h3>使用裝置</h3><span>{report.kpis.sessions} 次造訪</span></div>
           <DeviceRing items={report.devices.map(device => ({ label: device.label, value: device.count }))} />
+          <div className="analytics-subsection-heading"><h3>報名來源</h3><span>首次進站來源，新報名才有</span></div>
+          <HorizontalBreakdown
+            items={report.registrationSources.map(source => ({ label: source.label, value: source.count }))}
+            total={report.registrationSources.reduce((sum, source) => sum + source.count, 0)}
+            emptyLabel="這段時間還沒有報名。"
+          />
         </div>
       </section>
 
@@ -251,7 +262,7 @@ export default function DashboardView({ report }: { report: DashboardReport }) {
             <div className="admin-table-wrap">
               <table className="admin-table">
                 <thead>
-                  <tr><th>時間</th><th>結果</th><th>姓名</th><th>聯絡</th><th>場次</th></tr>
+                  <tr><th>時間</th><th>結果</th><th>姓名</th><th>聯絡</th><th>場次</th><th>來源</th></tr>
                 </thead>
                 <tbody>
                   {report.registrations.map(row => (
@@ -261,6 +272,7 @@ export default function DashboardView({ report }: { report: DashboardReport }) {
                       <td data-label="姓名">{row.name}</td>
                       <td data-label="聯絡">{row.email}<span>{row.phone}</span></td>
                       <td data-label="場次">{row.session}</td>
+                      <td data-label="來源">{row.source || '—'}</td>
                     </tr>
                   ))}
                 </tbody>
