@@ -735,6 +735,25 @@ async function test(name, fn) {
     assert.match(visuals, /analytics-breakdown-label/);
   });
 
+
+  await test('admin chrome hides the test-data tab but keeps the direct route and exclusion', () => {
+    const shell = fs.readFileSync(path.join(root, 'components/admin/admin-shell.tsx'), 'utf8');
+    assert.equal(shell.includes('/admin/test-registrations'), false);
+    assert.equal(shell.includes('測試資料'), false);
+    assert.equal(/<nav[\s>]/.test(shell), false);
+    const dash = fs.readFileSync(path.join(root, 'components/admin/dashboard-view.tsx'), 'utf8');
+    assert.equal(dash.includes('/admin/test-registrations'), false);
+    assert.equal(dash.includes('查看並匯出這些資料'), false);
+    assert.match(dash, /已自列表與統計排除 \{report\.kpis\.excludedTestNames\} 筆測試姓名資料/);
+    assert.match(dash, /資料仍留在資料庫/);
+    const css = fs.readFileSync(path.join(root, 'app/admin/admin.css'), 'utf8');
+    assert.equal(/padding-bottom:\s*calc\(70px \+ env\(safe-area-inset-bottom\)\)/.test(css), false);
+    const page = fs.readFileSync(path.join(root, 'app/admin/test-registrations/page.tsx'), 'utf8');
+    assert.match(page, /已排除的測試資料/);
+    assert.match(page, /href="\/api\/admin\/test-registrations"/);
+    assert.equal(fs.existsSync(path.join(root, 'app/api/admin/test-registrations/route.ts')), true);
+  });
+
   console.log(`${passes} admin checks passed`);
 })().catch(error => {
   console.error(error);
