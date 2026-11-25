@@ -7,6 +7,8 @@ import SiteAnalytics from './site-analytics';
 export default function PublicChrome() {
   const pathname = usePathname() || '/';
   if (pathname.startsWith('/admin')) return null;
+  // 說明會頁各專案用自己的追蹤碼與 LINE，不載入 WIN 的全站元件。
+  if (pathname.startsWith('/seminar')) return null;
   return <>
     <Analytics />
     <SiteAnalytics />
