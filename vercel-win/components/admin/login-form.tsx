@@ -33,9 +33,9 @@ export default function LoginForm() {
     <main className="admin-login-page">
       <form className="admin-login-card" onSubmit={submit}>
         <div className="admin-brand-mark">W</div>
-        <p className="admin-eyebrow">WIN 講師班</p>
+        <p className="admin-eyebrow">WIN專案</p>
         <h1>流量與轉換後台</h1>
-        <p className="admin-muted">輸入管理密碼後查看報名、付款與進站。</p>
+        <p className="admin-muted">同一組管理密碼。登入後可切換講師班與美國三校。</p>
         <label className="admin-field">
           <span>管理密碼</span>
           <input

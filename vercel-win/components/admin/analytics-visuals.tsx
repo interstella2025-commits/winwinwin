@@ -50,7 +50,15 @@ function linePath(points: { x: number; y: number }[]) {
   return points.map((point, index) => `${index ? 'L' : 'M'}${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(' ');
 }
 
-export function TrafficTrendChart({ points }: { points: TrendPoint[] }) {
+export function TrafficTrendChart({ points, legend }: {
+  points: TrendPoint[];
+  legend?: { visits?: string; forms?: string; completions?: string; title?: string; description?: string };
+}) {
+  const visitsLabel = legend?.visits ?? '造訪';
+  const formsLabel = legend?.forms ?? '開始填表';
+  const completionsLabel = legend?.completions ?? '完成報名';
+  const chartTitle = legend?.title ?? '流量與轉換趨勢';
+  const chartDescription = legend?.description ?? '比較各時段的造訪、開始填表與完成報名次數。';
   const maximum = Math.max(1, ...points.flatMap(point => [point.visits, point.formStarts, point.completions]));
   const visits = linePoints(points, 'visits', maximum);
   const forms = linePoints(points, 'formStarts', maximum);
@@ -62,13 +70,13 @@ export function TrafficTrendChart({ points }: { points: TrendPoint[] }) {
   return (
     <div className="analytics-trend-chart">
       <div className="analytics-chart-legend" aria-label="圖例">
-        <span className="visits">造訪</span>
-        <span className="products">開始填表</span>
-        <span className="purchases">完成報名</span>
+        <span className="visits">{visitsLabel}</span>
+        <span className="products">{formsLabel}</span>
+        <span className="purchases">{completionsLabel}</span>
       </div>
       <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} role="img" aria-labelledby="traffic-trend-title traffic-trend-description">
-        <title id="traffic-trend-title">流量與轉換趨勢</title>
-        <desc id="traffic-trend-description">比較各時段的造訪、開始填表與完成報名次數。</desc>
+        <title id="traffic-trend-title">{chartTitle}</title>
+        <desc id="traffic-trend-description">{chartDescription}</desc>
         <defs>
           <linearGradient id="traffic-area-fill" x1="0" x2="0" y1="0" y2="1">
             <stop offset="0%" stopColor="#8b665c" stopOpacity="0.2" />
@@ -91,19 +99,19 @@ export function TrafficTrendChart({ points }: { points: TrendPoint[] }) {
         {visits.map((point, index) => (
           <g key={`visit-${points[index].label}`}>
             <circle className="analytics-chart-point visits" cx={point.x} cy={point.y} r="3.5">
-              <title>{`${points[index].label}：${point.value} 次造訪`}</title>
+              <title>{`${points[index].label}：${point.value} 次${visitsLabel}`}</title>
             </circle>
             {index % labelEvery === 0 ? <text className="analytics-chart-axis x" x={point.x} y={chartHeight - 14} textAnchor="middle">{points[index].label}</text> : null}
           </g>
         ))}
         {forms.map((point, index) => (
           <circle className="analytics-chart-point products" cx={point.x} cy={point.y} r="3" key={`${points[index].label}-form`}>
-            <title>{`${points[index].label}：${point.value} 次開始填表`}</title>
+            <title>{`${points[index].label}：${point.value} 次${formsLabel}`}</title>
           </circle>
         ))}
         {completions.map((point, index) => (
           <circle className="analytics-chart-point purchases" cx={point.x} cy={point.y} r="3" key={`${points[index].label}-done`}>
-            <title>{`${points[index].label}：${point.value} 次完成報名`}</title>
+            <title>{`${points[index].label}：${point.value} 次${completionsLabel}`}</title>
           </circle>
         ))}
       </svg>

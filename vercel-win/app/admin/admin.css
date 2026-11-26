@@ -1228,3 +1228,25 @@ html:has(.admin-login-page) body { background: #f4f1ec; color: #24211f; }
 .admin-app .admin-sidebar form { margin-top: auto; }
 .admin-app .admin-primary-button.compact { white-space: nowrap; }
 .admin-app .admin-table td[data-label="姓名"] { white-space: nowrap; }
+
+.admin-project-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.admin-project-switch a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  border: 1px solid rgba(36, 33, 31, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 253, 250, 0.72);
+  color: #594f4a;
+  padding: 6px 8px;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.admin-project-switch a.active { background: var(--admin-ink); border-color: transparent; color: #fff; }
+@media (max-width: 900px) {
+  .admin-sidebar > div:first-child { flex-wrap: wrap; }
+  .admin-project-switch { flex: 1 0 100%; }
+  .admin-project-switch a { min-height: 40px; }
+}
