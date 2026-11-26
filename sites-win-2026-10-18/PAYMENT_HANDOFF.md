@@ -11,8 +11,8 @@
 - GET /api/payuni/status 回傳最少付款狀態並禁止快取，不回傳姓名或聯絡資料。
 - 付款確認信在 verified paid 後寄出；寄信失敗保留 paid 資料並回 RETRY 讓金流通知重試；寄信使用訂單固定 Idempotency-Key 和 D1 lease，避免重複通知重寄。
 - 原 /api/apply 轉用同一付費建單驗證流程；不再寄未付款的免費申請確認信。舊 applications 保留。
-- 新增的 Drizzle migration 只增加付款及限流資料表，不修改原 applications。
-- 課程日期與參加方式仍待公布；無課前提醒或行銷排程。
+- Drizzle migrations：0001 起新增付款與限流資料表；0002 為 applications 加上 session_code、line_name；0003 加上可空的 session_catalog。發布時須先套用尚未執行的 migration。0003 不改寫既有列；未套用前不要發布會寫入 session_catalog 的程式，否則新建單會失敗。
+- 新報名只接受 lib/course-sessions.ts 的六個場次（對齊前端 917b802）。11/3、11/10、11/17 與舊的 11/24 19:30 只供既有訂單讀取，不能再新報。2026-11-24 新舊共用代碼，靠 session_catalog=`precourse-1115` 區分；查詢或匯出必須同時讀 session_code 與 session_catalog，再用 sessionLabel／describeStoredSession 產生文案。無課前提醒或行銷排程。
 
 驗證：node checks/payment.test.cjs（測試憑證、記憶體 SQLite、模擬寄信，不會收款或寄真實郵件）；TypeScript；production build；手機 390px 表單無水平溢出。
 正式端到端完成付款仍需真人刷卡，並核對 verified notify、D1 paid、結果頁與 Resend Delivered；抵達支付頁不能當成收款成功。
