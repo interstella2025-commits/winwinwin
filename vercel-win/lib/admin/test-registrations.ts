@@ -12,11 +12,27 @@ export function excludedTestNameList(env: NodeJS.ProcessEnv = process.env): stri
   return [...new Set([...DEFAULT_EXCLUDED_TEST_NAMES, ...extras])];
 }
 
+const CONTAINED_TEST_NAME_MARKERS = ['測試', 'elsa', '廖子淇'] as const;
+
 export function isExcludedTestName(name: string | null | undefined, env: NodeJS.ProcessEnv = process.env): boolean {
   if (typeof name !== 'string') return false;
   const needle = normalizeExcludedTestName(name);
   if (!needle) return false;
+  if (CONTAINED_TEST_NAME_MARKERS.some(marker => needle.includes(normalizeExcludedTestName(marker)))) return true;
   return excludedTestNameList(env).some(item => normalizeExcludedTestName(item) === needle);
+}
+
+export function isExcludedTestSource(source: string | null | undefined): boolean {
+  return typeof source === 'string' && source.includes('【測試】');
+}
+
+export function isExcludedRegistration(
+  name: string | null | undefined,
+  sources: Array<string | null | undefined> = [],
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  if (isExcludedTestName(name, env)) return true;
+  return sources.some(source => isExcludedTestSource(source));
 }
 
 export type ExcludedTestRow = {

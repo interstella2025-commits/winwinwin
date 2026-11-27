@@ -2,7 +2,7 @@ import { db } from '../payuni/db';
 import { classifyApplication, displaySession, isDecember16, isDecember23, isPaid399, isTestOrder, type OrderFact } from './offers';
 import { fixtureReport } from './fixture';
 import { ensureAnalyticsTables } from './schema';
-import { isExcludedTestName, type ExcludedTestRow } from './test-registrations';
+import { isExcludedRegistration, isExcludedTestName, isExcludedTestSource, type ExcludedTestRow } from './test-registrations';
 
 export type SessionRow = {
   id: string;
@@ -10,6 +10,7 @@ export type SessionRow = {
   started_at: string;
   last_seen_at: string;
   referrer: string | null;
+  landing_url?: string | null;
   device_type: string;
   utm_source: string | null;
   utm_medium: string | null;
@@ -233,6 +234,32 @@ export function groupApplications(rows: JoinRow[]): GroupedApplication[] {
   return [...grouped.values()];
 }
 
+function isTestTrafficSession(session: SessionRow) {
+  return [session.referrer, session.landing_url, session.utm_source, session.utm_medium, session.utm_campaign, session.utm_content, session.utm_term]
+    .some(value => isExcludedTestSource(value));
+}
+
+function isTestTrafficEvent(event: EventRow) {
+  const raw = typeof event.event_data === 'string' ? event.event_data : JSON.stringify(event.event_data ?? '');
+  if (isExcludedTestSource(raw)) return true;
+  const data = readData(event.event_data);
+  return Object.values(data).some(value => typeof value === 'string' && (isExcludedTestName(value) || isExcludedTestSource(value)));
+}
+
+function withoutTestTraffic(sessions: SessionRow[], events: EventRow[]) {
+  const dropped = new Set<string>();
+  for (const session of sessions) if (isTestTrafficSession(session)) dropped.add(session.id);
+  for (const event of events) if (isTestTrafficEvent(event)) dropped.add(event.session_id);
+  return {
+    sessions: sessions.filter(session => !dropped.has(session.id)),
+    events: events.filter(event => !dropped.has(event.session_id)),
+  };
+}
+
+function applicationExcluded(application: GroupedApplication) {
+  return isExcludedRegistration(application.name, application.orders.map(order => order.source));
+}
+
 function dwellSeconds(session: SessionRow, events: EventRow[]) {
   const start = Date.parse(session.started_at);
   const end = Date.parse(session.last_seen_at);
@@ -385,11 +412,12 @@ export function buildReport(input: {
   sessionsCapped?: boolean;
   eventsCapped?: boolean;
 }): DashboardReport {
-  const sessions = input.sessions;
-  const events = input.events;
+  const visibleTraffic = withoutTestTraffic(input.sessions, input.events);
+  const sessions = visibleTraffic.sessions;
+  const events = visibleTraffic.events;
   const dwells = sessions.map(session => dwellSeconds(session, events));
-  const visibleApplications = input.applications.filter(application => !isExcludedTestName(application.name));
-  const excludedApplications = input.applications.filter(application => isExcludedTestName(application.name));
+  const visibleApplications = input.applications.filter(application => !applicationExcluded(application));
+  const excludedApplications = input.applications.filter(application => applicationExcluded(application));
   const classified = visibleApplications.map(application => ({ application, outcome: classifyApplication(application.sessionCode, application.orders) }));
   const excludedClassified = excludedApplications.map(application => ({ application, outcome: classifyApplication(application.sessionCode, application.orders) }));
   const sumPaid = (pick: (item: typeof classified[number]) => boolean, december16 = false) => classified.reduce((sum, item) => {
@@ -594,7 +622,7 @@ export async function loadReport(days: number, now = Date.now()): Promise<Dashbo
     const firstStarted = earliest[0]?.started_at || null;
     if (firstStarted && Date.parse(since) < Date.parse(firstStarted)) trackingStartedAt = firstStarted;
     sessions = await db().query(
-      `SELECT id, visitor_id, started_at, last_seen_at, referrer, device_type, utm_source, utm_medium, utm_campaign, utm_content, utm_term, max_scroll_depth, last_stage
+      `SELECT id, visitor_id, started_at, last_seen_at, referrer, landing_url, device_type, utm_source, utm_medium, utm_campaign, utm_content, utm_term, max_scroll_depth, last_stage
        FROM site_sessions WHERE started_at >= $1 ORDER BY started_at DESC LIMIT ${SESSION_FETCH_LIMIT}`,
       [since],
     ) as SessionRow[];
@@ -639,7 +667,7 @@ export async function loadExcludedTestRegistrations(now = Date.now()): Promise<E
        LIMIT 5000`,
     ) as JoinRow[];
     return groupApplications(rows)
-      .filter(application => isExcludedTestName(application.name))
+      .filter(application => isExcludedRegistration(application.name, application.orders.map(order => order.source)))
       .map(application => {
         const outcome = classifyApplication(application.sessionCode, application.orders);
         return toExcludedRow(application, outcome.result);

@@ -24,7 +24,7 @@ export default function AdminShell({ children, current, project = 'lecturer' }: 
           ) : (
             <>
               <a className={current === 'traffic' ? 'active' : ''} href="/admin/dashboard" aria-current={current === 'traffic' ? 'page' : undefined}>流量</a>
-              <a className={current === 'tests' ? 'active' : ''} href="/admin/test-registrations" aria-current={current === 'tests' ? 'page' : undefined}>測試資料</a>
+              {current === 'tests' ? <a className="active" href="/admin/test-registrations" aria-current="page">測試資料</a> : null}
             </>
           )}
         </nav>

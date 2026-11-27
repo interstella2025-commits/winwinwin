@@ -38,11 +38,13 @@ function FunnelBlock({ title, note, steps, outcomes }: {
 
 export default function DashboardView({ report }: { report: DashboardReport }) {
   const rangeLabel = report.days === 1 ? '最近 24 小時' : `最近 ${report.days} 天`;
+  const showTraffic = !report.analyticsUnavailable;
+  const showSignups = !report.registrationsUnavailable;
   return (
     <main className="admin-page analytics-page">
       <header className="admin-page-header split">
         <div>
-          <p className="admin-eyebrow">DATA OVERVIEW</p>
+          <p className="admin-eyebrow">講師班</p>
           <h1>流量與訪客旅程</h1>
           <p>先看整體趨勢，再查看報名與付款結果。</p>
           <p className="analytics-period-caption">統計期間：{report.periodCaption}（台北時間）</p>
@@ -56,44 +58,14 @@ export default function DashboardView({ report }: { report: DashboardReport }) {
         </nav>
       </header>
 
-      {report.fixture ? (
-        <div className="admin-setup-banner analytics-warning">
-          <strong>此畫面是本機示範資料</strong>
-          <span>用來預覽版面。正式環境不會使用這批數字。</span>
-        </div>
-      ) : null}
-      {report.analyticsUnavailable ? (
-        <div className="admin-setup-banner analytics-warning">
-          <strong>流量資料表尚未啟用</strong>
-          <span>請先套用 migration 0003_site_analytics.sql。報名與付款仍會盡量從既有資料讀取。</span>
-        </div>
-      ) : null}
-      {report.registrationsUnavailable ? (
-        <div className="admin-setup-banner analytics-warning">
-          <strong>目前讀不到報名與付款資料</strong>
-          <span>資料庫連線恢復後，名單與統計會重新出現。</span>
-        </div>
-      ) : null}
-      {report.trackingStartedAt ? (
-        <div className="admin-setup-banner">
-          <strong>流量資料自 {formatTaipei(report.trackingStartedAt)} 起</strong>
-          <span>這段期間的開頭早於開始記錄流量的時間，因此進站、漏斗與來源只涵蓋有資料的區間。</span>
-        </div>
-      ) : null}
-      {report.sessionsCapped || report.eventsCapped ? (
-        <div className="admin-setup-banner analytics-warning">
-          <strong>這段期間的流量資料已達讀取上限</strong>
-          <span>{[report.sessionsCapped ? '造訪次數' : '', report.eventsCapped ? '事件筆數' : ''].filter(Boolean).join('、')}已截取最新一頁，數字可能低於實際。停留時間以各次造訪的開始／最後活動時間計算，不含 dwell_ping。</span>
-        </div>
-      ) : null}
-      {report.kpis.excludedTestNames ? (
-        <div className="admin-setup-banner">
-          <strong>已自列表與統計排除 {report.kpis.excludedTestNames} 筆測試姓名資料</strong>
-          <span>姓名去掉所有空白（含全形空白）後，完全等於「elsa測試」、「Elsa」（大小寫不拘）或「廖子淇」的報名與訂單不會顯示、也不計入數字。資料仍留在資料庫。<a href="/admin/test-registrations">查看並匯出這些資料</a></span>
-        </div>
+      {!showTraffic && !showSignups ? (
+        <p className="analytics-inline-empty">目前沒有可顯示的資料。</p>
       ) : null}
 
+      {showTraffic || showSignups ? (
       <section className="analytics-kpis" aria-label="流量摘要">
+        {showTraffic ? (
+          <>
         <article>
           <span>不重複訪客</span>
           <strong>{report.kpis.visitors}</strong>
@@ -114,6 +86,10 @@ export default function DashboardView({ report }: { report: DashboardReport }) {
           <strong>{percent(report.funnels.online[1]?.count || 0, report.kpis.sessions)}%</strong>
           <small>{report.funnels.online[1]?.count || 0}／{report.kpis.sessions} 次造訪</small>
         </article>
+          </>
+        ) : null}
+        {showSignups ? (
+          <>
         <article>
           <span>線上免費登記</span>
           <strong>{report.kpis.freeOnline}</strong>
@@ -127,15 +103,19 @@ export default function DashboardView({ report }: { report: DashboardReport }) {
         <article>
           <span>線上已付款</span>
           <strong>{report.kpis.onlinePaid}</strong>
-          <small>既有 {money(report.kpis.onlinePaidAmount)}</small>
+          <small>{money(report.kpis.onlinePaidAmount)}</small>
         </article>
+          </>
+        ) : null}
       </section>
+      ) : null}
 
+      {showSignups ? (
       <section className="admin-panel" aria-labelledby="signup-result-title">
         <div className="admin-section-heading">
           <div>
             <h2 id="signup-result-title">報名結果</h2>
-            <p>線上沒有付款訂單，才算免費登記。實體課以已付款、金額 399、且不是 NT$1 測試單計算。姓名完全符合測試名單的報名已從這裡扣除。</p>
+            <p>線上沒有付款訂單，算免費登記。實體課以已付款、金額 399 計算。</p>
           </div>
           <span>{rangeLabel}</span>
         </div>
@@ -146,11 +126,11 @@ export default function DashboardView({ report }: { report: DashboardReport }) {
           <article><span>實體已付款</span><strong>{report.kpis.inpersonPaid} 筆</strong></article>
           <article><span>實體未完成付款</span><strong>{Math.max(0, report.kpis.inpersonStarted - report.kpis.inpersonPaid)} 筆</strong></article>
           <article><span>其他場次通知</span><strong>{report.kpis.notify} 筆</strong></article>
-          <article><span>NT$1 測試單</span><strong>{report.kpis.excludedTestOrders} 筆</strong></article>
-          <article><span>已排除測試姓名</span><strong>{report.kpis.excludedTestNames} 筆</strong></article>
         </div>
       </section>
+      ) : null}
 
+      {showTraffic ? (
       <section className="admin-panel" aria-labelledby="event-count-title">
         <div className="admin-section-heading">
           <div>
@@ -165,7 +145,9 @@ export default function DashboardView({ report }: { report: DashboardReport }) {
           ))}
         </div>
       </section>
+      ) : null}
 
+      {showTraffic ? (
       <section className="analytics-overview-grid">
         <div className="admin-panel analytics-trend-panel">
           <div className="admin-section-heading">
@@ -175,7 +157,7 @@ export default function DashboardView({ report }: { report: DashboardReport }) {
           <TrafficTrendChart points={report.trend} />
         </div>
         <div className="admin-panel analytics-breakdown-panel">
-          <div className="admin-section-heading"><div><h2>流量來源</h2><p>有 UTM 時用來源與媒介，否則用來路網域</p></div></div>
+          <div className="admin-section-heading"><div><h2>流量來源</h2><p>依廣告來源；沒有標記時用來路網站</p></div></div>
           <HorizontalBreakdown
             items={report.sources.map(source => ({ label: source.campaign ? `${source.label}｜${source.campaign}` : source.label, value: source.sessions }))}
             total={report.kpis.sessions}
@@ -185,8 +167,11 @@ export default function DashboardView({ report }: { report: DashboardReport }) {
           <DeviceRing items={report.devices.map(device => ({ label: device.label, value: device.count }))} />
         </div>
       </section>
+      ) : null}
 
+      {showTraffic ? (
       <section className="analytics-depth-grid">
+        {showSignups ? (
         <div className="admin-panel analytics-funnel-panel" id="journey">
           <div className="admin-section-heading">
             <div><h2>訪客旅程路徑</h2><p>進站與點擊是全站工作階段。開始填表以後才分線上與實體。完成數以報名與訂單為準。</p></div>
@@ -212,6 +197,7 @@ export default function DashboardView({ report }: { report: DashboardReport }) {
             ]}
           />
         </div>
+        ) : null}
         <div className="admin-panel analytics-scroll-panel">
           <div className="admin-section-heading">
             <div>
@@ -228,7 +214,9 @@ export default function DashboardView({ report }: { report: DashboardReport }) {
           />
         </div>
       </section>
+      ) : null}
 
+      {showTraffic && showSignups ? (
       <section className="admin-panel analytics-service-panel">
         <div className="admin-section-heading">
           <div><h2>課程內容表現</h2><p>比較開始填表、送出與完成</p></div>
@@ -236,13 +224,15 @@ export default function DashboardView({ report }: { report: DashboardReport }) {
         </div>
         <OfferPerformanceVisual offers={report.offerPerformance} />
       </section>
+      ) : null}
 
+      {showSignups ? (
       <section className="admin-panel">
         <details className="analytics-journey-disclosure" open>
           <summary className="analytics-ad-summary">
             <div>
               <h2>近期報名</h2>
-              <p>顯示前 {Math.min(report.registrations.length, 20)} 筆。測試姓名不會出現在這裡。</p>
+              <p>顯示前 {Math.min(report.registrations.length, 20)} 筆。</p>
             </div>
             <span className="analytics-ad-period">共 {report.registrationsTotal} 筆{report.registrationsTotal > report.registrations.length ? '，最多顯示 20 筆' : ''}</span>
             <span className="analytics-ad-toggle" aria-hidden="true" />
@@ -269,13 +259,15 @@ export default function DashboardView({ report }: { report: DashboardReport }) {
           ) : <p className="analytics-inline-empty">這段時間還沒有報名。</p>}
         </details>
       </section>
+      ) : null}
 
+      {showSignups ? (
       <section className="admin-panel">
         <details className="analytics-journey-disclosure" open>
           <summary className="analytics-ad-summary">
             <div>
               <h2>近期付款</h2>
-              <p>線上既有 NT$399 與實體訂單都列在這裡。NT$1 測試單與測試姓名不列入。</p>
+              <p>線上與實體的付款訂單。</p>
             </div>
             <span className="analytics-ad-period">共 {report.paymentsTotal} 筆{report.paymentsTotal > report.payments.length ? '，最多顯示 20 筆' : ''}</span>
             <span className="analytics-ad-toggle" aria-hidden="true" />
@@ -303,6 +295,7 @@ export default function DashboardView({ report }: { report: DashboardReport }) {
           ) : <p className="analytics-inline-empty">這段時間還沒有付款訂單。</p>}
         </details>
       </section>
+      ) : null}
     </main>
   );
 }

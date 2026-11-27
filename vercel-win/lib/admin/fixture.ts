@@ -96,7 +96,7 @@ export function fixtureReport(days: number, now = Date.now()) {
     },
     {
       id: 'fixture-app-friend',
-      name: '廖子淇的朋友',
+      name: '陳好友',
       email: 'friend@example.test',
       phone: '+886900000093',
       sessionCode: ONLINE,
