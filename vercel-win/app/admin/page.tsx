@@ -5,7 +5,7 @@ import { isAdminAuthenticated } from '../../lib/admin/session';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
-  title: '登入｜WIN 講師班後台',
+  title: '登入｜WIN專案後台',
   robots: { index: false, follow: false },
 };
 

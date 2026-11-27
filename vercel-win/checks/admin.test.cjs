@@ -543,6 +543,85 @@ async function test(name, fn) {
     assert.equal(ingest.isIgnoredAnalyticsUa('Mozilla/5.0 (iPhone)'), false);
   });
 
+  await test('美國三校 events are additive and hide test names', async () => {
+    const sql = fs.readFileSync(path.join(root, 'db/migrations/0004_us3_events.sql'), 'utf8');
+    assert.equal(/\b(ALTER|DROP|DELETE|UPDATE|TRUNCATE)\b/i.test(sql), false);
+    assert.match(sql, /CREATE TABLE IF NOT EXISTS us3_events/);
+    const us3 = load('lib/admin/us3.ts');
+    const collect = load('app/api/us3/collect/route.ts');
+    assert.equal(us3.us3AllowedOrigin('https://evil.example'), null);
+    assert.equal(us3.us3AllowedOrigin('https://us2027.waward.group'), 'https://us2027.waward.group');
+    assert.equal(us3.us3RangeDays(undefined), 30);
+    const rejected = await collect.POST(new Request('https://2027course.win-lin.com/api/us3/collect', {
+      method: 'POST',
+      headers: { origin: 'https://evil.example', 'content-type': 'application/json' },
+      body: JSON.stringify({ kind: 'page_view' }),
+    }));
+    assert.equal(rejected.status, 403);
+    const signup = {
+      kind: 'seminar_signup',
+      name: '王小明',
+      session: '2026/12/16（三）14:00–16:00',
+      requestId: 'signup-1216-test',
+      pagePath: '/seminar/',
+      utm_source: 'facebook',
+      utm_medium: 'paid',
+      utm_campaign: 'us3',
+      email: 'hidden@example.test',
+      phone: '0912000000',
+    };
+    const allowed = await collect.POST(new Request('https://2027course.win-lin.com/api/us3/collect', {
+      method: 'POST',
+      headers: { origin: 'https://us2027.waward.group', 'content-type': 'application/json', 'user-agent': 'Mozilla/5.0 (iPhone)' },
+      body: JSON.stringify(signup),
+    }));
+    assert.equal(allowed.status, 200);
+    const again = await collect.POST(new Request('https://2027course.win-lin.com/api/us3/collect', {
+      method: 'POST',
+      headers: { origin: 'https://us2027.waward.group', 'content-type': 'application/json', 'user-agent': 'Mozilla/5.0 (iPhone)' },
+      body: JSON.stringify(signup),
+    }));
+    assert.equal(again.status, 200);
+    for (const name of ['elsa測試', 'elsa', '廖子淇']) {
+      const parsed = us3.parseUs3Event(JSON.stringify({ kind: 'lead', name, requestId: `lead-${name}`, pagePath: '/' }));
+      assert.equal(parsed.ok, true);
+      assert.equal(parsed.value.isTest, 1);
+      await us3.recordUs3Event(parsed.value, '2026-11-25T02:00:00.000Z');
+    }
+    await us3.recordUs3Event(us3.parseUs3Event(JSON.stringify({
+      kind: 'page_view', requestId: 'pv-home-1', pagePath: '/', visitorId: 'visitor-123456', utm_source: 'facebook',
+    })).value, '2026-11-25T01:00:00.000Z');
+    await us3.recordUs3Event(us3.parseUs3Event(JSON.stringify({
+      kind: 'seminar_signup', name: '林同學', session: '2026-12-30', requestId: 'signup-1230', pagePath: '/seminar/',
+    })).value, '2026-11-26T03:00:00.000Z');
+    const columns = sqlite.prepare('PRAGMA table_info(us3_events)').all().map(column => column.name);
+    assert.equal(columns.includes('email'), false);
+    assert.equal(columns.includes('phone'), false);
+    assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM us3_events WHERE id = ?').get('signup-1216-test').n, 1);
+    const stored = sqlite.prepare('SELECT person_name, session_date, is_test FROM us3_events WHERE id = ?').get('signup-1216-test');
+    assert.equal(stored.person_name, '王小明');
+    assert.equal(stored.session_date, '2026-12-16');
+    assert.equal(Number(stored.is_test), 0);
+    const report = await us3.loadUs3Report(30, Date.parse('2026-11-26T12:00:00.000Z'));
+    assert.equal(report.unavailable, false);
+    assert.equal(report.excludedTests, 3);
+    assert.equal(report.kpis.seminarSignups, 2);
+    assert.equal(report.kpis.seminar1216, 1);
+    assert.equal(report.kpis.seminar1230, 1);
+    assert.equal(report.kpis.leads, 0);
+    assert.equal(report.kpis.visits, 1);
+    assert.equal(JSON.stringify(report).includes('hidden@example.test'), false);
+    assert.equal(JSON.stringify(report).includes('0912000000'), false);
+    assert.equal(JSON.stringify(report).includes('王小明'), false);
+    const view = fs.readFileSync(path.join(root, 'components/admin/us3-dashboard.tsx'), 'utf8');
+    assert.equal(view.includes('person_name'), false);
+    assert.equal(view.includes('email'), false);
+    const shell = fs.readFileSync(path.join(root, 'components/admin/admin-shell.tsx'), 'utf8');
+    assert.match(shell, /WIN專案/);
+    assert.match(shell, /href="\/admin\/us3"/);
+    assert.match(shell, /href="\/admin\/dashboard"/);
+  });
+
   await test('home page flushes analytics before leaving for /registered, and login opts the browser out', () => {
     const home = fs.readFileSync(path.join(root, 'app/page.tsx'), 'utf8');
     assert.match(home, /flushWinAnalytics\(\);\s*location\.assign\('\/registered'\)/);
