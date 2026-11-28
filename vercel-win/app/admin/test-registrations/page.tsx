@@ -20,7 +20,7 @@ export default async function TestRegistrationsPage() {
           <div>
             <p className="admin-eyebrow">BACKUP</p>
             <h1>已排除的測試資料</h1>
-            <p>這些報名與訂單仍留在資料庫，只是不出現在流量頁，也不計入統計。比對方式是去掉前後空白後，姓名完全等於「elsa測試」、「Elsa」（大小寫不拘）或「廖子淇」。</p>
+            <p>這些報名沒有列入流量頁。姓名含有「測試」、「elsa」或「廖子淇」，來源含有「【測試】」，或屬於另外指定的測試姓名時，會列在這裡。資料仍保留。</p>
           </div>
           <a className="admin-primary-button compact" href="/api/admin/test-registrations">匯出 CSV</a>
         </header>

@@ -1,6 +1,6 @@
 import { db } from '../payuni/db';
 import { formatTaipeiRange } from './report';
-import { isExcludedTestName } from './test-registrations';
+import { isExcludedTestName, isExcludedTestSource } from './test-registrations';
 
 export const US3_SCHEMA = [
   `CREATE TABLE IF NOT EXISTS us3_events (
@@ -141,6 +141,7 @@ export function parseUs3Event(raw: string): { ok: true; value: ParsedUs3Event } 
     const text = clip(value, max);
     return text || null;
   };
+  const source = optional(record.source, 180);
   return {
     ok: true,
     value: {
@@ -148,7 +149,7 @@ export function parseUs3Event(raw: string): { ok: true; value: ParsedUs3Event } 
       kind: typedKind,
       pagePath: pagePath(record.pagePath),
       sessionDate,
-      source: optional(record.source, 180),
+      source,
       utmSource: optional(record.utm_source, 120),
       utmMedium: optional(record.utm_medium, 120),
       utmCampaign: optional(record.utm_campaign, 120),
@@ -157,7 +158,7 @@ export function parseUs3Event(raw: string): { ok: true; value: ParsedUs3Event } 
       visitorId: visitorId(record.visitorId),
       referrerHost: referrerHost(record.referrer),
       personName: name || null,
-      isTest: typedKind !== 'page_view' && isExcludedTestName(name) ? 1 : 0,
+      isTest: typedKind !== 'page_view' && (isExcludedTestName(name) || isExcludedTestSource(source)) ? 1 : 0,
     },
   };
 }
@@ -191,6 +192,7 @@ export type Us3EventRow = {
   utm_campaign: string | null;
   visitor_id: string | null;
   referrer_host: string | null;
+  person_name?: string | null;
   is_test: number | boolean | string;
 };
 
@@ -239,6 +241,14 @@ function isTest(row: Us3EventRow) {
   return Number(row.is_test) === 1;
 }
 
+function signupKind(row: Us3EventRow) {
+  return row.kind === 'seminar_signup' || row.kind === 'lead';
+}
+
+function rowMarkedTest(row: Us3EventRow) {
+  return isTest(row) || isExcludedTestName(row.person_name) || isExcludedTestSource(row.source);
+}
+
 function pageGroup(path: string) {
   const clean = (path || '/').split('?')[0];
   if (clean === '/' || clean === '/index.html') return '首頁';
@@ -280,8 +290,16 @@ function grouped(rows: Us3EventRow[], labelOf: (row: Us3EventRow) => string) {
 
 export function buildUs3Report(input: { days: number; since: string; now?: number; rows: Us3EventRow[]; unavailable?: boolean; capped?: boolean }): Us3Report {
   const now = input.now ?? Date.now();
-  const visible = input.rows.filter(row => !isTest(row));
-  const excludedTests = input.rows.filter(row => isTest(row) && (row.kind === 'seminar_signup' || row.kind === 'lead')).length;
+  const excludedVisitors = new Set<string>();
+  for (const row of input.rows) {
+    if (signupKind(row) && rowMarkedTest(row) && row.visitor_id) excludedVisitors.add(row.visitor_id);
+  }
+  const hidden = (row: Us3EventRow) => {
+    const visitorId = row.visitor_id;
+    return rowMarkedTest(row) || (row.kind === 'page_view' && Boolean(visitorId) && excludedVisitors.has(visitorId || ''));
+  };
+  const visible = input.rows.filter(row => !hidden(row));
+  const excludedTests = input.rows.filter(row => signupKind(row) && rowMarkedTest(row)).length;
   const visits = visible.filter(row => row.kind === 'page_view');
   const signups = visible.filter(row => row.kind === 'seminar_signup');
   const leads = visible.filter(row => row.kind === 'lead');
@@ -342,7 +360,7 @@ export async function loadUs3Report(days: number, now = Date.now()): Promise<Us3
   try {
     await ensureUs3Tables();
     const rows = await db().query(
-      `SELECT kind, occurred_at, page_path, session_date, source, utm_source, utm_medium, utm_campaign, visitor_id, referrer_host, is_test
+      `SELECT kind, occurred_at, page_path, session_date, source, utm_source, utm_medium, utm_campaign, visitor_id, referrer_host, person_name, is_test
        FROM us3_events
        WHERE occurred_at >= $1
        ORDER BY occurred_at ASC

@@ -297,14 +297,20 @@ async function test(name, fn) {
     assert.equal(names.isExcludedTestName('E lsa'), true);
     assert.equal(names.isExcludedTestName('廖\u3000子淇'), true);
     assert.equal(names.isExcludedTestName('ELSA'), true);
-    assert.equal(names.isExcludedTestName('Elsa的朋友'), false);
+    assert.equal(names.isExcludedTestName('Elsa的朋友'), true);
     assert.equal(names.isExcludedTestName('廖'), false);
-    assert.equal(names.isExcludedTestName('廖子淇的朋友'), false);
-    assert.equal(names.isExcludedTestName('elsa測試帳號'), false);
+    assert.equal(names.isExcludedTestName('廖子淇的朋友'), true);
+    assert.equal(names.isExcludedTestName('elsa測試帳號'), true);
+    assert.equal(names.isExcludedTestName('測 試'), true);
     assert.equal(names.isExcludedTestName('陳安'), false);
+    assert.equal(names.isExcludedTestSource('【測試】說明會'), true);
+    assert.equal(names.isExcludedTestSource('https://2027course.win-lin.com/#apply'), false);
+    assert.equal(names.isExcludedRegistration('陳安', ['活動【測試】']), true);
+    assert.equal(names.isExcludedRegistration('陳安', ['https://2027course.win-lin.com/#apply']), false);
     process.env.ADMIN_EXCLUDED_TEST_NAMES = ' 王測試 ,李示範';
     assert.equal(names.isExcludedTestName('王測試'), true);
     assert.equal(names.isExcludedTestName('李示範'), true);
+    assert.equal(names.isExcludedTestName('李示範的朋友'), false);
     assert.equal(names.isExcludedTestName('elsa測試'), true);
     delete process.env.ADMIN_EXCLUDED_TEST_NAMES;
   });
@@ -338,6 +344,7 @@ async function test(name, fn) {
         { id: 'elsa2', name: ' Elsa ', email: 'elsa.case@example.test', phone: '+886900000094', sessionCode: DAY16, createdAt: now, orders: [order({ orderNo: 'WINMWL2WRYP316798C958', status: 'pending', paidAt: null })] },
         { id: 'liao', name: ' 廖子淇 ', email: 'liao@example.test', phone: '+886900000092', sessionCode: DAY16, createdAt: now, orders: [order({ orderNo: 'WINLIAO' })] },
         { id: 'friend', name: '廖子淇的朋友', email: 'friend@example.test', phone: '+886900000093', sessionCode: ONLINE, createdAt: now, orders: [] },
+        { id: 'kept', name: '陳好友', email: 'kept@example.test', phone: '+886900000099', sessionCode: ONLINE, createdAt: now, orders: [] },
       ],
     });
     assert.equal(before.kpis.freeOnline, 1);
@@ -347,19 +354,20 @@ async function test(name, fn) {
     assert.equal(after.kpis.inpersonPaid, 1);
     assert.equal(after.kpis.inpersonPaidAmount, 399);
     assert.equal(after.kpis.inpersonStarted, 1);
-    assert.equal(after.kpis.excludedTestNames, 3);
+    assert.equal(after.kpis.excludedTestNames, 4);
     assert.equal(after.funnels.online.at(-1).count, 2);
     assert.equal(after.funnels.inperson.at(-1).count, 1);
-    assert.equal(after.registrations.some(row => /elsa/i.test(row.name.trim()) || row.name.trim() === '廖子淇'), false);
-    assert.equal(after.registrations.some(row => row.name === '廖子淇的朋友' && row.result === '免費登記'), true);
+    assert.equal(after.registrations.some(row => /elsa/i.test(row.name.trim()) || row.name.includes('廖子淇')), false);
+    assert.equal(after.registrations.some(row => row.name === '陳好友' && row.result === '免費登記'), true);
     assert.equal(after.payments.some(row => row.orderNo === 'WINLIAO' || row.orderNo === 'WINMWL2WRYP316798C958' || row.name.trim() === '廖子淇' || row.name.trim() === 'Elsa'), false);
     assert.equal(after.payments.some(row => row.orderNo === 'WIN1216'), true);
     assert.equal(after.excludedTests.some(row => row.name.trim() === 'Elsa' && row.orders.some(order => order.orderNo === 'WINMWL2WRYP316798C958')), true);
-    assert.equal(after.excludedTests.map(row => row.name.trim()).sort().join(','), 'Elsa,elsa測試,廖子淇');
+    assert.equal(after.excludedTests.map(row => row.name.trim()).sort().join(','), 'Elsa,elsa測試,廖子淇,廖子淇的朋友');
     const csv = load('lib/admin/test-registrations.ts').excludedTestRegistrationsCsv(after.excludedTests);
     assert.match(csv, /elsa測試/);
     assert.match(csv, /廖子淇/);
-    assert.equal(csv.includes('廖子淇的朋友'), false);
+    assert.match(csv, /廖子淇的朋友/);
+    assert.equal(csv.includes('陳好友'), false);
   });
 
   await test('fixture hides default test names and still counts a similar real name', () => {
@@ -367,7 +375,7 @@ async function test(name, fn) {
     assert.equal(sample.fixture, true);
     assert.equal(sample.kpis.excludedTestNames, 2);
     assert.equal(sample.registrations.some(row => row.name.trim() === 'elsa測試' || row.name.trim() === '廖子淇'), false);
-    assert.equal(sample.registrations.some(row => row.name === '廖子淇的朋友'), true);
+    assert.equal(sample.registrations.some(row => row.name === '陳好友'), true);
     assert.equal(sample.payments.some(row => row.orderNo === 'WINTESTNAME'), false);
     assert.equal(sample.kpis.freeOnline >= 4, true);
     assert.equal(sample.kpis.inpersonPaid, 2);
@@ -379,14 +387,17 @@ async function test(name, fn) {
     sqlite.prepare('INSERT INTO applications (id,name,email,phone,profession,stage,topic,session_code,line_name,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)').run('app-elsa', 'elsa測試', 'elsa@example.test', '+886900000091', 'QA', 'QA', 'QA', ONLINE, '', created);
     sqlite.prepare('INSERT INTO applications (id,name,email,phone,profession,stage,topic,session_code,line_name,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)').run('app-liao', ' 廖子淇 ', 'liao@example.test', '+886900000092', 'QA', 'QA', 'QA', DAY16, '', created);
     sqlite.prepare('INSERT INTO payment_orders (id,application_id,order_no,merchant,amount,token,request_id,status,created_at,consent_at,source,paid_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)').run('order-liao', 'app-liao', 'WINLIAO', 'M', 399, 'token-liao', 'request-liao', 'paid', created, created, 'https://2027course.win-lin.com/#apply', created);
-    sqlite.prepare('INSERT INTO applications (id,name,email,phone,profession,stage,topic,session_code,line_name,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)').run('app-friend', '廖子淇的朋友', 'friend@example.test', '+886900000093', 'QA', 'QA', 'QA', ONLINE, '', created);
+    sqlite.prepare('INSERT INTO applications (id,name,email,phone,profession,stage,topic,session_code,line_name,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)').run('app-friend', '陳好友', 'friend@example.test', '+886900000093', 'QA', 'QA', 'QA', ONLINE, '', created);
+    sqlite.prepare('INSERT INTO applications (id,name,email,phone,profession,stage,topic,session_code,line_name,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)').run('app-marked', '林正常', 'marked@example.test', '+886900000097', 'QA', 'QA', 'QA', ONLINE, '', created);
+    sqlite.prepare('INSERT INTO payment_orders (id,application_id,order_no,merchant,amount,token,request_id,status,created_at,consent_at,source,paid_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)').run('order-marked', 'app-marked', 'WINMARK', 'M', 399, 'token-marked', 'request-marked', 'paid', created, created, '活動【測試】', created);
     const csvRoute = load('app/api/admin/test-registrations/route.ts');
     assert.equal((await csvRoute.GET(new Request('https://2027course.win-lin.com/api/admin/test-registrations'))).status, 401);
     const token = auth.createAdminSessionToken();
     const allowed = await overview.GET(new Request('https://2027course.win-lin.com/api/admin/overview', { headers: { cookie: `win_admin_session=${token}` } }));
     assert.equal(allowed.status, 200);
     const body = await allowed.json();
-    assert.equal(body.registrations.some(row => row.email === 'elsa@example.test' || row.email === 'liao@example.test'), false);
+    assert.equal(body.registrations.some(row => row.email === 'elsa@example.test' || row.email === 'liao@example.test' || row.email === 'marked@example.test'), false);
+    assert.equal(body.payments.some(row => row.orderNo === 'WINMARK'), false);
     assert.equal(body.registrations.some(row => row.email === 'friend@example.test' && row.result === '免費登記'), true);
     assert.equal(body.kpis.excludedTestNames >= 2, true);
     const csvResponse = await csvRoute.GET(new Request('https://2027course.win-lin.com/api/admin/test-registrations', { headers: { cookie: `win_admin_session=${token}` } }));
@@ -394,6 +405,7 @@ async function test(name, fn) {
     const csv = await csvResponse.text();
     assert.match(csv, /elsa測試/);
     assert.match(csv, /廖子淇/);
+    assert.match(csv, /marked@example.test/);
     assert.equal(csv.includes('friend@example.test'), false);
     assert.equal(csv.includes('unit-test-admin-password'), false);
   });
@@ -496,7 +508,12 @@ async function test(name, fn) {
     assert.equal(built.sessionsCapped, true);
     assert.equal(built.eventsCapped, true);
     const view = fs.readFileSync(path.join(root, 'components/admin/dashboard-view.tsx'), 'utf8');
-    assert.match(view, /流量資料自 \{formatTaipei\(report\.trackingStartedAt\)\} 起/);
+    assert.equal(view.includes('admin-setup-banner'), false);
+    assert.equal(view.includes('測試'), false);
+    assert.equal(view.includes('/admin/test-registrations'), false);
+    assert.equal(view.includes('migration'), false);
+    assert.equal(view.includes('資料庫'), false);
+    assert.equal(view.includes('目前沒有可顯示的資料'), true);
     assert.match(view, /共 \{report\.registrationsTotal\} 筆/);
     assert.match(view, /共 \{report\.paymentsTotal\} 筆/);
   });
@@ -616,10 +633,109 @@ async function test(name, fn) {
     const view = fs.readFileSync(path.join(root, 'components/admin/us3-dashboard.tsx'), 'utf8');
     assert.equal(view.includes('person_name'), false);
     assert.equal(view.includes('email'), false);
+    assert.equal(view.includes('admin-setup-banner'), false);
+    assert.equal(view.includes('測試'), false);
+    assert.equal(view.includes('Jotform'), false);
+    assert.equal(view.includes('資料庫'), false);
+    assert.equal(view.includes('目前沒有可顯示的資料'), true);
     const shell = fs.readFileSync(path.join(root, 'components/admin/admin-shell.tsx'), 'utf8');
+    assert.match(shell, /current === 'tests'/);
     assert.match(shell, /WIN專案/);
     assert.match(shell, /href="\/admin\/us3"/);
     assert.match(shell, /href="\/admin\/dashboard"/);
+  });
+
+  await test('query filters contained names, marked sources, and tied traffic without rewriting rows', async () => {
+    const now = '2026-11-18T10:00:00.000Z';
+    const session = (id, patch = {}) => ({
+      id,
+      visitor_id: id,
+      started_at: now,
+      last_seen_at: now,
+      referrer: null,
+      landing_url: 'https://2027course.win-lin.com/',
+      device_type: 'mobile',
+      utm_source: null,
+      utm_medium: null,
+      utm_campaign: null,
+      utm_content: null,
+      utm_term: null,
+      max_scroll_depth: 40,
+      last_stage: 'page_view',
+      ...patch,
+    });
+    const built = report.buildReport({
+      days: 7,
+      since: '2026-11-11T10:00:00.000Z',
+      analyticsUnavailable: false,
+      registrationsUnavailable: false,
+      fixture: false,
+      sessions: [
+        session('real'),
+        session('marked', { utm_campaign: '【測試】' }),
+        session('landing', { landing_url: 'https://2027course.win-lin.com/?note=【測試】' }),
+      ],
+      events: [
+        { session_id: 'real', event_name: 'page_view', offer: null, event_data: '{}', occurred_at: now },
+        { session_id: 'real', event_name: 'cta_click', offer: null, event_data: '{}', occurred_at: now },
+        { session_id: 'marked', event_name: 'page_view', offer: null, event_data: '{}', occurred_at: now },
+        { session_id: 'marked', event_name: 'form_start', offer: 'online', event_data: '{}', occurred_at: now },
+        { session_id: 'named', event_name: 'form_start', offer: 'online', event_data: '{"name":"王測試同學"}', occurred_at: now },
+        { session_id: 'landing', event_name: 'page_view', offer: null, event_data: '{}', occurred_at: now },
+      ],
+      applications: [
+        { id: 'ok', name: '陳安', email: 'ok@example.test', phone: '+886900000001', sessionCode: ONLINE, createdAt: now, orders: [] },
+        { id: 'src', name: '林正常', email: 'src@example.test', phone: '+886900000002', sessionCode: DAY16, createdAt: now, orders: [order({ orderNo: 'WINSRC', source: '【測試】表單' })] },
+      ],
+    });
+    assert.equal(built.kpis.sessions, 1);
+    assert.equal(built.kpis.visitors, 1);
+    assert.equal(built.eventCounts.find(row => row.key === 'form_start').count, 0);
+    assert.equal(built.funnels.online[1].count, 1);
+    assert.equal(built.kpis.freeOnline, 1);
+    assert.equal(built.kpis.inpersonPaid, 0);
+    assert.equal(built.registrations.some(row => row.name === '陳安'), true);
+    assert.equal(built.registrations.some(row => row.email === 'src@example.test'), false);
+    assert.equal(built.payments.some(row => row.orderNo === 'WINSRC'), false);
+    assert.equal(built.excludedTests.some(row => row.email === 'src@example.test'), true);
+
+    const us3 = load('lib/admin/us3.ts');
+    const contained = us3.parseUs3Event(JSON.stringify({ kind: 'lead', name: '王測試同學', requestId: 'lead-contained', pagePath: '/' }));
+    const sourced = us3.parseUs3Event(JSON.stringify({ kind: 'seminar_signup', name: '林正常', session: '2026-12-16', source: '【測試】', requestId: 'signup-sourced', pagePath: '/seminar/' }));
+    assert.equal(contained.ok && contained.value.isTest, 1);
+    assert.equal(sourced.ok && sourced.value.isTest, 1);
+    const at = Date.parse('2026-11-26T12:00:00.000Z');
+    const before = await us3.loadUs3Report(30, at);
+    const occurred = '2026-11-25T04:00:00.000Z';
+    const insert = sqlite.prepare('INSERT INTO us3_events (id, kind, occurred_at, page_path, session_date, source, utm_source, utm_medium, utm_campaign, utm_content, utm_term, visitor_id, referrer_host, person_name, is_test) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
+    insert.run('legacy-name', 'seminar_signup', occurred, '/seminar/', '2026-12-16', null, null, null, null, null, null, 'visitor-legacy', null, '王測試', 0);
+    insert.run('legacy-source', 'lead', occurred, '/', null, '名單【測試】', null, null, null, null, null, 'visitor-source', null, '林正常', 0);
+    insert.run('tied-view', 'page_view', occurred, '/', null, null, null, null, null, null, null, 'visitor-legacy', null, null, 0);
+    insert.run('real-view', 'page_view', occurred, '/', null, null, null, null, null, null, null, 'visitor-real', null, null, 0);
+    const after = await us3.loadUs3Report(30, at);
+    assert.equal(Number(sqlite.prepare('SELECT is_test FROM us3_events WHERE id = ?').get('legacy-name').is_test), 0);
+    assert.equal(Number(sqlite.prepare('SELECT is_test FROM us3_events WHERE id = ?').get('legacy-source').is_test), 0);
+    assert.equal(sqlite.prepare('SELECT person_name FROM us3_events WHERE id = ?').get('legacy-name').person_name, '王測試');
+    assert.equal(after.kpis.seminarSignups, before.kpis.seminarSignups);
+    assert.equal(after.kpis.leads, before.kpis.leads);
+    assert.equal(after.kpis.visits, before.kpis.visits + 1);
+    assert.equal(after.excludedTests, before.excludedTests + 2);
+    const direct = us3.buildUs3Report({
+      days: 7,
+      since: '2026-11-01T00:00:00.000Z',
+      rows: [
+        { kind: 'seminar_signup', occurred_at: occurred, page_path: '/seminar/', session_date: '2026-12-23', source: null, utm_source: null, utm_medium: null, utm_campaign: null, visitor_id: 'visitor-a', referrer_host: null, person_name: '測試甲', is_test: 0 },
+        { kind: 'page_view', occurred_at: occurred, page_path: '/', session_date: null, source: null, utm_source: null, utm_medium: null, utm_campaign: null, visitor_id: 'visitor-a', referrer_host: null, person_name: null, is_test: 0 },
+        { kind: 'page_view', occurred_at: occurred, page_path: '/', session_date: null, source: '【測試】', utm_source: null, utm_medium: null, utm_campaign: null, visitor_id: 'visitor-b', referrer_host: null, person_name: null, is_test: 0 },
+        { kind: 'page_view', occurred_at: occurred, page_path: '/seminar/', session_date: null, source: null, utm_source: null, utm_medium: null, utm_campaign: null, visitor_id: 'visitor-c', referrer_host: null, person_name: null, is_test: 0 },
+        { kind: 'lead', occurred_at: occurred, page_path: '/', session_date: null, source: null, utm_source: null, utm_medium: null, utm_campaign: null, visitor_id: 'visitor-c', referrer_host: null, person_name: '陳安', is_test: 0 },
+      ],
+    });
+    assert.equal(direct.kpis.seminarSignups, 0);
+    assert.equal(direct.kpis.leads, 1);
+    assert.equal(direct.kpis.visits, 1);
+    assert.equal(direct.excludedTests, 1);
+    assert.equal(direct.funnel.seminarPage, 1);
   });
 
   await test('home page flushes analytics before leaving for /registered, and login opts the browser out', () => {
